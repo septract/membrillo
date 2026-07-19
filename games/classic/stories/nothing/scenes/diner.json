@@ -1,0 +1,111 @@
+{
+  "id": "diner",
+  "name": "Nib's Coffee Shop",
+  "paint": "diner",
+  "size": { "w": 400, "h": 180 },
+  "walk": { "x": 12, "y": 130, "w": 376, "h": 40 },
+  "depth": { "far": { "y": 130, "scale": 0.9 }, "near": { "y": 170, "scale": 1.05 } },
+  "start": { "x": 40, "y": 150 },
+  "hotspots": [
+    {
+      "id": "counter_rye",
+      "name": "bread basket",
+      "region": { "x": 92, "y": 104, "w": 26, "h": 14 },
+      "walkTo": { "x": 104, "y": 146 },
+      "requires": ["!flag:took_rye"],
+      "look": [{ "text": "On the counter, wrapped in wax paper: a whole marble rye. Nib bakes it himself and dares the world to comment." }],
+      "take": [
+        {
+          "text": "You palm the marble rye off the counter with the fluid ease of a man who owes this establishment nine dollars.",
+          "giveItem": "rye",
+          "setFlags": ["took_rye"]
+        }
+      ]
+    },
+    {
+      "id": "board",
+      "name": "trivia board",
+      "region": { "x": 300, "y": 40, "w": 74, "h": 40 },
+      "walkTo": { "x": 330, "y": 148 },
+      "look": [
+        {
+          "requires": ["flag:won_trivia"],
+          "text": "The board now reads WINNERS: BOOTH 4. That's you. That's Kessler and a rye. History is written by whoever's least hungry at the buzzer."
+        },
+        {
+          "text": "TONIGHT'S TRIVIA — GRAND PRIZE $3. Tonight's category: 'Years Things Happened.' The question chalked below: \"In what year did the ballpoint pen go on sale?\" You have absolutely no idea. Someone in your life definitely does."
+        }
+      ],
+      "use": [
+        {
+          "requires": ["flag:won_trivia"],
+          "text": "You've already won. Gloating further would be gauche, and you're saving all your gauche for the jacket."
+        },
+        {
+          "requires": ["flag:knows_answer", "companion:kessler", "!flag:won_trivia"],
+          "text": "You march up, Kessler in tow, and answer: NINETEEN OH FOUR. The buzzer AGREES. Three dollars, and the pure clean joy of being right about something that does not matter at all.",
+          "addCounter": { "money": 3 },
+          "setFlags": ["won_trivia"]
+        },
+        {
+          "requires": ["!flag:knows_answer"],
+          "text": "The buzzer waits. You do not know when the ballpoint pen went on sale. You barely know what year it is NOW. You need someone who knows things."
+        },
+        { "text": "You know the answer, but the pot pays a TEAM. You need a trivia-brain standing next to you at the buzzer." }
+      ]
+    }
+  ],
+  "characters": [
+    {
+      "id": "nib",
+      "name": "Nib",
+      "pos": { "x": 150, "y": 150 },
+      "walkTo": { "x": 130, "y": 152 },
+      "paint": "nib",
+      "portrait": "nibPortrait",
+      "color": [230, 200, 150],
+      "facing": "left",
+      "look": [{ "text": "Nib. Apron, spatula, a ledger where your name appears in a color he reserves for the guilty." }],
+      "talk": [
+        {
+          "requires": ["counter:money>=9", "!flag:tab_paid"],
+          "text": "You lay nine dollars on the counter — every cent of it schemed. \"There. The tab. Paid. Nobody mention this again.\" Nib reaches, slowly, for the ledger...",
+          "setFlags": ["tab_paid"],
+          "goto": "victory"
+        },
+        { "dialogue": "nib" }
+      ],
+      "itemUse": [
+        {
+          "withItem": "rye",
+          "speaker": "target",
+          "text": "\"Put my rye back or eat it and add it to the tab. Those are the options. There is no third rye option.\""
+        }
+      ]
+    },
+    {
+      "id": "elna_seat",
+      "name": "Elna",
+      "pos": { "x": 320, "y": 152 },
+      "walkTo": { "x": 300, "y": 154 },
+      "paint": "elna",
+      "portrait": "elnaPortrait",
+      "color": [180, 120, 180],
+      "facing": "left",
+      "requires": ["!companion:elna"],
+      "look": [{ "text": "Elna, in Booth 4, doing the crossword in pen and correcting the newspaper's grammar in the margins." }],
+      "talk": [{ "dialogue": "elna_recruit" }]
+    }
+  ],
+  "exits": [
+    {
+      "id": "out",
+      "name": "the door",
+      "region": { "x": 4, "y": 92, "w": 24, "h": 48 },
+      "walkTo": { "x": 28, "y": 150 },
+      "to": "street",
+      "entry": { "x": 210, "y": 150 },
+      "look": "Back out to the block."
+    }
+  ]
+}

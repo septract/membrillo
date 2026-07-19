@@ -90,6 +90,37 @@ design note, it lands here; when it ships, delete it. Dated design notes in
 
 ## Later
 
+- **Durable story abstractions** (Mike, 2026-07-19) — THE core need for big
+  stories: JSON gives us data, not *abstraction*. A big SWE project is workable
+  because it's composed of durable, independently-editable units with
+  interfaces (functions, modules, types); a big story is currently one flat
+  pile of JSON where everything references everything by stringly-typed global
+  ids. What we want is first-class, composable units you can build bit by bit:
+  a **puzzle/thread** as a unit that declares what it *consumes* and *produces*
+  (its flag/item/counter interface) and can be authored + tested in isolation;
+  a **character** as a reusable module (its dialogue + reactions travel with
+  it); **scene templates / parameterized sub-stories**; encapsulation so a
+  thread's internal flags don't leak into one global namespace. Then a big game
+  = composition of durable abstractions, and the fuzzer checks the seams. The
+  tooling below serves this; the abstraction model is the real design work
+  (relates to the shelved typed-DSL — types are one way to make the interfaces
+  durable).
+- **Structured story-programming tools** (Mike, 2026-07-19) — building a big
+  story should feel like a big SWE project, not hand-linking JSON. Felt
+  acutely while authoring "Nothing Doing". Candidate tooling: (1) a story
+  "language server" — go-to-definition / find-references across flags, items,
+  counters, scenes (which rule SETS flag X, which READS it); rename-refactor a
+  flag/item id across all files. (2) Auto-derive the puzzle dependency GRAPH
+  from the data (the flag/item/counter DAG — "what unlocks what") and render
+  it, like a build graph; the fuzzer already walks the state space, so the
+  data is there. (3) Per-thread test assertions (the fuzzer proves global
+  winnability; add "from state S, action A reaches flag F" unit checks). (4)
+  Story modules / composable threads so a big game is assembled from units.
+  (5) Author from a higher-level spec — the shelved typed-DSL (`as const
+  satisfies`) that compiles to canonical JSON with derived id unions. Start
+  with the language-server-style cross-reference checks + the dependency-graph
+  view; both are pure reads over existing data.
+
 - Ask AngelJaimer for a formal licence on the pointclick-adventure kit
   (Mike, 2026-07-19, low priority). The kit README grants reuse ("the engine
   itself is yours to reuse") and we attribute in NOTICE + docs/2026-07-19-kit-

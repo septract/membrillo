@@ -1,0 +1,72 @@
+[
+  {
+    "id": "kessler",
+    "name": "Kessler",
+    "paint": "kessler",
+    "color": [200, 160, 90],
+    "look": [
+      {
+        "requires": ["flag:knows_answer"],
+        "text": "Kessler, chewing, radiant with the knowledge of a man who has just eaten someone else's rye and remembered something obscure."
+      },
+      { "text": "Kessler: hair like a startled cat, a fact for every occasion, an appetite for other people's food." }
+    ],
+    "talk": [
+      {
+        "requires": ["flag:knows_answer"],
+        "speaker": "target",
+        "text": "\"1904, Artie. The answer is 1904. Also this rye is a TRIUMPH. Do you have another one?\""
+      },
+      {
+        "requires": ["item:rye"],
+        "speaker": "target",
+        "text": "\"Is that— is that the marble rye? Give it HERE, I'll tell you anything. I contain multitudes. Mostly trivia and sourdough.\""
+      },
+      { "speaker": "target", "text": "\"Trivia Night's tonight, Artie. I know EVERYTHING. I just get, y'know, peckish under pressure.\"" }
+    ],
+    "itemUse": [
+      {
+        "withItem": "rye",
+        "speaker": "target",
+        "text": "Kessler inhales half the loaf, gasps, and delivers the answer like a weather bulletin: \"NINETEEN OH FOUR.\" You will never get the rye back. You didn't want it back.",
+        "removeItem": "rye",
+        "setFlags": ["knows_answer"]
+      },
+      {
+        "withItem": "umbrella",
+        "speaker": "target",
+        "text": "\"It doesn't CLOSE, Artie. That's not an umbrella, that's a commitment.\""
+      }
+    ]
+  },
+  {
+    "id": "elna",
+    "name": "Elna",
+    "paint": "elna",
+    "portrait": "elnaPortrait",
+    "color": [180, 120, 180],
+    "look": [
+      { "text": "Elna: sharper than the cutlery, and keeping a running score of every wrong thing anyone has ever said within earshot." }
+    ],
+    "talk": [
+      {
+        "requires": ["flag:tab_paid"],
+        "speaker": "target",
+        "text": "\"You paid a nine dollar tab with nine dollars. That's not a scheme, Artie, that's arithmetic.\""
+      },
+      {
+        "requires": ["flag:won_trivia"],
+        "speaker": "target",
+        "text": "\"We WON. On a rye-powered guess from a man who thinks the Renaissance was a hotel. I've never been prouder or more annoyed.\""
+      },
+      { "speaker": "target", "text": "\"You owe Nib nine dollars. I was there. I keep score, Artie. I keep meticulous, joyless score.\"" }
+    ],
+    "itemUse": [
+      {
+        "withItem": "pen",
+        "speaker": "target",
+        "text": "\"I'm not signing anything, and neither are you. Put the pen away before it starts a fight.\""
+      }
+    ]
+  }
+]

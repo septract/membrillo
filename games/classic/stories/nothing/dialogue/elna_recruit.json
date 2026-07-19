@@ -1,0 +1,37 @@
+{
+  "id": "elna_recruit",
+  "start": "start",
+  "nodes": {
+    "start": {
+      "line": "Let me guess. You owe Nib nine dollars, you 'already paid,' and now there's a whole DAY about it. I've seen this episode.",
+      "options": [
+        { "text": "There's a trivia pot. I could use a brain.", "to": "trivia" },
+        { "text": "You do the crossword in PEN?", "to": "pen" },
+        { "text": "Just saying hi. Genuinely nothing else.", "to": "end" }
+      ]
+    },
+    "trivia": {
+      "line": "You could use a brain the way a boat could use a hull. Fine — I'm in, but ONLY because that tall lunatic thinks the War of 1812 was a phone number and someone responsible has to be at that buzzer.",
+      "options": [
+        {
+          "text": "Booth 4 rides again. Come on.",
+          "to": "joined",
+          "addCompanion": "elna"
+        },
+        { "text": "On second thought I'll wing it.", "to": "wing" }
+      ]
+    },
+    "pen": {
+      "line": "In pen, in ink, in PUBLIC. Commitment, Artie. You should try it on something other than a grudge.",
+      "options": [{ "text": "Noted. Aggressively.", "to": "end" }]
+    },
+    "wing": {
+      "line": "You'll 'wing it.' The last thing you winged was that jacket, and look how that turned out. I'll be in the booth, being right, if you need me.",
+      "options": [{ "text": "I'll keep it in mind.", "to": "end" }]
+    },
+    "joined": {
+      "line": "Good. Rule one: you don't answer. You've never once been right and I'm not starting a streak of it now.",
+      "options": [{ "text": "Rule one accepted.", "to": "end" }]
+    }
+  }
+}

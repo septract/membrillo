@@ -1,0 +1,80 @@
+{
+  "id": "store",
+  "name": "Brill's Department Store",
+  "paint": "store",
+  "walk": { "x": 12, "y": 130, "w": 296, "h": 40 },
+  "depth": { "far": { "y": 130, "scale": 0.9 }, "near": { "y": 168, "scale": 1.05 } },
+  "start": { "x": 40, "y": 150 },
+  "hotspots": [
+    {
+      "id": "shelf",
+      "name": "menswear rack",
+      "region": { "x": 180, "y": 78, "w": 60, "h": 50 },
+      "walkTo": { "x": 208, "y": 148 },
+      "look": [{ "text": "A rack of jackets, each more confident than the last. Yours came from here. Yours has since lost that confidence." }],
+      "use": [{ "text": "You browse for a replacement out of habit, then remember you have three dollars and a tab. You are not, currently, a browsing man." }],
+      "itemUse": [
+        { "withItem": "umbrella", "text": "You hold the broken umbrella hopefully against the rack. It does not belong here. It does not belong anywhere. That's its whole thing." }
+      ]
+    },
+    {
+      "id": "sign",
+      "name": "RETURNS sign",
+      "region": { "x": 60, "y": 60, "w": 60, "h": 20 },
+      "walkTo": { "x": 88, "y": 146 },
+      "look": [{ "text": "RETURNS ACCEPTED — WITH RECEIPT, WITH TAGS, WITH A GOOD ATTITUDE, AND WITHIN A WINDOW WE WILL DEFINE AFTER YOU'VE WAITED. The attitude clause is hand-added. In pen. Recently." }]
+    }
+  ],
+  "characters": [
+    {
+      "id": "clerk",
+      "name": "the clerk",
+      "pos": { "x": 96, "y": 148 },
+      "walkTo": { "x": 116, "y": 150 },
+      "paint": "clerk",
+      "portrait": "clerkPortrait",
+      "color": [200, 180, 200],
+      "facing": "left",
+      "look": [{ "text": "A returns clerk who has weaponized the word 'policy.' She is not unkind. She is simply the last honest obstacle between you and four dollars." }],
+      "talk": [{ "dialogue": "clerk" }],
+      "itemUse": [
+        {
+          "withItem": "jacket",
+          "requires": ["item:receipt", "!flag:refunded"],
+          "speaker": "target",
+          "text": "She examines the jacket, then the receipt, then the jacket. \"...Tags on. Receipt valid. Attitude — acceptable.\" The register opens like a portcullis. FOUR DOLLARS. You are, briefly, solvent. She stamps the receipt VOID and hands it back — a souvenir of commerce survived.",
+          "removeItem": "jacket",
+          "addCounter": { "money": 4 },
+          "setFlags": ["refunded"]
+        },
+        {
+          "withItem": "jacket",
+          "requires": ["!item:receipt"],
+          "speaker": "target",
+          "text": "\"No receipt.\" She says it the way a judge says 'guilty.' \"Bring the receipt or wear the jacket. Those are the two lives available to you.\""
+        },
+        {
+          "withItem": "receipt",
+          "speaker": "target",
+          "text": "\"A receipt with no jacket is just... paper feelings. Bring me the item, sir.\""
+        },
+        {
+          "withItem": "pen",
+          "speaker": "target",
+          "text": "\"You may NOT click that at my register. This is a place of business and that click is a place of chaos.\""
+        }
+      ]
+    }
+  ],
+  "exits": [
+    {
+      "id": "out",
+      "name": "the exit",
+      "region": { "x": 4, "y": 92, "w": 24, "h": 48 },
+      "walkTo": { "x": 26, "y": 150 },
+      "to": "street",
+      "entry": { "x": 392, "y": 150 },
+      "look": "Back to the block, hopefully four dollars richer."
+    }
+  ]
+}

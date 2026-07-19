@@ -1,0 +1,11 @@
+{
+  "id": "brief",
+  "name": "A Regular Tuesday",
+  "paint": "briefCard",
+  "beats": [
+    "This is a story about nothing. A man, a diner, a nine dollar tab, and the absolute certainty — Artie's certainty — that he already paid it.",
+    "You are ARTIE SKINT. You have three dollars, two friends who know everything, and a jacket you deeply regret.",
+    "Nib says you owe nine. Nib is wrong. Nib also has your number, your booth, and a very long memory. So."
+  ],
+  "next": "apartment"
+}

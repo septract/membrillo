@@ -1,0 +1,143 @@
+{
+  "id": "apartment",
+  "name": "Sol's Apartment",
+  "paint": "apartment",
+  "walk": { "x": 12, "y": 128, "w": 296, "h": 40 },
+  "depth": { "far": { "y": 128, "scale": 0.9 }, "near": { "y": 168, "scale": 1.05 } },
+  "start": { "x": 60, "y": 150 },
+  "enter": [{ "requires": ["!companion:kessler"], "play": "kessler_in" }],
+  "sequences": {
+    "kessler_in": [
+      { "wait": 0.3 },
+      { "addCompanion": "kessler" },
+      { "who": "kessler", "say": "ARTIE. Big news. No news. Same news. Trivia Night's tonight and I am a WEAPON." },
+      { "say": "Kessler, the door was locked. I heard it lock. I locked it AT you." },
+      { "who": "kessler", "say": "And yet. Here I am. Do you have any bread? A dense bread? A rye, say?" }
+    ]
+  },
+  "hotspots": [
+    {
+      "id": "closet",
+      "name": "coat closet",
+      "region": { "x": 22, "y": 70, "w": 30, "h": 50 },
+      "walkTo": { "x": 44, "y": 140 },
+      "requires": ["!flag:took_jacket"],
+      "look": [{ "text": "A closet containing one coat you like and one you cannot look at directly." }],
+      "take": [
+        {
+          "text": "You retrieve the gauche jacket, holding it at arm's length like a confession.",
+          "giveItem": "jacket",
+          "setFlags": ["took_jacket"]
+        }
+      ]
+    },
+    {
+      "id": "umbrella_stand",
+      "name": "umbrella stand",
+      "region": { "x": 54, "y": 96, "w": 12, "h": 26 },
+      "walkTo": { "x": 62, "y": 140 },
+      "requires": ["!flag:took_umbrella"],
+      "look": [{ "text": "One bent umbrella, permanently open, standing in the stand like a small defeated ghost." }],
+      "take": [
+        {
+          "text": "You take the umbrella. It does not close. It never closes. It is a lifestyle now.",
+          "giveItem": "umbrella",
+          "setFlags": ["took_umbrella"]
+        }
+      ]
+    },
+    {
+      "id": "mail",
+      "name": "mail pile",
+      "region": { "x": 120, "y": 108, "w": 30, "h": 12 },
+      "walkTo": { "x": 134, "y": 140 },
+      "look": [
+        { "requires": ["flag:took_receipt"], "text": "Bills, a menu, and a postcard from a cousin you've been successfully avoiding." },
+        { "text": "A drift of unopened mail on the table. Something crinkles in there — a receipt, maybe. You never file, you accumulate." }
+      ],
+      "take": [
+        {
+          "requires": ["!flag:took_receipt"],
+          "text": "You dig out the crumpled receipt for the jacket. Proof. POWER.",
+          "giveItem": "receipt",
+          "setFlags": ["took_receipt"]
+        },
+        { "text": "The rest is bills, and bills can wait until they're threats." }
+      ]
+    },
+    {
+      "id": "desk",
+      "name": "cluttered desk",
+      "region": { "x": 156, "y": 104, "w": 34, "h": 16 },
+      "walkTo": { "x": 172, "y": 140 },
+      "requires": ["!flag:took_pen"],
+      "look": [{ "text": "A desk that has given up. Somewhere in the strata: a click pen of unusual satisfaction." }],
+      "take": [
+        {
+          "text": "You pocket the click pen. Click. Click. Click. A tiny fountain of pointless joy.",
+          "giveItem": "pen",
+          "setFlags": ["took_pen"]
+        }
+      ]
+    },
+    {
+      "id": "couch",
+      "name": "the couch",
+      "region": { "x": 210, "y": 118, "w": 62, "h": 24 },
+      "walkTo": { "x": 240, "y": 148 },
+      "look": [
+        { "requires": ["flag:took_change"], "text": "A couch that has surrendered its treasure. Just crumbs and one alarming spring now." },
+        { "text": "A couch of great depth, geological in its layering. Coins live in couches. This is known." }
+      ],
+      "use": [
+        {
+          "requires": ["!flag:took_change"],
+          "text": "You mine the cushions and surface with a dollar in loose change and a cough drop you choose not to examine.",
+          "addCounter": { "money": 1 },
+          "setFlags": ["took_change"]
+        },
+        { "text": "You've strip-mined it. There is nothing left but the spring, and the spring has plans for you." }
+      ]
+    },
+    {
+      "id": "tv",
+      "name": "television",
+      "region": { "x": 92, "y": 68, "w": 40, "h": 30 },
+      "walkTo": { "x": 108, "y": 138 },
+      "look": [{ "text": "A show about four people arguing about nothing. You watch it like a mirror." }],
+      "use": [{ "text": "You turn it on. It's the one where the tall idiot bursts in. You turn it off. Too real." }]
+    }
+  ],
+  "characters": [
+    {
+      "id": "sol",
+      "name": "Sol",
+      "pos": { "x": 292, "y": 150 },
+      "walkTo": { "x": 270, "y": 152 },
+      "paint": "sol",
+      "portrait": "solPortrait",
+      "color": [150, 200, 220],
+      "facing": "left",
+      "look": [{ "text": "Sol, comedian, owner of this apartment and the moral high ground he never actually uses. He is watching your scheme with the calm of a man who will do a bit about it later." }],
+      "talk": [{ "dialogue": "sol" }],
+      "itemUse": [
+        {
+          "withItem": "jacket",
+          "speaker": "target",
+          "text": "\"You want me to hold the ugly jacket. No. That jacket is a decision, Artie, and you have to live in it or return it.\""
+        }
+      ]
+    }
+  ],
+  "exits": [
+    {
+      "id": "out",
+      "name": "the front door",
+      "region": { "x": 282, "y": 78, "w": 26, "h": 44 },
+      "walkTo": { "x": 288, "y": 146 },
+      "to": "street",
+      "entry": { "x": 40, "y": 150 },
+      "look": "Out into the world, where the tab and the trivia and the jacket all live."
+    }
+  ]
+}

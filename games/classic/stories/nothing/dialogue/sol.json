@@ -1,0 +1,27 @@
+{
+  "id": "sol",
+  "start": "start",
+  "nodes": {
+    "start": {
+      "line": "So you owe Nib nine dollars, and instead of paying Nib nine dollars, you're going to spend all day acquiring nine dollars from elsewhere. That's not a plan, Artie. That's a lateral move with extra steps.",
+      "options": [
+        { "text": "It's about the PRINCIPLE. I already paid.", "to": "principle" },
+        { "text": "Where would you even get nine dollars?", "to": "hints" },
+        { "text": "You're supposed to be on my side.", "to": "side" },
+        { "text": "I don't have time for material, Sol.", "to": "end" }
+      ]
+    },
+    "principle": {
+      "line": "It's never about the principle. It's about the nine dollars. It's ALWAYS about the nine dollars. That's the whole show.",
+      "options": [{ "text": "...The whole show.", "to": "end" }]
+    },
+    "hints": {
+      "line": "You've got a jacket you hate — that store took my toaster back, they'll take your crime against plaid. And there's Trivia Night, if you can get one of your walking encyclopedias to stand still near a buzzer. Two schemes, one tab. Go.",
+      "options": [{ "text": "The jacket and the trivia. Got it.", "to": "end" }]
+    },
+    "side": {
+      "line": "I'm on the side of watching this happen. That's the best seat in the house and it's the seat I bought.",
+      "options": [{ "text": "Enjoy the show.", "to": "end" }]
+    }
+  }
+}

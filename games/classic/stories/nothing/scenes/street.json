@@ -1,0 +1,78 @@
+{
+  "id": "street",
+  "name": "The Block",
+  "paint": "street",
+  "size": { "w": 420, "h": 180 },
+  "walk": { "x": 12, "y": 132, "w": 396, "h": 38 },
+  "depth": { "far": { "y": 132, "scale": 0.9 }, "near": { "y": 170, "scale": 1.05 } },
+  "start": { "x": 40, "y": 150 },
+  "hotspots": [
+    {
+      "id": "vending",
+      "name": "vending machine",
+      "region": { "x": 120, "y": 92, "w": 30, "h": 52 },
+      "walkTo": { "x": 135, "y": 150 },
+      "look": [
+        { "requires": ["flag:kicked_machine"], "text": "The machine and you have made peace. It took a dollar, you took it back with interest and a dented shin. Nobody won. Everybody's even. The neighbourhood way." },
+        { "requires": ["flag:fed_machine"], "text": "The machine that took your dollar and gave you a lesson. The lesson was: never trust this machine. Your dollar is RIGHT THERE, behind the glass, humming, smug." },
+        { "text": "A vending machine. The 'B4' slot holds a soda that has clearly seen things. A dollar would find out." }
+      ],
+      "use": [
+        {
+          "requires": ["counter:money>=1", "!flag:fed_machine"],
+          "text": "You feed it a dollar. It hums, considers, and keeps the dollar. No soda. No apology. Just the machine, humming, richer, at peace.",
+          "addCounter": { "money": -1 },
+          "setFlags": ["fed_machine"]
+        },
+        {
+          "requires": ["flag:fed_machine", "!flag:kicked_machine"],
+          "text": "Enough. You give it a single, precise, Kessler-taught kick. It shudders, reconsiders its whole life, and surrenders your dollar plus a dented can you'll never open. Restitution.",
+          "addCounter": { "money": 1 },
+          "setFlags": ["kicked_machine"]
+        },
+        { "requires": ["flag:kicked_machine"], "text": "You and the machine are square. Pushing it further would be greed, and greed is Kessler's department." },
+        { "text": "It wants a dollar you don't have. Which, honestly, is the machine doing you a favour." }
+      ]
+    },
+    {
+      "id": "newsstand",
+      "name": "newsstand",
+      "region": { "x": 250, "y": 100, "w": 46, "h": 40 },
+      "walkTo": { "x": 270, "y": 150 },
+      "look": [{ "text": "A newsstand run by a man who has decided, personally, that you are a shoplifter. You have never taken anything. He knows. He KNOWS." }],
+      "use": [{ "text": "You browse, innocently. He watches, guiltily-on-your-behalf. It's a whole relationship, built on nothing." }],
+      "itemUse": [
+        { "withItem": "pen", "text": "You click the pen near his papers. He flinches like you've drawn a weapon. Delicious." }
+      ]
+    }
+  ],
+  "exits": [
+    {
+      "id": "apt",
+      "name": "Sol's building",
+      "region": { "x": 6, "y": 92, "w": 26, "h": 48 },
+      "walkTo": { "x": 28, "y": 150 },
+      "to": "apartment",
+      "entry": { "x": 280, "y": 148 },
+      "look": "Back up to Sol's, where the couch and the closet keep their secrets."
+    },
+    {
+      "id": "diner",
+      "name": "the diner",
+      "region": { "x": 190, "y": 90, "w": 44, "h": 52 },
+      "walkTo": { "x": 210, "y": 152 },
+      "to": "diner",
+      "entry": { "x": 40, "y": 150 },
+      "look": "Nib's. The tab. The booth. The trivia. Everything that is currently your problem, under one neon sign."
+    },
+    {
+      "id": "store",
+      "name": "the department store",
+      "region": { "x": 380, "y": 84, "w": 32, "h": 58 },
+      "walkTo": { "x": 392, "y": 150 },
+      "to": "store",
+      "entry": { "x": 40, "y": 150 },
+      "look": "The store that sold you the jacket, and — if the receipt holds and the clerk cracks — might yet take it back."
+    }
+  ]
+}

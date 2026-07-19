@@ -1,0 +1,45 @@
+{
+  "id": "clerk",
+  "start": "start",
+  "nodes": {
+    "start": {
+      "line": "Welcome to Brill's. Returns are a privilege, not a right, and I am the privilege.",
+      "options": [
+        { "text": "I'd like to return a jacket.", "to": "jacket" },
+        { "text": "What exactly is your return policy?", "to": "policy" },
+        { "text": "Do you validate feelings? Parking? Anything?", "to": "validate" },
+        { "text": "Just browsing my options. Aggressively.", "to": "end" }
+      ]
+    },
+    "jacket": {
+      "line": "A jacket. With a receipt, with the tags on, with — and I cannot stress this enough — a good attitude. Show me the item and the paper, in that order, and we'll see.",
+      "options": [
+        { "text": "The item and the paper. Understood.", "to": "howto" },
+        { "text": "What if I only have one of the two?", "to": "onlyone" }
+      ]
+    },
+    "howto": {
+      "line": "Hand me the jacket while you're holding the receipt. That's the whole rite. I don't make the rules — I merely enforce them with my entire personality.",
+      "options": [{ "text": "The jacket, with the receipt. Got it.", "to": "end" }]
+    },
+    "onlyone": {
+      "line": "One of two is zero of two. A jacket without a receipt is a story. A receipt without a jacket is a wish. I trade in neither. Bring me the matched set.",
+      "options": [{ "text": "Matched set. Right.", "to": "end" }]
+    },
+    "policy": {
+      "line": "RETURNS ACCEPTED — with receipt, with tags, with a good attitude, and within a window I define after you've waited. The attitude clause is new. I added it. In pen. After a man named Kessler.",
+      "options": [
+        { "text": "You added a clause about ATTITUDE?", "to": "attitude" },
+        { "text": "Seems airtight. Sinister, but airtight.", "to": "end" }
+      ]
+    },
+    "attitude": {
+      "line": "The policy is the last honest thing in this store, sir. Everything else is on sale. The policy is not on sale. The policy is load-bearing.",
+      "options": [{ "text": "Respect. Grudging, total respect.", "to": "end" }]
+    },
+    "validate": {
+      "line": "I validate returns. That's it. That's the list. Your feelings can take the escalator to Housewares like everyone else's.",
+      "options": [{ "text": "Housewares it is.", "to": "end" }]
+    }
+  }
+}

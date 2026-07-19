@@ -1,0 +1,41 @@
+{
+  "id": "nib",
+  "start": "start",
+  "nodes": {
+    "start": {
+      "line": "Nine dollars, Artie. You. Owe. Me. Nine. Dollars.",
+      "options": [
+        { "text": "I PAID that tab. I distinctly remember intending to.", "to": "paid" },
+        { "text": "What's this Trivia Night I keep hearing about?", "to": "trivia" },
+        { "text": "Can I get a coffee to think about it?", "to": "coffee" },
+        { "text": "Nine dollars. Right. I'm on it.", "to": "end" }
+      ]
+    },
+    "paid": {
+      "line": "You 'distinctly remember intending to.' Artie, that's not paying. That's the fantasy of paying. The ledger deals in the OTHER kind.",
+      "options": [
+        { "text": "The ledger could be wrong.", "to": "ledger" },
+        { "text": "...I'll get your nine dollars.", "to": "end" }
+      ]
+    },
+    "ledger": {
+      "line": "The ledger has never been wrong. The ledger is the one thing in this diner that has never once let me down, and it says Skint, comma, Artie, comma, NINE.",
+      "options": [{ "text": "Fine. Nine.", "to": "end" }]
+    },
+    "trivia": {
+      "line": "Trivia Night. Booth 4 hosts, three-dollar pot, and the whole neighbourhood pretends it doesn't care who wins. Everybody cares who wins. YOU should care — three dollars is a third of a tab.",
+      "options": [
+        { "text": "I don't know a single fact.", "to": "facts" },
+        { "text": "Three dollars, you say.", "to": "end" }
+      ]
+    },
+    "facts": {
+      "line": "No, but you KNOW people who know things. That tall one who eats my bread. The sharp one in the booth. Rent-a-brain, Artie. It's practically the American way.",
+      "options": [{ "text": "Rent-a-brain. I like it.", "to": "end" }]
+    },
+    "coffee": {
+      "line": "The coffee goes on the tab. The tab is nine dollars. So the coffee is, spiritually, the tenth dollar, and I won't do it to you. Sit. Scheme. Come back with money.",
+      "options": [{ "text": "Wise, actually.", "to": "end" }]
+    }
+  }
+}

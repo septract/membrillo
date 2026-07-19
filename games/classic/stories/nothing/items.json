@@ -1,0 +1,39 @@
+[
+  {
+    "id": "jacket",
+    "name": "gauche jacket",
+    "look": [
+      {
+        "text": "A jacket with a plaid so aggressive it files a grievance of its own. You cannot imagine why you bought it. The store, however, can be reminded that you did."
+      }
+    ]
+  },
+  {
+    "id": "receipt",
+    "name": "crumpled receipt",
+    "look": [
+      { "text": "Proof of purchase. The single most powerful document a man can hold, and you nearly threw it out with the pizza box." }
+    ]
+  },
+  {
+    "id": "rye",
+    "name": "marble rye",
+    "look": [
+      { "text": "A whole marble rye. Dense, seeded, historic. Kessler has been talking about this exact loaf for a week and a half." }
+    ]
+  },
+  {
+    "id": "umbrella",
+    "name": "bent umbrella",
+    "look": [
+      { "text": "It opens. It does not close. It is, functionally, a small permanent weather system you carry by the neck." }
+    ]
+  },
+  {
+    "id": "pen",
+    "name": "click pen",
+    "look": [
+      { "text": "A pen that clicks with a satisfaction wildly out of proportion to anything it will ever write. You could click this pen for a living." }
+    ]
+  }
+]

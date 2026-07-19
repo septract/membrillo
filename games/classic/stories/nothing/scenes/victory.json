@@ -1,0 +1,13 @@
+{
+  "id": "victory",
+  "name": "Even",
+  "paint": "victoryCard",
+  "beats": [
+    "You slap nine hard-won dollars on the counter. Refund money, trivia money, couch money — a coalition of pettiness, assembled at great personal cost.",
+    "Nib takes it, opens the ledger, and frowns. \"Huh. Says here... you already paid. Last Tuesday. There it is, in the guilty color.\" He pushes the nine dollars back. \"We're even. We were always even.\"",
+    "So: you are exactly where you started. Minus a jacket, plus a void receipt, plus a trivia trophy for a fact you'll forget by the door. Kessler is eating the rye. Elna is keeping score. Sol is, somewhere, already writing the bit.",
+    "Nothing happened. Nobody learned. It was, in every particular, perfect.",
+    "— The End (of nothing) —"
+  ],
+  "ending": true
+}

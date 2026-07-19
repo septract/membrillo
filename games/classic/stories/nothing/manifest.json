@@ -1,0 +1,24 @@
+{
+  "id": "nothing",
+  "title": "Nothing Doing",
+  "description": "You owe the diner nine dollars you swear you already paid. A petty little scheme in three rooms.",
+  "category": "story",
+  "start": "brief",
+  "actor": "artie",
+  "actorPortrait": "artiePortrait",
+  "counters": {
+    "money": { "min": 0, "max": 9, "start": 3, "label": "Wallet", "unit": "$" }
+  },
+  "audio": {
+    "themes": {
+      "citybop": {
+        "bpm": 108,
+        "prog": ["Am", "D", "G", "C"],
+        "scale": [57, 60, 62, 64, 65, 67, 69, 72],
+        "style": "pluck",
+        "gain": 0.5
+      }
+    },
+    "sceneTheme": { "apartment": "citybop", "diner": "citybop", "store": "citybop" }
+  }
+}

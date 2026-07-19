@@ -1,0 +1,13 @@
+[
+  {
+    "id": "tab",
+    "text": "Settle the $9 tab you definitely already paid",
+    "done": ["flag:tab_paid"]
+  },
+  {
+    "id": "scrape",
+    "text": "Scrape together nine dollars",
+    "active": ["!flag:tab_paid"],
+    "done": ["counter:money>=9"]
+  }
+]
