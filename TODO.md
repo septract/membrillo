@@ -7,17 +7,25 @@ design note, it lands here; when it ships, delete it. Dated design notes in
 ## Decisions needed (Mike)
 
 - **Name the framework.** It needs one before any public artifact (deploy,
-  README, npm-ability). Candidates (each needs a collision check before use):
-  - **MOIST** — *Model-checked Interactive Story Toolkit*; the SCUMM school
-    of naming (gross word, true backronym).
-  - **BILGE** — *Browser-first Interactive Logic Game Engine*; nautical-gross.
-  - **Eventually** — the liveness operator the fuzzer enforces (◇win);
-    "every story ends."
-  - **Verbena** — verb + flower; sits nicely beside the *Marigold*.
-  - **QED** — *Quest Engine, Declarative*; heavily collided namespace.
-  - ~~Wick~~ — checked 2026-07-18: conflicted three ways (Wick Editor, a
-    browser game-making tool; *Wick* the 2015 candlelight horror game;
-    Wicked Engine). Out.
+  README, npm-ability). Current direction: obscure minor-LucasArts-character
+  names (checked clean 2026-07-18):
+  - **Chepito** (Grim Fandango) — the little man walking the sea floor in
+    circles, lantern in hand, perfectly content. Lamplight/harbor resonance;
+    zero software collisions.
+  - **Hetchel** (Loom) — Bobbin's guardian, named for the comb that readies
+    flax threads for the loom — an engine that readies stories. Only a
+    dormant GitHub username in the namespace.
+  - **Membrillo** (Grim Fandango) — the gentle coroner; Spanish for quince,
+    extending the accidental botanical streak. No software presence.
+  - Bench: **Cobb** (MI's "Ask me about LOOM" pirate — tagline: *Ask me
+    about it*), **chuck-the-plant** (the eternal cameo), **Velasco** (harbor
+    master).
+  - Earlier slate (backronyms MOIST/BILGE, Eventually, Verbena, QED) parked;
+    ~~Wick~~ out — conflicted three ways (Wick Editor, the 2015 candlelight
+    horror game, Wicked Engine).
+  - Note: minor-NPC names carry no real IP risk for a free engine (names
+    aren't copyrightable; no marks on minor characters) — homage only, never
+    art or likenesses.
 - **Audio verdict** — the synth themes (ship drone, hollow pluck, dusk/lamp)
   need human ears; tune or rethink `engine/audio` voicing accordingly.
 - **Where the demo goes next**: grow the Marigold (second mission), polish
