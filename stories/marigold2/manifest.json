@@ -1,0 +1,27 @@
+{
+  "id": "marigold2",
+  "title": "The Marigold: Gale Reach",
+  "start": "brief2",
+  "audio": {
+    "themes": {
+      "station": {
+        "bpm": 50,
+        "prog": ["Em", "C"],
+        "scale": [40, 47, 52],
+        "style": "drone",
+        "gain": 0.5
+      },
+      "aurora": {
+        "bpm": 70,
+        "prog": ["Am", "Em", "G", "D"],
+        "scale": [57, 59, 62, 64, 67, 71, 74],
+        "style": "pluck",
+        "gain": 0.6
+      }
+    },
+    "sceneTheme": {
+      "landing": "station",
+      "shaft": "aurora"
+    }
+  }
+}

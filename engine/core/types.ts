@@ -66,6 +66,11 @@ export interface Target {
   use?: Rule[];
   take?: Rule[];
   itemUse?: ItemUseRule[];
+  /**
+   * What a plain (Interact-armed) click does, overriding the kind default —
+   * e.g. a sleeping creature you'd examine, not prod.
+   */
+  defaultVerb?: 'look' | 'talk' | 'interact';
 }
 
 export interface Hotspot extends Target {

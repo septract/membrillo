@@ -6,16 +6,16 @@ design note, it lands here; when it ships, delete it. Dated design notes in
 
 ## Decisions needed (Mike)
 
-- **Where the demo goes next**: grow the Marigold (second mission) or polish
-  what exists. (Deploy shipped; audio verdict in: the music is good — synth
-  approach stays.)
+- (none open — Gale Reach shipped as the second mission; next direction TBD
+  after playing it.)
 
 ## Next (engine)
 
-- Sequence `walkTo`/movement for characters and companions (actor-only
-  today) — needed for staging richer scripted moments.
-- Authored `defaultVerb` override per target, for when the kind default is
-  wrong (a sleeping guard you'd examine, not wake).
+- Per-story browser tests (Mike, 2026-07-18): tools/browser-drive.mjs is one
+  monolith rolled through every story — split into per-story driver modules
+  sharing the helper kit, runnable individually (`node tools/drive/<id>.mjs`)
+  and all together.
+
 - Multi-frame costumes: richer walk cycles beyond leg-scissor, distinct
   toward/away frames.
 - Save slots (single autosave today); save-format versioning before any
@@ -66,7 +66,7 @@ design note, it lands here; when it ships, delete it. Dated design notes in
   checker.
 - Bounded counters (`counter:x:0..3`) if a story ever needs them — the only
   approved logic-model extension (see scumm-parity note, Bucket 3).
-- Camera: vertical scroll is untested (no tall scene exists); parallax.
+- Camera: parallax layers.
 - Mobile, further: PWA manifest + home-screen icon, rotate-to-landscape
   hint, iOS media-channel audio routing (the kit's recipes).
 - Cold playtests with think-aloud protocol before anything ships (research

@@ -51,7 +51,7 @@ Stories may set `manifest.view` (render resolution, default 320×180) and per-sc
 
 ## Conventions
 
-- **Respond to every click** (Mike's principle, engine-level and story-level). Story-side: authored look/use/rebuff text everywhere (see GUIDE.md). Engine-side: clicks hurry sequences (snapping scripted walks), advance beats, skip speech, and dismiss the end card to the menu — the ONLY deliberately swallowed inputs are canvas clicks during the pre-switch half of a fade (~220ms) and canvas clicks while a dialogue's options are open. Anything else that eats input is a bug.
+- **Respond to every click** (Mike's principle, engine-level and story-level). Story-side: authored look/use/rebuff text everywhere (see GUIDE.md). Engine-side: clicks hurry sequences (snapping scripted walks), advance beats, skip speech, and dismiss the end card to the menu — the ONLY deliberately swallowed inputs are canvas clicks during the pre-switch half of a fade (~220ms) and canvas clicks while a MULTI-CHOICE dialogue node is open (single-option acknowledgment nodes click through). Anything else that eats input is a bug.
 
 - Notes and docs are named date-first: `YYYY-MM-DD-descriptive-title.md`.
 - Once engine code exists: run the story validator + fuzzer after any story change, and validator + fuzzer + core unit tests after any engine-core change, before considering work done (tng-game discipline — all sub-second).

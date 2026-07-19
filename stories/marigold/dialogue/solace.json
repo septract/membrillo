@@ -7,14 +7,14 @@
       "options": [
         { "text": "Join the away team, Counselor.", "to": "joins", "addCompanion": "solace" },
         { "text": "How nervous am I, exactly?", "to": "scale" },
-        { "text": "Thank you, Counselor. (leave)", "to": "end" }
+        { "text": "Thank you, Counselor.", "to": "end" }
       ]
     },
     "scale": {
       "line": "Seven. Out of a friendly ten. It suits you.",
       "options": [
         { "text": "Join the away team, Counselor.", "to": "joins", "addCompanion": "solace" },
-        { "text": "I'll take it. (leave)", "to": "end" }
+        { "text": "I'll take it.", "to": "end" }
       ]
     },
     "joins": {

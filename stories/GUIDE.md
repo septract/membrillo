@@ -48,7 +48,11 @@ Three verbs — **Interact** (default), **Look**, **Talk** — plus item arming:
 
 You author four rule buckets (`look`, `talk`, `use`, `take`) plus `itemUse`.
 The engine collapses `take`/`use` behind Interact — define **one or the
-other** per target, never both (validator error).
+other** per target, never both (validator error). A plain click resolves by
+kind (people → Talk, operable things → Interact, inert scenery → Look);
+override with `defaultVerb` when the kind default is wrong (a sleeping
+creature you'd examine, not prod). Dialogue options with `to: "end"` are
+marked by the engine (dimmed, trailing ≫) — never hand-write "(leave)".
 
 ## Rules — the entire logic model
 
@@ -105,10 +109,13 @@ A scene is a **room** or a **cutscene** — never both.
 - **size > view** scrolls under a following camera. Remember off-screen
   targets can't be clicked — players walk toward things, which is correct.
 
-**Cutscenes** are `{ "beats": ["line", ...], "next": "sceneId" }` — full-black
-caption cards, click/Esc to advance. Terminal ones use `"ending": true`
-instead of `next`. Reaching any `ending` scene wins (the fuzzer's success
-criterion). For scripted moments INSIDE a room, use sequences instead.
+**Cutscenes** are `{ "beats": ["line", ...], "next": "sceneId" }` — caption
+cards, click/Esc to advance. Terminal ones use `"ending": true` instead of
+`next`. Reaching any `ending` scene wins (the fuzzer's success criterion).
+Give a cutscene a `paint` and it becomes a **full-screen card**: the painter
+draws at view size (it may read state — the same card can show before/after)
+and the beats render as lower-third subtitles. For scripted moments INSIDE a
+room, use sequences instead.
 
 ## Hotspots, characters, exits
 
@@ -199,7 +206,12 @@ trying to do.
 ```
 
 Steps: `who` (`"actor"` default, a scene character id, or a companion id),
-`say`, `walkTo` (actor only), `face`, `wait`, plus any rule effect fields.
+`say`, `walkTo` (actor: walkbox-pathed; scene characters: straight line —
+author-controlled ground; not companions), `face`, `wait`, plus any rule
+effect fields. **The character-swap pattern**: to move a character
+permanently, walk them in a sequence, then `setFlags` a flag that hides
+their old definition and reveals a second definition positioned at the walk's
+endpoint — the handoff is seamless and survives scene re-entry.
 Trigger from `enter` (first matching trigger, every entry — gate one-time
 intros on a flag the sequence itself sets) or a rule's `play` (`play`+`goto`
 = sequence, then travel: a beam-out). Clicking hurries the current line; Esc

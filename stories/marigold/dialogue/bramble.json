@@ -6,7 +6,7 @@
       "line": "The Hollow's crop won't wait, Ensign. Take your team, take your sniffer, and see it done.",
       "options": [
         { "text": "Why me, Captain?", "to": "why" },
-        { "text": "Aye, Captain. (leave)", "to": "end" }
+        { "text": "Aye, Captain.", "to": "end" }
       ]
     },
     "why": {

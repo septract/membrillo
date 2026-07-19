@@ -1,0 +1,11 @@
+{
+  "id": "sung",
+  "name": "Answered",
+  "paint": "card",
+  "beats": [
+    "That night, every comm grille in the colony hums the same soft song — volume: considerate.",
+    "Somewhere over the dark water, the sky-rays answer.",
+    "\"Casualties: none,\" you report. \"New friends: one colony's worth.\" Bramble sips her tea. \"See? Done.\""
+  ],
+  "ending": true
+}

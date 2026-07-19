@@ -7,7 +7,7 @@
       "options": [
         { "text": "Join the away team, Lieutenant.", "to": "joins", "addCompanion": "cog" },
         { "text": "Tell me the joke now.", "to": "joke" },
-        { "text": "Carry on, Cog. (leave)", "to": "end" }
+        { "text": "Carry on, Cog.", "to": "end" }
       ]
     },
     "joins": {
@@ -18,7 +18,7 @@
       "line": "Negative. A joke deployed early is a fact with delusions. It will deploy when morale requires it.",
       "options": [
         { "text": "Join the away team, Lieutenant.", "to": "joins", "addCompanion": "cog" },
-        { "text": "Fine. (leave)", "to": "end" }
+        { "text": "Fine.", "to": "end" }
       ]
     }
   }

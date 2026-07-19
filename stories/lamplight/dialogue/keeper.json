@@ -16,7 +16,7 @@
           "to": "raised",
           "requires": ["item:lens"]
         },
-        { "text": "I'll see what I can do. (leave)", "to": "end" }
+        { "text": "I'll see what I can do.", "to": "end" }
       ]
     },
     "crate": {

@@ -113,6 +113,15 @@ function validateStory(files: StoryFiles): Report {
     if (target.look === undefined) {
       r.warn(`${where}: no look text — Look falls back to the generic default`);
     }
+    if (target.defaultVerb !== undefined) {
+      if (!['look', 'talk', 'interact'].includes(target.defaultVerb)) {
+        r.error(`${where}: defaultVerb "${target.defaultVerb}" is not look/talk/interact`);
+      } else if (target.defaultVerb === 'talk' && target.talk === undefined) {
+        r.warn(`${where}: defaultVerb talk but no talk bucket`);
+      } else if (target.defaultVerb === 'interact' && target.use === undefined && target.take === undefined) {
+        r.warn(`${where}: defaultVerb interact but no use/take bucket`);
+      }
+    }
     if (target.use !== undefined && target.take !== undefined) {
       r.error(`${where}: defines both "use" and "take" — Interact must resolve to exactly one`);
     }
@@ -266,8 +275,17 @@ function validateStory(files: StoryFiles): Report {
           r.error(`${w}: who "${who}" is not the actor, a scene character, or a companion`);
         }
         if (step.walkTo !== undefined) {
-          if (who !== 'actor') r.error(`${w}: walkTo is actor-only`);
-          else checkWalkTo(w, step.walkTo);
+          if (who === 'actor') {
+            checkWalkTo(w, step.walkTo);
+          } else if (characterIds.has(who)) {
+            // Scripted characters walk straight lines on author-controlled
+            // ground — bounds-checked against the scene, not the walkboxes.
+            if (step.walkTo.x < 0 || step.walkTo.x > size.w || step.walkTo.y < 0 || step.walkTo.y > size.h) {
+              r.error(`${w}: character walkTo leaves the ${size.w}x${size.h} scene`);
+            }
+          } else {
+            r.error(`${w}: walkTo works for the actor and scene characters, not companions`);
+          }
         }
         if (step.wait !== undefined && !(step.wait >= 0)) r.error(`${w}: wait must be >= 0`);
         // A step's effect subset is exactly a rule — validate it as one.

@@ -1,0 +1,47 @@
+{
+  "id": "mote",
+  "start": "start",
+  "nodes": {
+    "start": {
+      "line": "Good evening. This unit is performing routine harmonic maintenance. Is the volume... troubling?",
+      "options": [
+        { "text": "You're SINGING, Mote.", "to": "sing", "setFlags": ["heard_song"] },
+        { "text": "Status report, please.", "to": "status", "setFlags": ["heard_song"] },
+        {
+          "text": "We've patched you into the colony net. Sing to THEM.",
+          "to": "accept",
+          "requires": ["flag:knows_lonely", "flag:link_ready"]
+        },
+        { "text": "We'll look around.", "to": "end" }
+      ]
+    },
+    "sing": {
+      "line": "Singing is a strong word. The sky-rays vocalize on seventeen bands. This unit... answers. Routinely. As part of maintenance.",
+      "options": [
+        { "text": "Maintenance of what, exactly?", "to": "status" },
+        { "text": "(Let it be, for now.)", "to": "end" }
+      ]
+    },
+    "status": {
+      "line": "Sixty years, four months, nine days: nominal. Visitors, current: one. Visitors, previous: zero. This unit keeps excellent records.",
+      "options": [
+        { "text": "...Zero. In sixty years.", "to": "zero" },
+        { "text": "Thank you, Mote.", "to": "end" }
+      ]
+    },
+    "zero": {
+      "line": "The beacon guides ships PAST Gale Reach, Ensign. That is its function. It is very good at it.",
+      "options": [{ "text": "(Something in that lands heavily.)", "to": "end" }]
+    },
+    "accept": {
+      "line": "...Every band? And they will answer back? ...This unit finds that the maintenance schedule permits it. Volume: considerate. Thank you, Ensign.",
+      "options": [
+        {
+          "text": "Carry on, Mote. Sing them something nice.",
+          "to": "end",
+          "setFlags": ["song_settled"]
+        }
+      ]
+    }
+  }
+}

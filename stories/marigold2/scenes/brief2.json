@@ -1,0 +1,11 @@
+{
+  "id": "brief2",
+  "name": "Gale Reach",
+  "paint": "card",
+  "beats": [
+    "Gale Reach: one beacon station, one automated caretaker, sixty years of dutiful silence.",
+    "Three weeks ago, the beacon began to sing. Ships are diverting around the noise.",
+    "\"Restore normal service,\" says Bramble. \"And Ensign — be polite. It's been alone up there a long time.\""
+  ],
+  "next": "landing"
+}

@@ -102,6 +102,8 @@ button.secondary { color: var(--dim); }
 #dialogue[hidden] { display: none; }
 #dialogue .npc-line { margin: 0 0 4px; color: var(--accent); }
 #dialogue button { text-align: left; }
+#dialogue button.dialogue-end { color: var(--dim); }
+#dialogue button.dialogue-end::after { content: " ≫"; color: var(--accent); }
 
 .panel { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
 

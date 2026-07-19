@@ -11,7 +11,7 @@
           "to": "pressed",
           "requires": ["flag:knows_fault"]
         },
-        { "text": "We'll see what we can do. (leave)", "to": "end" }
+        { "text": "We'll see what we can do.", "to": "end" }
       ]
     },
     "deflect": {

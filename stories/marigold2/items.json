@@ -1,0 +1,21 @@
+[
+  {
+    "id": "sniffer",
+    "name": "sniffer",
+    "look": [
+      { "text": "The trusty sniffer, freshly un-melted from last time. It disapproves already." }
+    ]
+  },
+  {
+    "id": "cell",
+    "name": "power cell",
+    "look": [{ "text": "A power cell off the charging rack, warm as fresh bread." }]
+  },
+  {
+    "id": "coupler",
+    "name": "comm coupler",
+    "look": [
+      { "text": "A comm coupler, sixty years old and mint in box. The box was labelled by hand: SPARES (DO NOT SING TO)." }
+    ]
+  }
+]

@@ -7,7 +7,7 @@
 // the actor paths through walkboxes and behind props, room changes fade, and
 // a following camera lets scenes be larger than the story's view resolution.
 
-import type { Character, Point, Scene, SeqStep, Size, State, Target } from './core/types.ts';
+import type { Character, DialogueOption, Point, Scene, SeqStep, Size, State, Target } from './core/types.ts';
 import { applyRule, initialState } from './core/rules.ts';
 import {
   act,
@@ -98,6 +98,10 @@ interface Session {
   /** Companion follower presentation state, keyed by companion id. */
   followers: Map<string, ActorPose>;
   trail: Trail;
+  /** Runtime positions of sequence-moved scene characters (presentation only). */
+  charPoses: Map<string, ActorPose>;
+  /** In-flight scripted character walks: id -> destination. */
+  charWalks: Map<string, Point>;
   /** Sequence-set facing overrides for scene characters; reset per scene. */
   facingOverrides: Record<string, Facing>;
   finished: boolean;
@@ -298,6 +302,8 @@ function startStory(id: string, state: State | null): void {
     sequence: null,
     followers: new Map(),
     trail: { points: [] },
+    charPoses: new Map(),
+    charWalks: new Map(),
     facingOverrides: {},
     finished: false,
   };
@@ -334,6 +340,8 @@ function placeInScene(scene: Scene, entry: Point | null): void {
   session.dialogue = null;
   session.sequence = null;
   session.facingOverrides = {};
+  session.charPoses.clear();
+  session.charWalks.clear();
   renderDialogue();
   speech = null;
   hover = undefined;
@@ -426,7 +434,9 @@ function actorHead(): Point {
 }
 
 function characterHead(scene: Scene, c: Character): Point {
-  return { x: c.pos.x, y: c.pos.y - CHARACTER_SPEECH_OFFSET * depthScale(scene, c.pos.y) };
+  const rp = session?.charPoses.get(c.id);
+  const p = rp ? { x: rp.x, y: rp.y } : c.pos;
+  return { x: p.x, y: p.y - CHARACTER_SPEECH_OFFSET * depthScale(scene, p.y) };
 }
 
 interface Speaker {
@@ -482,6 +492,7 @@ function resolveClickVerb(target: TargetRef): PlayerVerb {
   if (armed !== 'interact') return armed;
   const def = targetDef(target);
   if (!def) return 'interact';
+  if (def.defaultVerb !== undefined) return def.defaultVerb; // authored override
   const person = target.kind === 'character' || target.kind === 'companion';
   if (person && def.talk !== undefined) return 'talk';
   if (def.use !== undefined || def.take !== undefined) return 'interact';
@@ -579,8 +590,24 @@ function advanceSequence(): void {
     say(step.say, who.anchor, who.color, who.id);
     seq.until = speech?.expires ?? 0;
   } else if (step.walkTo !== undefined) {
-    session.path = findPath({ x: session.actor.x, y: session.actor.y }, step.walkTo, walkBoxes(sceneOf(session)));
-    session.pending = null;
+    const who = step.who ?? 'actor';
+    if (who === 'actor') {
+      session.path = findPath({ x: session.actor.x, y: session.actor.y }, step.walkTo, walkBoxes(sceneOf(session)));
+      session.pending = null;
+    } else {
+      // Scripted character walk: straight line (author-controlled ground).
+      const def = (sceneOf(session).characters ?? []).find((c) => c.id === who);
+      if (!session.charPoses.has(who) && def) {
+        session.charPoses.set(who, {
+          x: def.pos.x,
+          y: def.pos.y,
+          facing: def.facing ?? 'left',
+          phase: 0,
+          walking: false,
+        });
+      }
+      if (session.charPoses.has(who)) session.charWalks.set(who, { ...step.walkTo });
+    }
     seq.until = null; // completes when the walk does
   } else if (step.wait !== undefined) {
     seq.until = performance.now() + step.wait * 1000;
@@ -596,6 +623,7 @@ function skipSequence(): void {
   session.state = applySequenceEffects(session.state, seq.steps, seq.index + 1);
   session.sequence = null;
   session.path = null;
+  for (const id of [...session.charWalks.keys()]) snapCharWalk(id);
   speech = null;
   if (seq.afterGoto !== null) changeScene(seq.afterGoto, null);
   save();
@@ -705,23 +733,42 @@ function renderDialogue(): void {
   for (const option of options) {
     const btn = document.createElement('button');
     btn.textContent = option.text;
-    btn.addEventListener('click', () => {
-      if (!session || !session.dialogue) return;
-      const step = chooseOption(session.state, option);
-      session.state = step.state;
-      log(`> ${option.text}`);
-      if (step.to === 'end') {
-        session.dialogue = null;
-      } else {
-        session.dialogue.node = step.to;
-        log(dialogueNode(dlg, step.to).line);
-      }
-      save();
-      renderDialogue();
-      renderPanel();
-    });
+    // Options that END the conversation get one consistent marker, engine-
+    // wide — the player learns the signal once (no hand-written "(leave)").
+    if (option.to === 'end') btn.classList.add('dialogue-end');
+    btn.addEventListener('click', () => pickOption(option));
     el.dialogue.append(btn);
   }
+}
+
+function pickOption(option: DialogueOption): void {
+  if (!session || !session.dialogue) return;
+  const dlg = session.loaded.story.dialogues[session.dialogue.id]!;
+  const step = chooseOption(session.state, option);
+  session.state = step.state;
+  log(`> ${option.text}`);
+  if (step.to === 'end') {
+    session.dialogue = null;
+  } else {
+    session.dialogue.node = step.to;
+    log(dialogueNode(dlg, step.to).line);
+  }
+  save();
+  renderDialogue();
+  renderPanel();
+}
+
+/**
+ * A canvas click during dialogue: single-option nodes are acknowledgments —
+ * click anywhere to take them (Mike's "dialog isn't done" trap). Multi-choice
+ * nodes still require an actual pick.
+ */
+function clickThroughDialogue(): void {
+  if (!session || !session.dialogue) return;
+  const dlg = session.loaded.story.dialogues[session.dialogue.id]!;
+  const options = visibleOptions(session.state, dialogueNode(dlg, session.dialogue.node));
+  if (options.length === 0) pickOption({ text: '(leave)', to: 'end' });
+  else if (options.length === 1) pickOption(options[0]!);
 }
 
 // --- Panel (sentence line, verbs, inventory) --------------------------------
@@ -890,13 +937,18 @@ function hurrySequence(): void {
   const current = session.sequence.steps[session.sequence.index];
   if (current && current.walkTo !== undefined) {
     // Snap the scripted walk to its destination rather than ignoring the click.
-    const end = session.path?.[session.path.length - 1];
-    if (end) {
-      session.actor.x = end.x;
-      session.actor.y = end.y;
+    const who = current.who ?? 'actor';
+    if (who === 'actor') {
+      const end = session.path?.[session.path.length - 1];
+      if (end) {
+        session.actor.x = end.x;
+        session.actor.y = end.y;
+      }
+      session.path = null;
+      session.actor.walking = false;
+    } else {
+      snapCharWalk(who);
     }
-    session.path = null;
-    session.actor.walking = false;
   }
   advanceSequence();
   while (session.sequence) {
@@ -912,7 +964,10 @@ el.canvas.addEventListener('click', (ev) => {
     showMenu(); // the end card's click-anywhere response
     return;
   }
-  if (session.dialogue) return; // the options ARE the interface
+  if (session.dialogue) {
+    clickThroughDialogue(); // single-option acknowledgments click through
+    return;
+  }
   if (session.sequence) {
     // Hurrying works even during the fade-in — a running sequence means the
     // scene switch already happened, and arrival clicks must never be eaten.
@@ -1057,17 +1112,25 @@ el.btnRestart.addEventListener('click', () => {
 // Card backgrounds go on the pixel buffer; their TEXT goes on the crisp
 // display-resolution overlay, like all other in-scene text.
 
-function drawCutscene(scene: Scene, scale: number): void {
+function drawCutscene(scene: Scene, scale: number, t: number): void {
   if (!session || session.beat === null) return;
   const { w, h } = session.view;
-  ctx.fillStyle = css(P.black);
-  ctx.fillRect(0, 0, w, h);
+  // Full-screen card: a cutscene with a painter shows its painting (drawn at
+  // view size) with the beats as lower-third subtitles — the SCUMM close-up.
+  const painter = scene.paint !== undefined ? session.loaded.paint.scenes?.[scene.paint] : undefined;
+  if (painter) {
+    painter(ctx, session.state, t);
+  } else {
+    ctx.fillStyle = css(P.black);
+    ctx.fillRect(0, 0, w, h);
+  }
   const beat = (scene.beats ?? [])[session.beat] ?? '';
   const size = 8 * scale;
   octx.font = `${Math.round(size)}px ${FONT}`;
   const maxW = w * scale * 0.86;
   const lines = wrapWords(beat, (s) => octx.measureText(s).width <= maxW);
-  const y0 = (h / 2) * scale - (lines.length - 1) * 6 * scale;
+  const yCentre = painter ? h - 26 - (lines.length - 1) * 6 : h / 2;
+  const y0 = yCentre * scale - (lines.length - 1) * 6 * scale;
   lines.forEach((line, i) =>
     overlayText(octx, line, (w / 2) * scale, y0 + i * 12 * scale, P.white, size, 'center'),
   );
@@ -1137,7 +1200,7 @@ function tick(now: number): void {
       drawEndCard(scale);
     } else if (session.beat !== null) {
       if (session.finished) drawEndCard(scale);
-      else drawCutscene(scene, scale);
+      else drawCutscene(scene, scale, now / 1000);
       if (alpha > 0) {
         ctx.fillStyle = rgba(P.black, alpha);
         ctx.fillRect(0, 0, session.view.w, session.view.h);
@@ -1145,6 +1208,7 @@ function tick(now: number): void {
     } else {
       updateWalk(dt);
       updateFollowers(dt);
+      updateCharWalks(dt);
       updateSequence(now);
       updateCamera(dt);
       const sp = currentSpeech();
@@ -1167,6 +1231,7 @@ function tick(now: number): void {
         speakingId: sp?.speakerId ?? null,
         followers: followerViews(),
         pinnedCharacter,
+        characterPoses: session.charPoses,
         facingOverrides: session.facingOverrides,
         fade: alpha,
       });
@@ -1202,7 +1267,12 @@ function updateSequence(now: number): void {
   const seq = session.sequence;
   const step = seq.steps[seq.index];
   if (!step) return;
-  const done = step.walkTo !== undefined ? session.path === null : seq.until !== null && now >= seq.until;
+  const done =
+    step.walkTo !== undefined
+      ? (step.who ?? 'actor') === 'actor'
+        ? session.path === null
+        : !session.charWalks.has(step.who!)
+      : seq.until !== null && now >= seq.until;
   if (done) advanceSequence();
 }
 
@@ -1261,6 +1331,44 @@ function followerViews(): FollowerView[] {
     views.push({ id, pose, paint: session.loaded.story.companions[id]?.paint });
   }
   return views;
+}
+
+function snapCharWalk(id: string): void {
+  if (!session) return;
+  const target = session.charWalks.get(id);
+  const pose = session.charPoses.get(id);
+  if (target && pose) {
+    pose.x = target.x;
+    pose.y = target.y;
+    pose.walking = false;
+  }
+  session.charWalks.delete(id);
+}
+
+/** Move sequence-scripted characters toward their destinations. */
+function updateCharWalks(dt: number): void {
+  if (!session) return;
+  const scene = sceneOf(session);
+  for (const [id, target] of session.charWalks) {
+    const pose = session.charPoses.get(id);
+    if (!pose) {
+      session.charWalks.delete(id);
+      continue;
+    }
+    const dx = target.x - pose.x;
+    const dy = target.y - pose.y;
+    const dist = Math.hypot(dx, dy);
+    const step = WALK_SPEED * depthScale(scene, pose.y) * dt;
+    if (dist <= step) {
+      snapCharWalk(id);
+      continue;
+    }
+    pose.x += (dx / dist) * step;
+    pose.y += (dy / dist) * step;
+    pose.phase += step * STEP_PHASE;
+    pose.walking = true;
+    pose.facing = facingFromDelta(dx, dy);
+  }
 }
 
 function updateCamera(dt: number): void {

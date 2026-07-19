@@ -7,7 +7,7 @@
       "options": [
         { "text": "Wind it with what?", "to": "what" },
         { "text": "Anyone else out here?", "to": "bird", "requires": ["!companion:sparrow"] },
-        { "text": "I'll manage. (leave)", "to": "end" }
+        { "text": "I'll manage.", "to": "end" }
       ]
     },
     "bird": {

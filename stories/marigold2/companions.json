@@ -1,0 +1,49 @@
+[
+  {
+    "id": "cog",
+    "name": "Lt. Cog",
+    "paint": "cog",
+    "color": [150, 220, 210],
+    "look": [{ "text": "Lt. Cog, cataloguing the station's tidiness with visible professional respect." }],
+    "talk": [
+      {
+        "requires": ["flag:heard_song", "!flag:link_ready"],
+        "speaker": "target",
+        "text": "\"The song is in D minor, transposed from sky-ray calls. Technically flawless. Also: sixty years is 1,893,456,000 seconds, and it counted every one. Draw your own conclusion, Ensign.\""
+      },
+      {
+        "requires": ["flag:song_settled"],
+        "speaker": "target",
+        "text": "\"For the record: introducing the lonely station to the neighbours was superior to switching it off. I have logged this as 'timing.'\""
+      },
+      { "speaker": "target", "text": "\"The joke remains in reserve. This station's morale requirements are... complicated.\"" }
+    ],
+    "itemUse": [
+      { "withItem": "sniffer", "speaker": "target", "text": "\"Still an android, Ensign. Your diligence is noted.\"" }
+    ]
+  },
+  {
+    "id": "solace",
+    "name": "Counselor Solace",
+    "paint": "solace",
+    "color": [200, 170, 220],
+    "look": [{ "text": "Counselor Solace, one hand resting on the wall like she's taking the station's pulse." }],
+    "talk": [
+      {
+        "requires": ["flag:heard_song", "!flag:knows_lonely"],
+        "speaker": "target",
+        "text": "\"It isn't malfunction, Ensign. Listen past the deflection: 'visitors, previous, zero.' It's LONELY. It doesn't need repairing — it needs someone to sing to.\"",
+        "setFlags": ["knows_lonely"]
+      },
+      {
+        "requires": ["flag:song_settled"],
+        "speaker": "target",
+        "text": "\"Contentment, everywhere, like sunlight on the water. Sixty years, and it took us an afternoon.\""
+      },
+      { "speaker": "target", "text": "\"Whatever's here — it isn't angry. It's glad we came. Fiercely glad.\"" }
+    ],
+    "itemUse": [
+      { "withItem": "sniffer", "speaker": "target", "text": "\"Ensign. We TALKED about this. Diary. Dinner. Aloud.\"" }
+    ]
+  }
+]

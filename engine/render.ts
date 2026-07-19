@@ -248,6 +248,8 @@ export interface RenderOpts {
    * dialogue speaker who was just recruited must not vanish mid-sentence.
    */
   pinnedCharacter?: Character | undefined;
+  /** Runtime positions/poses for sequence-moved characters. */
+  characterPoses?: Map<string, ActorPose>;
   /** Scripted-sequence facing overrides for scene characters. */
   facingOverrides?: Record<string, Facing>;
   /** 0..1 black overlay for room-change fades. */
@@ -284,20 +286,23 @@ export function renderScene(
     cast.push(opts.pinnedCharacter);
   }
   for (const c of cast) {
-    const scale = depthScale(scene, c.pos.y);
+    const rp = opts.characterPoses?.get(c.id);
+    const pos = rp ? { x: rp.x, y: rp.y } : c.pos;
+    const scale = depthScale(scene, pos.y);
     const sprite = c.paint !== undefined ? loaded.paint.sprites?.[c.paint] : undefined;
     const pose: Pose = {
-      ...IDLE_POSE,
-      facing: opts.facingOverrides?.[c.id] ?? c.facing ?? 'left',
+      facing: rp?.facing ?? opts.facingOverrides?.[c.id] ?? c.facing ?? 'left',
+      phase: rp?.phase ?? 0,
+      walking: rp?.walking ?? false,
       talking: opts.speakingId === c.id,
     };
     bodies.push({
-      y: c.pos.y,
+      y: pos.y,
       draw: () => {
         if (sprite) {
-          scaled(ctx, c.pos.x, c.pos.y, scale, () => sprite(ctx, c.pos.x, c.pos.y, pose, opts.t));
+          scaled(ctx, pos.x, pos.y, scale, () => sprite(ctx, pos.x, pos.y, pose, opts.t));
         } else {
-          const b = characterBox(c.pos, scale);
+          const b = characterBox(pos, scale);
           ctx.fillStyle = css(P.stone);
           ctx.fillRect(b.x, b.y, b.w, b.h);
           ctx.strokeStyle = css(P.white);

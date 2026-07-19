@@ -1,0 +1,79 @@
+{
+  "id": "shaft",
+  "name": "The Beacon Shaft",
+  "paint": "shaft",
+  "size": { "w": 320, "h": 400 },
+  "walk": [
+    { "x": 8, "y": 352, "w": 304, "h": 40 },
+    { "x": 258, "y": 272, "w": 54, "h": 120 },
+    { "x": 8, "y": 272, "w": 304, "h": 40 },
+    { "x": 8, "y": 192, "w": 54, "h": 120 },
+    { "x": 8, "y": 192, "w": 304, "h": 40 },
+    { "x": 258, "y": 112, "w": 54, "h": 120 },
+    { "x": 8, "y": 112, "w": 304, "h": 40 }
+  ],
+  "start": { "x": 280, "y": 372 },
+  "hotspots": [
+    {
+      "id": "socket",
+      "name": "comm socket",
+      "region": { "x": 138, "y": 56, "w": 44, "h": 44 },
+      "walkTo": { "x": 160, "y": 126 },
+      "look": [
+        { "requires": ["flag:link_ready"], "text": "The coupler sits snug in the socket, colony net linked. A green light ticks in waltz time." },
+        { "text": "A bare comm socket under the beacon head — the station's line to the colony net, sixty years unplugged." }
+      ],
+      "use": [
+        { "requires": ["flag:link_ready"], "text": "Linked and humming. Leave it be." },
+        { "text": "Nothing to connect it WITH. It wants a coupler." }
+      ],
+      "itemUse": [
+        {
+          "withItem": "coupler",
+          "requires": ["companion:cog"],
+          "text": "Cog splices the coupler in with surgical calm. \"Colony net: reachable. Volume control: I have taken a liberty.\"",
+          "removeItem": "coupler",
+          "setFlags": ["link_ready"]
+        },
+        {
+          "withItem": "coupler",
+          "text": "Sixty-year-old pinouts. You want an android's steady hands for this — good thing you brought one."
+        },
+        {
+          "withItem": "sniffer",
+          "text": "The sniffer chirps: socket live, line dormant, and — it adds, unprompted — the song is in D minor."
+        }
+      ]
+    },
+    {
+      "id": "core",
+      "name": "Mote's core grille",
+      "region": { "x": 54, "y": 64, "w": 30, "h": 28 },
+      "walkTo": { "x": 70, "y": 128 },
+      "look": [{ "text": "Behind this grille, sixty years of patience and one caretaker intelligence, singing." }],
+      "talk": [{ "dialogue": "mote" }]
+    },
+    {
+      "id": "window",
+      "name": "shaft window",
+      "region": { "x": 20, "y": 236, "w": 28, "h": 32 },
+      "walkTo": { "x": 40, "y": 290 },
+      "look": [
+        { "text": "Through the salt-scoured glass: the aurora, banding green to violet, and dark shapes riding it. Sky-rays. They're circling the beacon." }
+      ],
+      "use": [{ "text": "It hasn't opened since before you were born, and it's not starting now." }]
+    }
+  ],
+  "characters": [],
+  "exits": [
+    {
+      "id": "down",
+      "name": "landing bay door",
+      "region": { "x": 8, "y": 314, "w": 28, "h": 48 },
+      "walkTo": { "x": 28, "y": 372 },
+      "look": "Back down to the landing bay.",
+      "to": "landing",
+      "entry": { "x": 290, "y": 152 }
+    }
+  ]
+}

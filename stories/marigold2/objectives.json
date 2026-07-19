@@ -1,0 +1,25 @@
+[
+  {
+    "id": "why",
+    "text": "Find out why the beacon sings",
+    "done": ["flag:knows_lonely"]
+  },
+  {
+    "id": "stores",
+    "text": "Get the old stores open",
+    "active": ["flag:landed", "!flag:link_ready"],
+    "done": ["flag:took_coupler"]
+  },
+  {
+    "id": "link",
+    "text": "Patch the beacon into the colony net",
+    "active": ["flag:heard_song"],
+    "done": ["flag:link_ready"]
+  },
+  {
+    "id": "home",
+    "text": "Settle the song and report home",
+    "active": ["flag:knows_lonely"],
+    "done": ["flag:went_home2"]
+  }
+]
