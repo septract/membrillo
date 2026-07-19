@@ -75,10 +75,11 @@ design note, it lands here; when it ships, delete it. Dated design notes in
     with the auto-derived `{depth,walk}`); `roomdemo` fixture wires a plate via
     `imageScene` and its driver browser-proves a sprite walks the rendered floor,
     scaling with depth. No Blender.
-  - **Phase 2 (next)**: `membrillo scene check` — re-derive depth/walk from the
-    floorplan and assert the scene JSON still matches (model-checked, like
-    validate/fuzz); auto-patch the scene block on build instead of the manual
-    paste; browser live-preview route for tuning camera/floor.
+  - **Phase 2 mostly DONE (2026-07-19)**: `membrillo scene check` re-derives
+    depth/walk and asserts the scene matches (wired into `npm run check` as
+    `scene:check`, pinned by `render-scene.test.mjs`); `scene build` auto-patches
+    the scene's size/depth/walk in place (no manual paste). REMAINING: a browser
+    live-preview route for tuning camera/floor (edit→look).
   - **Phase 3**: second/third rooms (Monk's, a street/exterior — test scrolling
     worlds); re-plate "Nothing Doing" as the first real customer.
   - **Phase 4**: occlusion automation (walk-behind hints from prop boxes),

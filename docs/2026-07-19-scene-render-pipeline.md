@@ -179,9 +179,16 @@ or alongside the story), not gitignored `assets-local/`. Consequences:
    verdict confirmed: not needed. Dither/textured-floor pass makes the plate
    legible (see prototype outcome). Calibration is analytic (project a reference
    figure at the walk area's near/far edges — no image analysis).
-2. **`scene check` + live preview.** The consistency check and the browser tuning
-   route — the "as much automation as we can" core, so subsequent rooms are fast
-   and stay correct.
+2. **`scene check` + auto-patch — DONE (2026-07-19); live preview remains.**
+   `membrillo scene check [ids…]` re-derives the band from the floorplan and
+   asserts the scene JSON still matches (canonical, key-order-insensitive
+   compare), wired into `npm run check` via `scene:check` and locked by
+   `render-scene.test.mjs` (calibration is pinned; drift fails the suite).
+   `scene build` now **auto-patches** the scene's size/depth/walk in place
+   (surgical single-line replace, trailing comma + hand-authored content
+   preserved) — no manual paste. Still to do: a browser live-preview route that
+   renders the floorplan and overlays the walkbox + a draggable test figure, to
+   tune camera/floor with edit→look instead of edit→build→look.
 3. **Second and third rooms** — Monk's, a street — to test the format across a
    scrolling world and an exterior; port "Nothing Doing" onto rendered plates as
    the first real customer.

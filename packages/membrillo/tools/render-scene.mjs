@@ -22,7 +22,7 @@
 //   sprite:   { heightUnits=1.7, nativePx=40 } the actor's real height, in units
 //                                              and in its native draw pixels
 import { deflateSync } from 'node:zlib';
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { P } from '../art/palette.ts';
 
@@ -52,18 +52,46 @@ const BAYER = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]];
 const SPREAD = 30;
 const snapDither = (x, y, c) => { const b = (BAYER[y & 3][x & 3] / 16 - 0.5) * SPREAD; return snap([c[0] + b, c[1] + b, c[2] + b]); };
 
+// ---- camera + calibration (pure; shared by render and check) ---------------
+/** Build the perspective projector for a floorplan's camera. */
+function projectorOf(fp) {
+  const W = fp.view.w, H = fp.view.h, EYE = fp.camera.eye;
+  const FOCAL = (W / 2) / Math.tan((fp.camera.hfov * Math.PI / 180) / 2);
+  const F = norm(sub(fp.camera.target, EYE));
+  const R = norm(cross([0, 1, 0], F));     // +x → screen right
+  const U = norm(cross(F, R));             // +y → screen up
+  const project = (p) => { const d = sub(p, EYE); const cz = dot(d, F); return { x: W / 2 + FOCAL * dot(d, R) / cz, y: H / 2 - FOCAL * dot(d, U) / cz, z: cz }; };
+  return { W, H, FOCAL, EYE, F, R, U, project };
+}
+
+/** Derive { size, depth, walk } from the projected floor — the calibration. */
+function bandFrom(project, W, H, fp) {
+  const wa = fp.walkArea;
+  const hUnits = fp.sprite?.heightUnits ?? 1.7, nativePx = fp.sprite?.nativePx ?? 40;
+  const zNear = Math.min(wa.z0, wa.z1), zFar = Math.max(wa.z0, wa.z1);
+  const xMid = (wa.x0 + wa.x1) / 2;
+  const probe = (z) => { const feet = project([xMid, 0, z]), top = project([xMid, hUnits, z]); return { row: feet.y, h: feet.y - top.y }; };
+  const nearP = probe(zNear), farP = probe(zFar);
+  const depth = {
+    far: { y: Math.round(farP.row), scale: +(farP.h / nativePx).toFixed(3) },
+    near: { y: Math.round(nearP.row), scale: +(nearP.h / nativePx).toFixed(3) },
+  };
+  const nl = project([wa.x0, 0, zNear]), nr = project([wa.x1, 0, zNear]);
+  const fl = project([wa.x0, 0, zFar]), fr = project([wa.x1, 0, zFar]);
+  const left = Math.round(Math.max(fl.x, nl.x)), right = Math.round(Math.min(fr.x, nr.x));
+  const yTop = Math.round(Math.min(fl.y, fr.y)), yBot = Math.round(Math.max(nl.y, nr.y));
+  return { size: { w: W, h: H }, depth, walk: { x: left, y: yTop, w: right - left, h: yBot - yTop } };
+}
+
+/** The calibrated band for a floorplan — no pixels rendered. */
+export function calibrate(fp) { const { project, W, H } = projectorOf(fp); return bandFrom(project, W, H, fp); }
+
 /**
  * Render a floorplan. Returns { rgba, width, height, depth, walk } — the plate
  * pixels and the calibrated band ready to drop into a scene JSON.
  */
 export function renderScene(fp) {
-  const W = fp.view.w, H = fp.view.h;
-  const EYE = fp.camera.eye, TARGET = fp.camera.target;
-  const FOCAL = (W / 2) / Math.tan((fp.camera.hfov * Math.PI / 180) / 2);
-  const F = norm(sub(TARGET, EYE));
-  const R = norm(cross([0, 1, 0], F));     // +x → screen right
-  const U = norm(cross(F, R));             // +y → screen up
-  const project = (p) => { const d = sub(p, EYE); const cz = dot(d, F); return { x: W / 2 + FOCAL * dot(d, R) / cz, y: H / 2 - FOCAL * dot(d, U) / cz, z: cz }; };
+  const { W, H, FOCAL, EYE, F, R, U, project } = projectorOf(fp);
 
   const buf = Buffer.alloc(W * H * 4);
   const zbuf = new Float32Array(W * H).fill(Infinity);
@@ -118,30 +146,35 @@ export function renderScene(fp) {
   faces.sort((a, b) => b.depth - a.depth);
   for (const f of faces) fillPoly(f.pts, f.color);
 
-  // ---- calibration: a reference person at the near & far edges of the walk
-  // area. Far = the larger-z edge (smaller on screen); near = smaller-z (larger).
-  const hUnits = fp.sprite?.heightUnits ?? 1.7, nativePx = fp.sprite?.nativePx ?? 40;
-  const zNear = Math.min(wa.z0, wa.z1), zFar = Math.max(wa.z0, wa.z1);
-  const xMid = (wa.x0 + wa.x1) / 2;
-  const probe = (z) => { const feet = project([xMid, 0, z]), top = project([xMid, hUnits, z]); return { row: feet.y, h: feet.y - top.y }; };
-  const nearP = probe(zNear), farP = probe(zFar);
-  const depth = {
-    far: { y: Math.round(farP.row), scale: +(farP.h / nativePx).toFixed(3) },
-    near: { y: Math.round(nearP.row), scale: +(nearP.h / nativePx).toFixed(3) },
-  };
-  // ---- walkbox: the largest screen rect that stays inside the floor trapezoid.
-  // Near edge is wider (lower); far edge is narrower (higher). Use the narrow
-  // far x-extent for left/right so the actor never steps off the floor at depth.
-  const nl = project([wa.x0, 0, zNear]), nr = project([wa.x1, 0, zNear]);
-  const fl = project([wa.x0, 0, zFar]), fr = project([wa.x1, 0, zFar]);
-  const left = Math.round(Math.max(fl.x, nl.x)), right = Math.round(Math.min(fr.x, nr.x));
-  const yTop = Math.round(Math.min(fl.y, fr.y)), yBot = Math.round(Math.max(nl.y, nr.y));
-  const walk = { x: left, y: yTop, w: right - left, h: yBot - yTop };
-
+  const { depth, walk } = bandFrom(project, W, H, fp);
   return { rgba: buf, width: W, height: H, depth, walk };
 }
 
-/** IO wrapper for the CLI: read floorplan, write plate + calib sidecar. */
+// Compact-but-spaced inline JSON, matching the scenes' hand-authored one-liners.
+const inline = (v) => typeof v !== 'object' || v === null ? JSON.stringify(v)
+  : Array.isArray(v) ? `[${v.map(inline).join(', ')}]`
+    : `{ ${Object.entries(v).map(([k, x]) => `"${k}": ${inline(x)}`).join(', ')} }`;
+
+/**
+ * Surgically replace the single-line size/depth/walk values in a scene file,
+ * preserving all hand-authored content and each line's trailing comma. Keys
+ * that aren't present (as a one-line value) are reported, not invented.
+ */
+function patchSceneBand(root, storyId, sceneId, band) {
+  const scenePath = resolve(root, storyId, 'scenes', `${sceneId}.json`);
+  if (!existsSync(scenePath)) return { patched: [], missing: ['size', 'depth', 'walk'], noScene: true };
+  let text = readFileSync(scenePath, 'utf8');
+  const patched = [], missing = [];
+  for (const key of ['size', 'depth', 'walk']) {
+    const re = new RegExp(`^(\\s*)"${key}":[^\\n]*?(,?)\\s*$`, 'm');
+    if (re.test(text)) { text = text.replace(re, (_m, indent, comma) => `${indent}"${key}": ${inline(band[key])}${comma}`); patched.push(key); }
+    else missing.push(key);
+  }
+  if (patched.length) writeFileSync(scenePath, text);
+  return { patched, missing };
+}
+
+/** IO wrapper for the CLI: read floorplan, write plate + calib sidecar, patch the scene. */
 export function buildScene(root, storyId, sceneId) {
   const fpPath = resolve(root, storyId, 'floorplans', `${sceneId}.json`);
   const fp = JSON.parse(readFileSync(fpPath, 'utf8'));
@@ -152,16 +185,61 @@ export function buildScene(root, storyId, sceneId) {
   const calib = { size: { w: width, h: height }, depth, walk };
   writeFileSync(resolve(root, storyId, 'floorplans', `${sceneId}.calib.json`), JSON.stringify(calib, null, 2) + '\n');
   console.log(`  ✓ ${storyId}/${sceneId}: wrote paint/assets/${sceneId}.png (${width}×${height})`);
-  console.log(`    depth ${JSON.stringify(depth)}`);
-  console.log(`    walk  ${JSON.stringify(walk)}`);
+  const { patched, missing, noScene } = patchSceneBand(root, storyId, sceneId, calib);
+  if (patched.length) console.log(`    patched scenes/${sceneId}.json: ${patched.join(', ')}`);
+  if (noScene) console.log(`    (no scenes/${sceneId}.json yet — add size/depth/walk: ${inline(calib)})`);
+  else if (missing.length) console.log(`    add these to scenes/${sceneId}.json: ${missing.map((k) => `"${k}": ${inline(calib[k])}`).join(', ')}`);
   return calib;
+}
+
+// deep, key-order-insensitive canonical form — so reordered JSON keys don't
+// read as drift, only real value changes do.
+const sortKeys = (o) => Array.isArray(o) ? o.map(sortKeys) : (o && typeof o === 'object') ? Object.fromEntries(Object.keys(o).sort().map((k) => [k, sortKeys(o[k])])) : o;
+const canon = (o) => JSON.stringify(sortKeys(o ?? null));
+
+/**
+ * Verify a scene JSON's size/depth/walk still match what its floorplan derives
+ * — the model-checked consistency guarantee (a hand-edited walkbox that drifts
+ * from the plate is caught, like validate/fuzz catch story drift).
+ */
+export function checkScene(root, storyId, sceneId) {
+  const fp = JSON.parse(readFileSync(resolve(root, storyId, 'floorplans', `${sceneId}.json`), 'utf8'));
+  const want = calibrate(fp);
+  const scenePath = resolve(root, storyId, 'scenes', `${sceneId}.json`);
+  if (!existsSync(scenePath)) return { ok: false, diffs: [`scenes/${sceneId}.json is missing`] };
+  const scene = JSON.parse(readFileSync(scenePath, 'utf8'));
+  const diffs = [];
+  for (const key of ['size', 'depth', 'walk'])
+    if (canon(scene[key]) !== canon(want[key])) diffs.push(`${key}: scene ${JSON.stringify(scene[key])} ≠ floorplan ${JSON.stringify(want[key])}`);
+  return { ok: diffs.length === 0, diffs };
+}
+
+/** Check every floorplan under root (optionally restricted to storyIds). Returns the failure count. */
+export function checkAll(root, ids = []) {
+  const targets = ids.length ? ids : readdirSync(root, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name);
+  let failed = 0, checked = 0;
+  for (const story of targets) {
+    const fpDir = resolve(root, story, 'floorplans');
+    if (!existsSync(fpDir)) continue;
+    for (const f of readdirSync(fpDir)) {
+      if (!f.endsWith('.json') || f.endsWith('.calib.json')) continue;
+      const scene = f.replace(/\.json$/, '');
+      const { ok, diffs } = checkScene(root, story, scene);
+      checked++;
+      if (ok) console.log(`  ✓ ${story}/${scene}: scene matches floorplan`);
+      else { failed++; console.error(`  ✗ ${story}/${scene}:`); for (const d of diffs) console.error(`      ${d}`); }
+    }
+  }
+  if (!checked) console.log('  (no floorplans found)');
+  return failed;
 }
 
 // ---- CLI (also invoked via `membrillo scene …`) ----------------------------
 if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
   const rest = process.argv.slice(2);
   const ri = rest.indexOf('--root'); const root = ri >= 0 ? rest[ri + 1] : process.env.STORIES_ROOT ?? './stories';
-  const pos = rest.filter((a, i) => !a.startsWith('-') && !(ri >= 0 && i === ri + 1));
-  if (pos[0] !== 'build' || !pos[1] || !pos[2]) { console.error('usage: render-scene build <storyId> <sceneId> [--root ./stories]'); process.exit(1); }
-  buildScene(root, pos[1], pos[2]);
+  const [sub, ...args] = rest.filter((a, i) => !a.startsWith('-') && !(ri >= 0 && i === ri + 1));
+  if (sub === 'build') { if (!args[0] || !args[1]) { console.error('usage: render-scene build <storyId> <sceneId> [--root]'); process.exit(1); } buildScene(root, args[0], args[1]); }
+  else if (sub === 'check') { process.exit(checkAll(root, args) ? 1 : 0); }
+  else { console.error('usage: render-scene <build <story> <scene> | check [ids…]> [--root ./stories]'); process.exit(1); }
 }
