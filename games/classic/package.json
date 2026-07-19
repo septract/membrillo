@@ -1,0 +1,16 @@
+{
+  "name": "@membrillo/classic",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "The classic Membrillo story collection: Lamplight, The Marigold, Gale Reach, and the engine fixtures.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "membrillo check --root ./stories"
+  },
+  "dependencies": {
+    "membrillo": "*"
+  }
+}

@@ -1,18 +1,19 @@
 {
-  "name": "membrillo",
+  "name": "membrillo-workspace",
   "private": true,
-  "version": "0.1.0",
   "license": "Apache-2.0",
   "type": "module",
+  "workspaces": ["packages/membrillo", "games/*"],
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
+    "dev": "npm run dev -w games/classic",
+    "build": "npm run build -w games/classic",
+    "preview": "npm run preview -w games/classic",
     "typecheck": "tsc --noEmit",
-    "validate": "node tools/validate.ts",
-    "fuzz": "node tools/fuzz.ts",
-    "test": "node --test tools/core.test.ts tools/walk.test.ts tools/followers.test.ts",
-    "check": "npm run typecheck && npm test && npm run validate && npm run fuzz"
+    "test": "node --test packages/membrillo/tools/core.test.ts packages/membrillo/tools/walk.test.ts packages/membrillo/tools/followers.test.ts",
+    "validate": "STORIES_ROOT=games/classic/stories node packages/membrillo/tools/validate.ts",
+    "fuzz": "STORIES_ROOT=games/classic/stories node packages/membrillo/tools/fuzz.ts",
+    "check": "npm run typecheck && npm test && npm run validate && npm run fuzz",
+    "drive": "node games/classic/drive.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",

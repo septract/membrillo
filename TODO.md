@@ -35,9 +35,9 @@ design note, it lands here; when it ships, delete it. Dated design notes in
 
 ## Later
 
-- **Membrillo as a library, not a fork** — plan written:
-  docs/2026-07-18-library-plan.md (local-first via npm workspaces; one seam
-  inversion + a CLI; ~one session). Awaiting go.
+- Library follow-ups: `games/_template` starter package; schema/save-format
+  versioning before any npm publish (see docs/2026-07-18-library-plan.md,
+  executed 2026-07-18).
 
 - Deploy: GitHub Pages workflow (the kit's recipe; decoupled from any fan
   content — ship Lamplight/Marigold-class original stories only).

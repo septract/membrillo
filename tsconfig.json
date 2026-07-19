@@ -14,7 +14,11 @@
     "noEmit": true,
     "skipLibCheck": true,
     "types": ["vite/client", "node"],
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "paths": {
+      "membrillo": ["./packages/membrillo/index.ts"],
+      "membrillo/*": ["./packages/membrillo/*"]
+    }
   },
-  "include": ["engine", "tools", "stories"]
+  "include": ["packages", "games"]
 }

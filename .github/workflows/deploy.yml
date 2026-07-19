@@ -33,7 +33,7 @@ jobs:
       - run: BASE_PATH=/membrillo/ npm run build
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: games/classic/dist
 
   deploy:
     needs: build

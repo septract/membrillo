@@ -1,4 +1,4 @@
-# Membrillo as a library — local-first plan
+# Membrillo as a library — local-first plan (EXECUTED 2026-07-18)
 
 *2026-07-18. Answering Mike's question: what does library-ifying look like,
 and is a LOCAL version (no npm publish) easy? Short answer: yes — the

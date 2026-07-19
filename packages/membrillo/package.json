@@ -1,0 +1,21 @@
+{
+  "name": "membrillo",
+  "version": "0.1.0",
+  "description": "A model-checked point-and-click adventure engine for the browser, in the classic SCUMM spirit. Stories are data; the engine proves them winnable.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "bin": {
+    "membrillo": "./bin/membrillo.mjs"
+  },
+  "exports": {
+    ".": "./index.ts",
+    "./style.css": "./style.css",
+    "./core/*": "./core/*.ts",
+    "./art/*": "./art/*.ts",
+    "./walk": "./walk.ts",
+    "./verify-kit": "./tools/drive/kit.mjs"
+  },
+  "engines": {
+    "node": ">=23"
+  }
+}

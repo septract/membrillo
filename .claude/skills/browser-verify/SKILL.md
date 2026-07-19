@@ -30,19 +30,19 @@ Requires Google Chrome installed (`channel: 'chrome'`).
 ```bash
 npm run dev > /dev/null 2>&1 &                    # then poll, don't sleep:
 timeout 30 bash -c 'until curl -sf http://localhost:5173 >/dev/null; do sleep 1; done'
-node tools/browser-drive.mjs                      # full regression, all stories
+node games/classic/drive.mjs                      # full regression, all stories
 pkill -f vite
 ```
 
-`tools/browser-drive.mjs` orchestrates per-story modules in `tools/drive/`
+`games/classic/drive.mjs` orchestrates per-story modules in `games/classic/drive/`
 (one file per story plus `resilience` and `mobile`), sharing one Chrome
-session via `tools/drive/kit.mjs`. Pass module names to run a subset:
-`node tools/browser-drive.mjs marigold2`. Screenshots land in
+session via the kit exported as `membrillo/verify-kit`. Pass module names to
+run a subset: `node games/classic/drive.mjs marigold2`. Screenshots land in
 `shots-browser/` (gitignored). **Read the screenshots** — a green log with a
 broken frame is still a failure. It exits non-zero on any assertion or any
 browser console error/pageerror.
 
-When adding a story, add a module in `tools/drive/` and list it in the
+When adding a story, add a module in `games/classic/drive/` and list it in the
 orchestrator; when a story's coordinates change, its module's clicks must
 follow. Modules must stay independent: boot via `kit.freshStory(id)`.
 

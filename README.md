@@ -42,29 +42,34 @@ fixtures (`meadow`: no art at all; `postcard`: image assets).
 
 ## Writing a story
 
-Read `stories/GUIDE.md` — the full authoring reference — and
+Read `games/classic/stories/GUIDE.md` — the full authoring reference — and
 `docs/2026-07-18-marigold-demo-design.md` for a worked design (puzzle
 dependency chart included). The loop:
 
 ```
-mkdir stories/mystory && $EDITOR stories/mystory/manifest.json ...
+mkdir games/classic/stories/mystory && $EDITOR .../manifest.json ...
 npm run validate -- mystory     # structure + cross-references
 npm run fuzz -- mystory         # proves it winnable
 ```
 
-## Layout
+## Layout (npm workspaces)
 
 ```
-engine/core/   pure rules — the ONLY implementation, shared by browser & tools
-engine/        canvas/DOM presentation; art library; synth audio
-tools/         validator, fuzzer (the model checker), unit tests, browser driver
-stories/       story data + per-story painters
-docs/          dated design notes (the reasoning lives here)
+packages/membrillo/   the engine library: core rules, presentation, art,
+                      audio, tools (validator, fuzzer, verify kit), CLI
+games/classic/        a consumer game: stories + a 10-line entry that
+                      calls boot() with its story globs
+docs/                 dated design notes (the reasoning lives here)
 ```
+
+A new game is a Vite project depending on `membrillo` (workspace or
+`file:` link — no registry needed): import `boot`, glob your stories, done.
+`npx membrillo check --root ./stories` runs the validator and the
+winnability model check against any story directory.
 
 Node ≥ 23 (native TS stripping), TypeScript + Vite, nothing at runtime.
 
 ## License
 
 [Apache 2.0](LICENSE). The bundled Pixel Operator font is CC0
-(`engine/assets/fonts/LICENSE.txt`).
+(`packages/membrillo/assets/fonts/LICENSE.txt`).
