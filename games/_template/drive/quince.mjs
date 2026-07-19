@@ -21,9 +21,16 @@ export async function run(kit) {
   await worldClick(90, 70); // the tree
   await waitLog('all knuckles and blossom-scars');
 
-  // Dialogue: learn the toll, get the hint, leave.
+  // Dialogue: learn the toll, get the hint, leave. VN staging: the
+  // gardener's portrait stands over the dimmed scene (no actorPortrait in
+  // this story, so the hero's side stays empty) and the line moves into
+  // the box.
   await verb('Talk');
   await worldClick(232, 138); // the gardener
+  await page.waitForSelector('#dialogue .npc-line', { timeout: 10000 });
+  const vn = await hook();
+  if (vn.vnPortraits !== 1) throw new Error(`expected 1 VN portrait, got ${vn.vnPortraits}`);
+  console.log('  VN dialogue staging ✓');
   await page.getByRole('button', { name: 'Where do I find a quince?' }).click();
   await page.getByRole('button', { name: "I'll have a look." }).click();
   await page.waitForTimeout(300);

@@ -3,3 +3,4 @@ deps/
 node_modules/
 dist/
 shots-browser/
+assets-local/

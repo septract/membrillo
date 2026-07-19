@@ -5,7 +5,16 @@
 import type { State } from 'membrillo/core/types';
 import { P, mix } from 'membrillo/art/palette';
 import { rampRect } from 'membrillo/art/dither';
-import { blk, px, faceCtx, talkMouth, type SpritePainter } from 'membrillo/art/sprites';
+import {
+  blk,
+  px,
+  faceCtx,
+  talkMouth,
+  blinking,
+  PORTRAIT,
+  type PortraitPainter,
+  type SpritePainter,
+} from 'membrillo/art/sprites';
 
 const W = 320;
 const H = 180;
@@ -159,5 +168,44 @@ const gardener: SpritePainter = (ctx, fx, fy, pose, t) => {
   ctx.restore();
 };
 
+// A dialogue portrait: a 90×160 close-up shown beside the options while the
+// gardener's dialogue tree is open. Image art works through the same seam
+// (membrillo/art/images portraitImage).
+const gardenerPortrait: PortraitPainter = (ctx, _state, t, talking) => {
+  rampRect(ctx, 0, 0, PORTRAIT.w, PORTRAIT.h, [P.skyMid, P.skyLow]);
+  const bob = Math.round(Math.sin(t * 1.3));
+  const y = 62 + bob;
+  // green apron over a red shirt
+  blk(ctx, 8, 120 + bob, 74, 40, P.cloth);
+  px(ctx, 26, 120 + bob, 38, 40, P.grass);
+  px(ctx, 26, 120 + bob, 38, 3, P.grassLit);
+  // neck + a well-weathered face
+  blk(ctx, 36, 106 + bob, 18, 16, P.skinShade);
+  blk(ctx, 24, y, 42, 50, P.skin);
+  px(ctx, 24, y + 32, 42, 14, P.skinShade);
+  if (!blinking(t + 1.6)) {
+    px(ctx, 31, y + 14, 7, 5, P.white);
+    px(ctx, 50, y + 14, 7, 5, P.white);
+    px(ctx, 34, y + 15, 3, 4, mix(P.wood, P.black, 0.4));
+    px(ctx, 53, y + 15, 3, 4, mix(P.wood, P.black, 0.4));
+  } else {
+    px(ctx, 31, y + 17, 7, 2, P.skinShade);
+    px(ctx, 50, y + 17, 7, 2, P.skinShade);
+  }
+  px(ctx, 30, y + 10, 9, 2, P.stoneLit); // patient grey brows
+  px(ctx, 49, y + 10, 9, 2, P.stoneLit);
+  // the straw hat, worn low
+  px(ctx, 14, y - 6, 62, 8, P.brassLit);
+  px(ctx, 26, y - 16, 38, 12, P.brass);
+  // mouth
+  if (talking) {
+    const open = Math.sin(t * 11) > 0 ? 5 : 2;
+    px(ctx, 41, y + 36, 8, open, mix(P.black, P.woodDark, 0.4));
+  } else {
+    px(ctx, 41, y + 37, 8, 2, P.skinShade);
+  }
+};
+
 export const scenes = { orchard };
 export const sprites = { gardener };
+export const portraits = { gardenerPortrait };

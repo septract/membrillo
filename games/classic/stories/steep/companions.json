@@ -3,6 +3,7 @@
     "id": "penny",
     "name": "Penny Farthing",
     "paint": "penny",
+    "portrait": "pennyPortrait",
     "color": [94, 130, 142],
     "look": [
       {

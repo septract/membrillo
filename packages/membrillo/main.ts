@@ -53,7 +53,9 @@ import { P, css, rgba, type RGB } from './art/palette.ts';
 import {
   ACTOR_SPEECH_OFFSET,
   CHARACTER_SPEECH_OFFSET,
+  PORTRAIT,
   type Facing,
+  type PortraitPainter,
 } from './art/sprites.ts';
 import type { Outcome } from './core/rules.ts';
 
@@ -550,6 +552,8 @@ function followerTargetAt(p: Point): TargetRef | undefined {
 /** The speech to show this frame: the open dialogue's line, else the transient bark. */
 function currentSpeech(): (Speech & { speakerId: string }) | null {
   if (session?.dialogue) {
+    // Under VN staging the line lives in the dialogue box, not over a head.
+    if (vnRight) return null;
     const d = session.dialogue;
     const dlg = session.loaded.story.dialogues[d.id];
     if (dlg) {
@@ -751,10 +755,102 @@ function openDialogue(dlgId: string, target?: TargetRef): void {
   }
   session.dialogue = { id: dlgId, node: dlg.start, anchor: who.anchor, color: who.color, speakerId: who.id };
   log(dialogueNode(dlg, dlg.start).line);
+  startPortraitLine(dialogueNode(dlg, dlg.start).line);
   renderDialogue();
 }
 
+// VN dialogue staging (Mike, 2026-07-19): while a dialogue tree is open and
+// the INTERLOCUTOR declares a `portrait`, both parties stand floor-to-
+// ceiling over the dimmed scene — the hero (manifest.actorPortrait) stage
+// left, the interlocutor stage right (mirrored, so they face each other) —
+// and the spoken line moves into the dialogue box under a name tag. Purely
+// presentational: a portrait-less speaker keeps the classic floating-line
+// dialogue exactly as before, and no state ever depends on portraits.
+let vnLeft: PortraitPainter | null = null;
+let vnRight: PortraitPainter | null = null;
+/** performance.now() deadline while the current line counts as "talking". */
+let portraitTalkUntil = 0;
+/** Offscreen logical-resolution buffers the portrait painters draw into. */
+let vnBuf: { l: HTMLCanvasElement; r: HTMLCanvasElement } | null = null;
+
+/** The open dialogue speaker's portrait painter, if they declare one. */
+function portraitFor(speakerId: string): PortraitPainter | null {
+  if (!session) return null;
+  const scene = sceneOf(session);
+  const def =
+    (scene.characters ?? []).find((c) => c.id === speakerId) ??
+    session.loaded.story.companions[speakerId];
+  return def?.portrait !== undefined
+    ? (session.loaded.paint.portraits?.[def.portrait] ?? null)
+    : null;
+}
+
+/** The hero's portrait painter (manifest.actorPortrait), if declared. */
+function actorPortrait(): PortraitPainter | null {
+  if (!session) return null;
+  const name = session.loaded.story.manifest.actorPortrait;
+  return name !== undefined ? (session.loaded.paint.portraits?.[name] ?? null) : null;
+}
+
+/** The display name of the open dialogue's speaker, for the name tag. */
+function speakerName(speakerId: string): string {
+  if (!session) return '';
+  const scene = sceneOf(session);
+  const def =
+    (scene.characters ?? []).find((c) => c.id === speakerId) ??
+    session.loaded.story.companions[speakerId];
+  return def?.name ?? '';
+}
+
+/** Nominal speaking time for a line — the portrait's mouth runs this long. */
+function startPortraitLine(line: string): void {
+  portraitTalkUntil = performance.now() + Math.min(1200 + line.length * 45, 7000);
+}
+
+/** Draw the VN layer on the overlay: scrim, then both standing portraits. */
+function drawVnPortraits(t: number): void {
+  if (!session?.dialogue || !vnRight) return;
+  octx.fillStyle = 'rgba(10, 9, 14, 0.45)'; // dim the room; the scene waits
+  octx.fillRect(0, 0, el.overlay.width, el.overlay.height);
+  if (!vnBuf) {
+    const make = (): HTMLCanvasElement => {
+      const c = document.createElement('canvas');
+      c.width = PORTRAIT.w;
+      c.height = PORTRAIT.h;
+      return c;
+    };
+    vnBuf = { l: make(), r: make() };
+  }
+  const h = el.overlay.height;
+  const w = Math.round(h * (PORTRAIT.w / PORTRAIT.h));
+  const prevSmooth = octx.imageSmoothingEnabled;
+  octx.imageSmoothingEnabled = false;
+  if (vnLeft) {
+    // the hero listens, slightly dimmed, stage left
+    const lctx = vnBuf.l.getContext('2d')!;
+    lctx.clearRect(0, 0, PORTRAIT.w, PORTRAIT.h); // image portraits may be transparent
+    vnLeft(lctx, session.state, t, false);
+    octx.globalAlpha = 0.62;
+    octx.drawImage(vnBuf.l, Math.round(el.overlay.width * 0.03), 0, w, h);
+    octx.globalAlpha = 1;
+  }
+  // the interlocutor speaks, stage right, mirrored to face the hero
+  const talking = performance.now() < portraitTalkUntil;
+  const rctx = vnBuf.r.getContext('2d')!;
+  rctx.clearRect(0, 0, PORTRAIT.w, PORTRAIT.h);
+  vnRight(rctx, session.state, t, talking);
+  const rx = Math.round(el.overlay.width * 0.97) - w;
+  octx.save();
+  octx.translate(rx + w, 0);
+  octx.scale(-1, 1);
+  octx.drawImage(vnBuf.r, 0, 0, w, h);
+  octx.restore();
+  octx.imageSmoothingEnabled = prevSmooth;
+}
+
 function renderDialogue(): void {
+  vnLeft = null;
+  vnRight = null;
   if (!session || !session.dialogue) {
     el.dialogue.hidden = true;
     return;
@@ -764,6 +860,23 @@ function renderDialogue(): void {
   const node = dialogueNode(dlg, d.node);
   el.dialogue.hidden = false;
   el.dialogue.innerHTML = '';
+  vnRight = portraitFor(d.speakerId);
+  if (vnRight) {
+    vnLeft = actorPortrait();
+    // VN staging: the line lives in the box, under the speaker's name tag.
+    const line = document.createElement('p');
+    line.className = 'npc-line';
+    const name = speakerName(d.speakerId);
+    if (name) {
+      const tag = document.createElement('strong');
+      tag.textContent = name;
+      tag.style.color = css(d.color);
+      line.append(tag, ` — ${node.line}`);
+    } else {
+      line.textContent = node.line;
+    }
+    el.dialogue.append(line);
+  }
   const options = visibleOptions(session.state, node);
   if (options.length === 0) {
     // Safety net: a node whose options are all condition-gated must never
@@ -792,6 +905,7 @@ function pickOption(option: DialogueOption): void {
   } else {
     session.dialogue.node = step.to;
     log(dialogueNode(dlg, step.to).line);
+    startPortraitLine(dialogueNode(dlg, step.to).line);
   }
   save();
   renderDialogue();
@@ -1174,6 +1288,7 @@ function tick(now: number): void {
         );
         overlayText(octx, hover.name, x, y, P.glow, size);
       }
+      drawVnPortraits(now / 1000); // over speech + hover; the scrim owns the frame
       if (session.finished) drawEndCard(scale);
     }
     octx.globalAlpha = 1;
@@ -1353,6 +1468,7 @@ window.__pcc = () =>
         sequence: session.sequence !== null,
         speech: currentSpeech()?.text ?? null,
         followers: [...session.followers.entries()].map(([id, p]) => ({ id, x: p.x, y: p.y })),
+        vnPortraits: (vnLeft ? 1 : 0) + (vnRight ? 1 : 0),
         finished: session.finished,
       }
     : null;

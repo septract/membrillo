@@ -87,6 +87,7 @@
       "pos": { "x": 84, "y": 122 },
       "walkTo": { "x": 92, "y": 134 },
       "paint": "barman",
+      "portrait": "barmanPortrait",
       "color": [236, 232, 224],
       "facing": "down",
       "look": [
@@ -107,6 +108,7 @@
       "pos": { "x": 344, "y": 138 },
       "walkTo": { "x": 322, "y": 146 },
       "paint": "penny",
+      "portrait": "pennyPortrait",
       "color": [94, 130, 142],
       "facing": "left",
       "requires": ["!companion:penny"],

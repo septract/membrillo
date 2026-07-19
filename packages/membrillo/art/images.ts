@@ -9,7 +9,7 @@
 
 import type { State } from '../core/types.ts';
 import { P, css } from './palette.ts';
-import type { Facing, Pose, SpritePainter } from './sprites.ts';
+import { PORTRAIT, type Facing, type Pose, type PortraitPainter, type SpritePainter } from './sprites.ts';
 
 const cache = new Map<string, HTMLImageElement>();
 
@@ -34,6 +34,67 @@ export function imageScene(url: string): (ctx: CanvasRenderingContext2D, state: 
       ctx.fillStyle = css(P.night);
       ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     }
+  };
+}
+
+/** Chroma-green test: bright green well above the red and blue channels. */
+function isChromaGreen(d: Uint8ClampedArray, i: number): boolean {
+  const r = d[i]!;
+  const g = d[i + 1]!;
+  const b = d[i + 2]!;
+  return g > 80 && g > r * 1.5 && g > b * 1.5;
+}
+
+/**
+ * A dialogue portrait from an image: cover-fits the image into the logical
+ * 9:16 portrait canvas (any resolution in; the down-scale onto the small
+ * canvas plus the overlay's pixelated upscale gives the chunky look for
+ * free). Generated or painted art drops straight in.
+ *
+ * Chroma key, automatically: if at least three corners of the image are
+ * flat chroma green, the green is knocked out to transparency (with a
+ * despill pass on fringe pixels), so the bust floats over the dimmed scene
+ * instead of carrying a rectangle. Generate on a flat green background to
+ * opt in; ordinary art is untouched.
+ */
+export function portraitImage(url: string): PortraitPainter {
+  const img = loadImage(url);
+  let processed: HTMLCanvasElement | null = null;
+  const prepare = (): HTMLCanvasElement => {
+    if (processed) return processed;
+    const c = document.createElement('canvas');
+    c.width = img.naturalWidth;
+    c.height = img.naturalHeight;
+    const cx = c.getContext('2d')!;
+    cx.drawImage(img, 0, 0);
+    const data = cx.getImageData(0, 0, c.width, c.height);
+    const d = data.data;
+    const at = (x: number, y: number): number => (y * c.width + x) * 4;
+    const corners = [at(1, 1), at(c.width - 2, 1), at(1, c.height - 2), at(c.width - 2, c.height - 2)];
+    if (corners.filter((i) => isChromaGreen(d, i)).length >= 3) {
+      for (let i = 0; i < d.length; i += 4) {
+        if (isChromaGreen(d, i)) {
+          d[i + 3] = 0;
+        } else if (d[i + 1]! > Math.max(d[i]!, d[i + 2]!) * 1.2) {
+          d[i + 1] = Math.max(d[i]!, d[i + 2]!); // despill the green fringe
+        }
+      }
+      cx.putImageData(data, 0, 0);
+    }
+    processed = c;
+    return c;
+  };
+  return (ctx) => {
+    ctx.clearRect(0, 0, PORTRAIT.w, PORTRAIT.h);
+    if (!img.complete || img.naturalWidth === 0) return; // invisible until loaded
+    const src = prepare();
+    // cover-fit: fill the frame, cropping the longer axis symmetrically
+    const scale = Math.max(PORTRAIT.w / src.width, PORTRAIT.h / src.height);
+    const sw = PORTRAIT.w / scale;
+    const sh = PORTRAIT.h / scale;
+    const sx = (src.width - sw) / 2;
+    const sy = (src.height - sh) / 2;
+    ctx.drawImage(src, sx, sy, sw, sh, 0, 0, PORTRAIT.w, PORTRAIT.h);
   };
 }
 

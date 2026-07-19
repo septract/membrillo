@@ -5,7 +5,7 @@
 // other files are matched by path prefix, so any glob root works.
 
 import type { Companion, Dialogue, Item, Manifest, Objective, Scene, State, Story } from './core/types.ts';
-import type { SpritePainter } from './art/sprites.ts';
+import type { PortraitPainter, SpritePainter } from './art/sprites.ts';
 
 export type ScenePainter = (ctx: CanvasRenderingContext2D, state: State, t: number) => void;
 
@@ -19,6 +19,8 @@ export interface PaintModule {
   sprites?: Record<string, SpritePainter>;
   /** Occluder painters, referenced by scene `props` entries. */
   props?: Record<string, ScenePainter>;
+  /** Dialogue close-ups, referenced by character/companion `portrait`. */
+  portraits?: Record<string, PortraitPainter>;
 }
 
 /**

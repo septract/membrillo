@@ -20,6 +20,15 @@ export async function run(kit) {
   // Barman: learn Fondant's weakness (problem before solution).
   await verb('Talk');
   await worldClick(84, 105);
+  // VN staging: hero + interlocutor portraits over the dimmed scene, and
+  // the line moves into the dialogue box under a name tag.
+  await page.waitForSelector('#dialogue .npc-line', { timeout: 10000 });
+  const vn = await hook();
+  if (vn.vnPortraits !== 2) throw new Error(`expected 2 VN portraits, got ${vn.vnPortraits}`);
+  const npcLine = await page.evaluate(() => document.querySelector('#dialogue .npc-line')?.textContent);
+  if (!npcLine?.includes('the barman')) throw new Error(`name tag missing: ${npcLine}`);
+  await shot('90a-portrait');
+  console.log('  VN staging: both portraits + name-tagged line ✓');
   await page.getByRole('button', { name: "Tell me about the Baron's funicular." }).click();
   await page.getByRole('button', { name: 'And what does Mr. Fondant care about?' }).click();
   await page.getByRole('button', { name: 'Shortbread. Of course. Thank you.' }).click();

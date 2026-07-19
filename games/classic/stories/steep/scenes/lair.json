@@ -115,6 +115,7 @@
       "pos": { "x": 180, "y": 136 },
       "walkTo": { "x": 158, "y": 148 },
       "paint": "marzipan",
+      "portrait": "marzipanPortrait",
       "color": [252, 232, 160],
       "facing": "left",
       "look": [

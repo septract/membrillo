@@ -1,0 +1,17 @@
+{
+  "id": "buddy",
+  "start": "start",
+  "nodes": {
+    "start": {
+      "line": "Still here. Still behind you. That's the whole arrangement and I honour it.",
+      "options": [
+        { "text": "How's the view back there?", "to": "view" },
+        { "text": "Good talk, Buddy.", "to": "end" }
+      ]
+    },
+    "view": {
+      "line": "Mostly the back of your head. It's a good head. I've seen worse arrangements.",
+      "options": [{ "text": "High praise.", "to": "end" }]
+    }
+  }
+}

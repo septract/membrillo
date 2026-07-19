@@ -198,4 +198,34 @@ rows.forEach((facing, row) => {
 
 writeFileSync(`${ASSETS}/buddy-sheet.png`, encodePng(FW * 3, FH * 3, sheet.buf));
 
-console.log('wrote stories/postcard/paint/assets/{yard-bg,buddy-sheet}.png');
+// --- Portrait: Buddy on a flat chroma-green screen (180x320, 9:16) ----------
+// Proves the generated-art pipeline: portraitImage() auto-detects the green
+// screen (corner sampling) and knocks it out, so the bust floats over the
+// dimmed scene under VN dialogue staging.
+
+const PW = 180;
+const PH = 320;
+const CHROMA = [0, 255, 0];
+const port = raster(PW, PH);
+port.fill(0, 0, PW, PH, CHROMA);
+// shoulders + tunic
+port.blk(20, 236, 140, 84, tunic);
+port.fill(64, 236, 52, 84, tunicLit);
+// neck + head, scaled-up buddy geometry
+port.blk(72, 208, 36, 34, mix(skin, [16, 14, 20], 0.2));
+port.blk(44, 110, 92, 104, skin);
+port.fill(44, 178, 92, 30, mix(skin, [16, 14, 20], 0.18)); // jaw shading
+port.fill(36, 92, 108, 34, hair);
+port.fill(36, 112, 14, 40, hair);
+// eyes + brows + an agreeable mouth
+port.fill(64, 154, 14, 10, [255, 255, 255]);
+port.fill(104, 154, 14, 10, [255, 255, 255]);
+port.fill(69, 157, 6, 7, [16, 14, 20]);
+port.fill(109, 157, 6, 7, [16, 14, 20]);
+port.fill(62, 144, 18, 4, hair);
+port.fill(102, 144, 18, 4, hair);
+port.fill(82, 192, 18, 5, mix(skin, [16, 14, 20], 0.45));
+
+writeFileSync(`${ASSETS}/buddy-portrait.png`, encodePng(PW, PH, port.buf));
+
+console.log('wrote stories/postcard/paint/assets/{yard-bg,buddy-sheet,buddy-portrait}.png');

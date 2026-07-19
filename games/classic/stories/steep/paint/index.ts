@@ -5,6 +5,7 @@
 // actor) and the shared walkFrame gait — every walking body steps to it.
 
 import type { State } from 'membrillo/core/types';
+import { portraitImage } from 'membrillo/art/images';
 import { P, css, mix, rgba, type RGB } from 'membrillo/art/palette';
 import { rampRect } from 'membrillo/art/dither';
 import {
@@ -14,6 +15,8 @@ import {
   talkMouth,
   blinking,
   walkFrame,
+  PORTRAIT,
+  type PortraitPainter,
   type SpritePainter,
   type WalkFrame,
 } from 'membrillo/art/sprites';
@@ -504,6 +507,173 @@ function victoryCard(ctx: CanvasRenderingContext2D, _state: State, t: number): v
   }
 }
 
+// --- Dialogue portraits (90×160 close-ups; code-drawn test art — generated
+// art drops in later via membrillo/art/images portraitImage) ----------------
+
+/** Dithered backdrop + frame shared by the cast's portraits. */
+function portraitBg(ctx: CanvasRenderingContext2D, a: RGB, b: RGB): void {
+  rampRect(ctx, 0, 0, PORTRAIT.w, PORTRAIT.h, [a, b]);
+  px(ctx, 0, 0, PORTRAIT.w, 2, mix(a, P.white, 0.15));
+}
+
+/** Blink + animated mouth for a portrait head; mx/my centre the mouth. */
+function portraitMouth(ctx: CanvasRenderingContext2D, mx: number, my: number, talking: boolean, t: number): void {
+  if (talking) {
+    const open = Math.sin(t * 11) > 0 ? 5 : 2;
+    px(ctx, mx - 4, my, 8, open, mix(P.black, P.cloth, 0.35));
+    if (open > 3) px(ctx, mx - 3, my + open - 2, 6, 1, P.skinShade);
+  } else {
+    px(ctx, mx - 4, my + 1, 8, 2, P.skinShade); // resting line
+  }
+}
+
+const earlGreyPortrait: PortraitPainter = (ctx, _state, t, talking) => {
+  portraitBg(ctx, mix(P.night, P.black, 0.4), P.night);
+  const bob = Math.round(Math.sin(t * 1.2));
+  const y = 58 + bob;
+  // the dinner jacket: black shoulders, white shirt front, bow tie
+  blk(ctx, 8, 116 + bob, 74, 44, P.black);
+  px(ctx, 32, 116 + bob, 26, 44, P.white);
+  px(ctx, 30, 116 + bob, 2, 44, mix(P.black, P.white, 0.3)); // satin lapel
+  px(ctx, 58, 116 + bob, 2, 44, mix(P.black, P.white, 0.3));
+  px(ctx, 38, 118 + bob, 14, 6, P.night); // the bow tie
+  px(ctx, 44, 119 + bob, 2, 4, P.black);
+  // neck + a face of professional composure
+  blk(ctx, 36, 104 + bob, 18, 16, P.skinShade);
+  blk(ctx, 24, y - 2, 42, 52, P.skin);
+  px(ctx, 24, y + 32, 42, 16, P.skinShade);
+  px(ctx, 20, y - 10, 50, 10, P.night); // impeccable dark hair
+  px(ctx, 20, y - 4, 6, 18, P.night); // sideburn of a serious man
+  if (!blinking(t + 0.4)) {
+    px(ctx, 31, y + 12, 7, 5, P.white);
+    px(ctx, 50, y + 12, 7, 5, P.white);
+    px(ctx, 34, y + 13, 3, 4, mix(P.seaDeep, P.black, 0.5));
+    px(ctx, 53, y + 13, 3, 4, mix(P.seaDeep, P.black, 0.5));
+  } else {
+    px(ctx, 31, y + 15, 7, 2, P.skinShade);
+    px(ctx, 50, y + 15, 7, 2, P.skinShade);
+  }
+  px(ctx, 30, y + 8, 9, 2, P.night); // one brow fractionally raised
+  px(ctx, 49, y + 7, 9, 2, P.night);
+  portraitMouth(ctx, 44, y + 35, talking, t);
+};
+
+const pennyPortraitDrawn: PortraitPainter = (ctx, _state, t, talking) => {
+  portraitBg(ctx, mix(P.seaDeep, P.black, 0.35), P.seaDeep);
+  const bob = Math.round(Math.sin(t * 1.4));
+  const y = 58 + bob;
+  // shoulders: croupier waistcoat over rolled white sleeves
+  blk(ctx, 8, 118 + bob, 74, 42, P.seaDeep);
+  px(ctx, 30, 118 + bob, 30, 42, P.white);
+  px(ctx, 34, 122 + bob, 22, 38, mix(P.seaDeep, P.black, 0.2)); // waistcoat V
+  px(ctx, 42, 126 + bob, 6, 30, P.sea); // watch chain
+  // neck + head
+  blk(ctx, 36, 104 + bob, 18, 16, P.skinShade);
+  blk(ctx, 22, y - 4, 46, 54, P.skin);
+  px(ctx, 22, y + 34, 46, 16, P.skinShade); // jaw shading
+  // auburn crop + goggles pushed up
+  px(ctx, 18, y - 12, 54, 16, P.wood);
+  px(ctx, 18, y - 2, 8, 28, P.wood);
+  px(ctx, 20, y - 16, 50, 8, P.brass); // goggles band
+  px(ctx, 28, y - 16, 12, 6, P.brassLit); // lens
+  px(ctx, 48, y - 16, 12, 6, P.brassLit);
+  // eyes: quick, appraising
+  if (!blinking(t + 0.9)) {
+    px(ctx, 30, y + 12, 8, 6, P.white);
+    px(ctx, 50, y + 12, 8, 6, P.white);
+    px(ctx, 33, y + 14, 3, 4, mix(P.seaDeep, P.black, 0.3));
+    px(ctx, 53, y + 14, 3, 4, mix(P.seaDeep, P.black, 0.3));
+  } else {
+    px(ctx, 30, y + 15, 8, 2, P.skinShade);
+    px(ctx, 50, y + 15, 8, 2, P.skinShade);
+  }
+  px(ctx, 29, y + 8, 10, 2, P.wood); // brows, one cocked
+  px(ctx, 49, y + 6, 10, 2, P.wood);
+  px(ctx, 26, y + 24, 3, 2, P.skinShade); // freckles
+  px(ctx, 60, y + 22, 3, 2, P.skinShade);
+  portraitMouth(ctx, 45, y + 36, talking, t);
+};
+
+const marzipanPortrait: PortraitPainter = (ctx, _state, t, talking) => {
+  portraitBg(ctx, mix(PINK, P.black, 0.55), mix(PINK, P.black, 0.2));
+  const bob = Math.round(Math.sin(t * 1.1));
+  const y = 56 + bob;
+  // cream suit shoulders, pink cravat, the marzipan rose
+  blk(ctx, 6, 116 + bob, 78, 44, CREAM);
+  px(ctx, 34, 116 + bob, 22, 44, P.white);
+  px(ctx, 38, 120 + bob, 14, 12, PINK); // cravat
+  px(ctx, 12, 124 + bob, 8, 8, PINK); // the rose
+  px(ctx, 14, 126 + bob, 4, 4, mix(PINK, P.white, 0.5));
+  // head: broad, glazed, calm
+  blk(ctx, 34, 102 + bob, 22, 18, P.skinShade);
+  blk(ctx, 20, y - 2, 50, 56, P.skin);
+  px(ctx, 20, y + 36, 50, 18, P.skinShade);
+  px(ctx, 16, y - 10, 58, 12, P.stoneLit); // silver sweep
+  px(ctx, 16, y - 2, 6, 20, P.stoneLit);
+  if (!blinking(t + 2.2)) {
+    px(ctx, 30, y + 14, 8, 5, P.white);
+    px(ctx, 52, y + 14, 8, 5, P.white);
+    px(ctx, 33, y + 15, 3, 4, mix(P.wood, P.black, 0.4));
+    px(ctx, 55, y + 15, 3, 4, mix(P.wood, P.black, 0.4));
+  } else {
+    px(ctx, 30, y + 17, 8, 2, P.skinShade);
+    px(ctx, 52, y + 17, 8, 2, P.skinShade);
+  }
+  px(ctx, 29, y + 10, 10, 2, P.stoneLit);
+  px(ctx, 51, y + 10, 10, 2, P.stoneLit);
+  px(ctx, 34, y + 30, 22, 3, P.stoneLit); // the ambitious moustache
+  const flourish = talking && Math.sin(t * 3.8) > 0.4;
+  if (flourish) px(ctx, 74, 128 + bob, 10, 20, CREAM); // a hand, mid-gesture
+  portraitMouth(ctx, 45, y + 38, talking, t);
+};
+
+const barmanPortrait: PortraitPainter = (ctx, _state, t, talking) => {
+  portraitBg(ctx, mix(WINE, P.black, 0.4), WINE);
+  const bob = Math.round(Math.sin(t * 1.2));
+  const y = 58 + bob;
+  // white jacket, black tie, perfect posture
+  blk(ctx, 10, 116 + bob, 70, 44, P.white);
+  px(ctx, 36, 116 + bob, 18, 44, P.stoneLit);
+  px(ctx, 41, 118 + bob, 8, 22, P.black); // the tie
+  blk(ctx, 36, 102 + bob, 18, 16, P.skinShade);
+  blk(ctx, 24, y - 2, 42, 52, P.skin);
+  px(ctx, 24, y + 32, 42, 16, P.skinShade);
+  px(ctx, 20, y - 10, 50, 10, P.stoneLit); // distinguished silver, parted
+  px(ctx, 44, y - 10, 2, 10, mix(P.stoneLit, P.black, 0.3));
+  if (!blinking(t + 3.4)) {
+    px(ctx, 31, y + 12, 7, 5, P.white);
+    px(ctx, 50, y + 12, 7, 5, P.white);
+    px(ctx, 34, y + 13, 3, 4, mix(P.night, P.black, 0.2));
+    px(ctx, 53, y + 13, 3, 4, mix(P.night, P.black, 0.2));
+  } else {
+    px(ctx, 31, y + 15, 7, 2, P.skinShade);
+    px(ctx, 50, y + 15, 7, 2, P.skinShade);
+  }
+  px(ctx, 30, y + 8, 9, 2, P.stoneLit);
+  px(ctx, 49, y + 8, 9, 2, P.stoneLit);
+  portraitMouth(ctx, 44, y + 34, talking, t);
+};
+
 export const scenes = { salon, terrace, lair, briefCard, victoryCard };
 export const sprites = { earlGrey, penny, barman, marzipan, fondant };
 export const props = { barCounter };
+// Local-art overlay: paint/assets-local/ is GITIGNORED — drop generated
+// portraits there (penny.jpg, marzipan.jpg, ...) and they replace the
+// code-drawn ones on this machine only. Nothing generated ships in the repo
+// unless it's deliberately moved into assets/ (a decision, not an accident).
+const localArt = import.meta.glob('./assets-local/*', {
+  eager: true,
+  query: '?url',
+  import: 'default',
+}) as Record<string, string>;
+const localPortrait = (file: string, fallback: PortraitPainter): PortraitPainter => {
+  const url = localArt[`./assets-local/${file}`];
+  return url !== undefined ? portraitImage(url) : fallback;
+};
+
+export const portraits = {
+  earlGreyPortrait: localPortrait('earlgrey.jpg', earlGreyPortrait),
+  pennyPortrait: localPortrait('penny.jpg', pennyPortraitDrawn),
+  marzipanPortrait: localPortrait('marzipan.jpg', marzipanPortrait),
+  barmanPortrait: localPortrait('barman.jpg', barmanPortrait),
+};

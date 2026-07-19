@@ -88,6 +88,12 @@ export interface Character extends Target {
   facing?: 'left' | 'right';
   /** Speech colour over the head, [r,g,b]; default white. */
   color?: [number, number, number];
+  /**
+   * Portrait painter name (the paint module's `portraits` export): a large
+   * 9:16 close-up shown beside the options while this character's dialogue
+   * tree is open. Absent: dialogue renders exactly as without portraits.
+   */
+  portrait?: string;
 }
 
 export interface Exit {
@@ -242,6 +248,8 @@ export interface Companion extends Target {
   paint?: string;
   /** Speech colour, [r,g,b]; default white. */
   color?: [number, number, number];
+  /** Portrait painter name for dialogue trees (see Character.portrait). */
+  portrait?: string;
 }
 
 /**
@@ -289,6 +297,12 @@ export interface Manifest {
    * export it under `sprites`). Omitted: the engine's default actor.
    */
   actor?: string;
+  /**
+   * Portrait painter name for the hero (`portraits` export): under VN
+   * dialogue staging the hero stands stage left, listening, whenever the
+   * interlocutor has a portrait. Omitted: only the interlocutor appears.
+   */
+  actorPortrait?: string;
   /** Optional music/SFX config; stories without it are silent. */
   audio?: AudioConfig;
 }

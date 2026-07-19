@@ -3,6 +3,7 @@
   "title": "Operation Steep",
   "start": "brief",
   "actor": "earlGrey",
+  "actorPortrait": "earlGreyPortrait",
   "audio": {
     "themes": {
       "lounge": {

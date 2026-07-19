@@ -91,6 +91,7 @@
       "pos": { "x": 232, "y": 148 },
       "walkTo": { "x": 208, "y": 150 },
       "paint": "gardener",
+      "portrait": "gardenerPortrait",
       "color": [110, 140, 72],
       "facing": "left",
       "look": [{ "text": "Straw hat, green apron, the patience of a slow season." }],

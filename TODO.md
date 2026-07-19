@@ -6,14 +6,7 @@ design note, it lands here; when it ships, delete it. Dated design notes in
 
 ## Decisions needed (Mike)
 
-- VN-style dialogue portraits (Mike, 2026-07-19): show a large character
-  image during dialogue trees, so talking art and walking art are separate
-  modes (much easier to produce than expression at 40px). Sketch: a fourth
-  optional painter surface (`portraits`), a `portrait` ref on characters/
-  companions, shown in the dialogue overlay only — floating speech in the
-  room stays SCUMM. Precedent says this is period-authentic (Fate of
-  Atlantis did dialogue portraits). Open: dialogue-only vs all speech;
-  placement/size; whether nodes can pick moods (schema extension — defer).
+- (none open.)
 
 ## Next (engine)
 
@@ -24,6 +17,10 @@ design note, it lands here; when it ships, delete it. Dated design notes in
 
 - Add a link to the GitHub repo on the running game page (bottom line?) —
   Mike, 2026-07-19.
+- Swap the code-drawn test portraits for generated art (Mike has a
+  generator; prompts ready in docs/2026-07-19-portrait-prompts.md).
+- Portrait extensions if wanted: per-node moods (dialogue schema extension),
+  two-frame talking images in `portraitImage`.
 
 - Pixelization tool: `tools/pixelize.mjs` — box-downscale + palette
   quantization + ordered dither over PNGs (we already have a zero-dep PNG

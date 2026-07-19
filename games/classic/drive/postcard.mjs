@@ -25,11 +25,22 @@ export async function run(kit) {
   );
   await verb('Talk');
   const pc = await hook();
-  await worldClick(Math.round(pc.actor.x) - 24, Math.round(pc.actor.y) - 15); // Buddy trails left
+  const buddyPos = pc.followers?.[0] ?? { x: pc.actor.x - 24, y: pc.actor.y };
+  await worldClick(Math.round(buddyPos.x), Math.round(buddyPos.y) - 15);
   await waitLog('Still here. Still behind you.');
   const pcAfter = await hook();
   if (Math.abs(pcAfter.actor.x - pc.actor.x) > 1) throw new Error('actor moved to talk to companion');
   console.log('  image sprite companion + in-place talk ✓');
+  // VN staging from an IMAGE portrait: the chroma-green test PNG is keyed
+  // out automatically, so the bust floats over the dimmed scene.
+  await page.waitForSelector('#dialogue .npc-line', { timeout: 10000 });
+  const vn = await hook();
+  if (vn.vnPortraits !== 1) throw new Error(`expected 1 VN portrait, got ${vn.vnPortraits}`);
+  await page.waitForTimeout(400); // let the PNG decode + key
+  await shot('62-postcard-portrait');
+  console.log('  chroma-keyed image portrait ✓');
+  await page.getByRole('button', { name: 'Good talk, Buddy.' }).click();
+  await page.waitForTimeout(300);
   await verb('Interact');
   await worldClick(292, 115); // the gate
   await page.waitForFunction(() => window.__pcc?.()?.scene === 'sent', null, { timeout: 15000 });

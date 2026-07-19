@@ -22,4 +22,5 @@ export type {
   Story,
 } from './core/types.ts';
 export type { PaintModule, ScenePainter } from './loader.ts';
-export type { SpritePainter, Pose, Facing } from './art/sprites.ts';
+export type { SpritePainter, PortraitPainter, Pose, Facing } from './art/sprites.ts';
+export { PORTRAIT } from './art/sprites.ts';

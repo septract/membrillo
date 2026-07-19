@@ -7,7 +7,7 @@
 // and a talking flag that runs the mouth while the sprite's speech floats.
 
 import { P, css, type RGB } from './palette.ts';
-import type { Direction } from '../core/types.ts';
+import type { Direction, State } from '../core/types.ts';
 
 export type Facing = Direction;
 
@@ -74,6 +74,22 @@ export type SpritePainter = (
   fy: number,
   pose: Pose,
   t: number,
+) => void;
+
+/**
+ * Dialogue portraits: a large 9:16 close-up drawn while a character's
+ * dialogue tree is open (VN-style; talking art and walking art are separate
+ * art modes). Painters draw the FULL logical canvas — the engine scales it
+ * into the dialogue overlay with pixelated rendering. `talking` is true
+ * while the current line is (nominally) being spoken; run the mouth then.
+ */
+export const PORTRAIT = { w: 90, h: 160 } as const;
+
+export type PortraitPainter = (
+  ctx: CanvasRenderingContext2D,
+  state: State,
+  t: number,
+  talking: boolean,
 ) => void;
 
 /**

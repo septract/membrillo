@@ -52,6 +52,9 @@ function validateStory(files: StoryFiles): Report {
   const view = manifest.view ?? DEFAULT_VIEW;
   if (view.w <= 0 || view.h <= 0) r.error('manifest.json: view dimensions must be positive');
   if (manifest.actor !== undefined) checkPaintRef(r, files, 'manifest.json actor', manifest.actor);
+  if (manifest.actorPortrait !== undefined) {
+    checkPaintRef(r, files, 'manifest.json actorPortrait', manifest.actorPortrait);
+  }
 
   const usage: ItemUsage = { sources: new Set(), sinks: new Set() };
 
@@ -236,6 +239,7 @@ function validateStory(files: StoryFiles): Report {
       checkWalkTo(w, c.walkTo);
       if (!inBox(c.pos, { x: 0, y: 0, w: size.w, h: size.h })) r.error(`${w}: pos outside the scene`);
       if (c.paint !== undefined) checkPaintRef(r, files, w, c.paint);
+      if (c.portrait !== undefined) checkPaintRef(r, files, w, c.portrait);
     }
     for (const e of scene.exits ?? []) {
       const w = `${where}#${e.id}`;
@@ -311,6 +315,9 @@ function validateStory(files: StoryFiles): Report {
     checkTarget(`companions.json#${companion.id}`, companion, null);
     if (companion.paint !== undefined) {
       checkPaintRef(r, files, `companions.json#${companion.id}`, companion.paint);
+    }
+    if (companion.portrait !== undefined) {
+      checkPaintRef(r, files, `companions.json#${companion.id}`, companion.portrait);
     }
   }
 

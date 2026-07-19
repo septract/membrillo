@@ -247,9 +247,10 @@ The story's one code surface. Draw-only: painters may READ state to vary
 drawing (hide a taken prop), never write it, and hold no game logic.
 
 ```ts
-export const scenes  = { dock, tower };   // (ctx, state, t) — full scene, WORLD size
-export const sprites = { keeper };        // (ctx, fx, fy, pose, t) — feet-up
-export const props   = { crates };        // (ctx, state, t) — drawn at baseline y
+export const scenes    = { dock, tower }; // (ctx, state, t) — full scene, WORLD size
+export const sprites   = { keeper };      // (ctx, fx, fy, pose, t) — feet-up
+export const props     = { crates };      // (ctx, state, t) — drawn at baseline y
+export const portraits = { keeperP };     // (ctx, state, t, talking) — 90×160 close-up
 ```
 
 Use the engine art library (`membrillo/art/*`): every colour from the palette
@@ -275,6 +276,20 @@ pixel shapes, `talkMouth`/`blinking` for faces. Recipes:
   the speech anchor stays honest.
 - Characters ~40px tall keep speech anchors honest; wildly taller/shorter
   sprites will misplace their floating lines.
+- **VN dialogue staging** (optional): give a character/companion
+  `"portrait": "<name>"` (painter exported under `portraits`, logical 90×160
+  — the `PORTRAIT` constant, 9:16). While that speaker's dialogue TREE is
+  open, the scene dims and both parties stand floor-to-ceiling over it: the
+  hero (`manifest.actorPortrait`) stage left, listening; the interlocutor
+  stage right, mirrored so they face each other. The spoken line moves into
+  the dialogue box under a coloured name tag. Floating in-room speech (barks,
+  sequences) is unaffected — the room stays SCUMM; conversations get the big
+  art. The painter gets `(ctx, state, t, talking)`: run the mouth while
+  `talking` (timed to line length). Author portraits facing viewer-RIGHT —
+  the engine's mirroring makes the pair face each other. Image art drops in
+  through the same seam: `portraitImage(url)` from `membrillo/art/images`
+  cover-fits any resolution. No portrait on the interlocutor → that dialogue
+  renders classically; portraits are presentation only, never logic.
 
 **Image assets** work through the same seam — a painter is draw code, and
 `membrillo/art/images` wraps PNGs into painters (`games/classic/stories/postcard/` is the
