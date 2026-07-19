@@ -78,3 +78,43 @@ export async function createKit() {
 
   return { browser, page, errors, BASE, hook, worldClick, waitLog, shot, verb, chip, walkTo, freshStory };
 }
+
+/**
+ * The whole drive orchestrator: one Chrome session shared across the game's
+ * driver modules, subset selection from argv, error-collector exit code.
+ * A game's drive.mjs is three lines:
+ *
+ *   import { runDrive } from 'membrillo/verify-kit';
+ *   await runDrive(import.meta.url, ['mystory', ...]);
+ *
+ * Each name resolves to ./drive/<name>.mjs beside the calling file and must
+ * export run(kit).
+ */
+export async function runDrive(callerUrl, modules) {
+  const wanted = process.argv.slice(2).filter((a) => !a.startsWith('-'));
+  for (const w of wanted) {
+    if (!modules.includes(w)) {
+      console.error(`unknown driver module "${w}" — available: ${modules.join(', ')}`);
+      process.exit(1);
+    }
+  }
+  const toRun = wanted.length > 0 ? wanted : modules;
+
+  const kit = await createKit();
+  try {
+    for (const name of toRun) {
+      console.log(`${name}:`);
+      const mod = await import(new URL(`./drive/${name}.mjs`, callerUrl).href);
+      await mod.run(kit);
+    }
+  } finally {
+    await kit.browser.close();
+  }
+
+  if (kit.errors.length) {
+    console.error('BROWSER ERRORS:');
+    for (const e of kit.errors) console.error('  ' + e);
+    process.exit(1);
+  }
+  console.log('done, no browser errors');
+}

@@ -1,0 +1,14 @@
+[
+  {
+    "id": "hook",
+    "name": "pruning hook",
+    "look": [{ "text": "A long-handled pruning hook, hedge twigs still in its teeth." }]
+  },
+  {
+    "id": "quince",
+    "name": "ripe quince",
+    "look": [
+      { "text": "Golden, heavy, and fragrant. You understand the gardener's terms completely." }
+    ]
+  }
+]

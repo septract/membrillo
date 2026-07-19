@@ -1,0 +1,17 @@
+{
+  "id": "quince",
+  "title": "The Quince Tree",
+  "start": "orchard",
+  "audio": {
+    "themes": {
+      "afternoon": {
+        "bpm": 84,
+        "prog": ["C", "F", "Am", "G"],
+        "scale": [60, 62, 64, 67, 69, 72, 74],
+        "style": "pluck",
+        "gain": 0.55
+      }
+    },
+    "sceneTheme": { "orchard": "afternoon" }
+  }
+}

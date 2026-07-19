@@ -33,8 +33,8 @@ stories/<id>/
 ```
 
 Everything optional is genuinely optional: omitting a file changes nothing
-else. `stories/meadow/` is the minimal reference (no painters);
-`stories/lamplight/` is the full-featured one.
+else. `games/classic/stories/meadow/` is the minimal reference (no
+painters); `games/classic/stories/lamplight/` is the full-featured one.
 
 ## The player's verbs
 
@@ -123,6 +123,10 @@ room, use sequences instead.
   use|take/itemUse }`. `requires` gates visibility. `walkTo` defaults to the
   region centre (clamped to walkable) — set it explicitly when the region
   isn't over ground.
+- Clicks hit-test characters first, then hotspots, then exits — each in
+  declaration order, first match wins. When regions overlap (a branch inside
+  the tree's canopy), list the more specific target first: the same
+  specific-before-general convention as rule buckets.
 - **Character**: as hotspot but `pos` (feet anchor) instead of region,
   plus `paint` (sprite), `color` ([r,g,b] speech colour), `facing`.
 - **Exit**: `{ id, name, region, walkTo?, to, entry, requires?, look?,
@@ -245,7 +249,7 @@ export const sprites = { keeper };        // (ctx, fx, fy, pose, t) — feet-up
 export const props   = { crates };        // (ctx, state, t) — drawn at baseline y
 ```
 
-Use the engine art library (`engine/art/`): every colour from the palette
+Use the engine art library (`membrillo/art/*`): every colour from the palette
 (`P`, `mix`), `rampRect` for dithered sky/sea bands, `blk`/`px` for outlined
 pixel shapes, `talkMouth`/`blinking` for faces. Recipes:
 
@@ -261,11 +265,11 @@ pixel shapes, `talkMouth`/`blinking` for faces. Recipes:
   sprites will misplace their floating lines.
 
 **Image assets** work through the same seam — a painter is draw code, and
-`engine/art/images.ts` wraps PNGs into painters (`stories/postcard/` is the
+`membrillo/art/images` wraps PNGs into painters (`games/classic/stories/postcard/` is the
 worked fixture):
 
 ```ts
-import { imageScene, sheetSprite } from '../../../engine/art/images.ts';
+import { imageScene, sheetSprite } from 'membrillo/art/images';
 const bg = new URL('./assets/yard-bg.png', import.meta.url).href; // Vite bundles it
 export const scenes = { yard: imageScene(bg) };
 export const sprites = {
@@ -280,7 +284,7 @@ export const sprites = {
 Author art at world scale (1 image pixel = 1 scene pixel; backgrounds at the
 scene's `size`, sprite frames feet-anchored at bottom-centre). Don't mix
 image-painted backdrops with code-drawn sprites in one scene without
-restyling the cast to match — they clash. `tools/make-test-art.mjs` generates
+restyling the cast to match — they clash. The engine's `tools/make-test-art.mjs` generates
 placeholder PNGs to rough out scenes before real art exists.
 
 ## Design rules (enforced or strongly conventional)

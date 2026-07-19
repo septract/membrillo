@@ -3,7 +3,7 @@
 *2026-07-18. A short, charming, fake-TNG mini adventure: an affectionate
 parody with original characters, built to exercise companions, the away-
 mission round trip, sequences, objectives, and audio — with real (if small)
-game design. See `stories/GUIDE.md` for schema; this note is the design.*
+game design. See `packages/membrillo/GUIDE.md` for schema; this note is the design.*
 
 ## Premise
 

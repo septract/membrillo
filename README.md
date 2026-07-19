@@ -42,7 +42,7 @@ fixtures (`meadow`: no art at all; `postcard`: image assets).
 
 ## Writing a story
 
-Read `games/classic/stories/GUIDE.md` — the full authoring reference — and
+Read `packages/membrillo/GUIDE.md` — the full authoring reference — and
 `docs/2026-07-18-marigold-demo-design.md` for a worked design (puzzle
 dependency chart included). The loop:
 
@@ -56,16 +56,21 @@ npm run fuzz -- mystory         # proves it winnable
 
 ```
 packages/membrillo/   the engine library: core rules, presentation, art,
-                      audio, tools (validator, fuzzer, verify kit), CLI
+                      audio, tools (validator, fuzzer, verify kit), CLI,
+                      GUIDE.md (the authoring reference)
 games/classic/        a consumer game: stories + a 10-line entry that
                       calls boot() with its story globs
+games/_template/      the starter game — copy it to begin your own
+                      (its README is the how-to)
 docs/                 dated design notes (the reasoning lives here)
 ```
 
-A new game is a Vite project depending on `membrillo` (workspace or
-`file:` link — no registry needed): import `boot`, glob your stories, done.
-`npx membrillo check --root ./stories` runs the validator and the
-winnability model check against any story directory.
+A new game is a copy of `games/_template` (in-workspace, or standalone with
+a `file:` link to `packages/membrillo` — no registry needed). Games hold
+only declarations — story globs, a title, a driver-module list; build
+config, tsconfig settings, and the browser-drive orchestrator are imported
+from the engine package. `npx membrillo check --root ./stories` runs the
+validator and the winnability model check against any story directory.
 
 Node ≥ 23 (native TS stripping), TypeScript + Vite, nothing at runtime.
 

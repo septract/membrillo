@@ -4,21 +4,14 @@
 //
 //   npm run dev                          # in another shell (or backgrounded)
 //   npm i --no-save playwright-core      # once per checkout; uses system Chrome
-//   node games/classic/drive.mjs                 # everything (from the repo root)
-//   node games/classic/drive.mjs meadow mobile   # any subset
+//   node drive.mjs                       # everything
+//   node drive.mjs quince                # any subset, by module name
 //
+// If the dev server isn't on :5173 (e.g. another game grabbed the port),
+// point BASE at it: BASE=http://localhost:5174 node drive.mjs
 // Screenshots land in shots-browser/ (gitignored). Read them — a green log
-// with a broken screenshot is a failure. Pattern + gotchas:
-// .claude/skills/browser-verify/SKILL.md.
+// with a broken screenshot is a failure.
 
 import { runDrive } from 'membrillo/verify-kit';
 
-await runDrive(import.meta.url, [
-  'lamplight',
-  'meadow',
-  'marigold',
-  'postcard',
-  'marigold2',
-  'resilience',
-  'mobile',
-]);
+await runDrive(import.meta.url, ['quince']);

@@ -1,0 +1,132 @@
+{
+  "id": "orchard",
+  "name": "The Walled Orchard",
+  "paint": "orchard",
+  "walk": { "x": 10, "y": 122, "w": 300, "h": 48 },
+  "depth": { "far": { "y": 122, "scale": 0.85 }, "near": { "y": 170, "scale": 1.05 } },
+  "start": { "x": 36, "y": 150 },
+  "enter": [{ "requires": ["!flag:greeted"], "play": "greeting" }],
+  "sequences": {
+    "greeting": [
+      { "setFlags": ["greeted"] },
+      { "who": "gardener", "say": "Afternoon. Gate's bolted, before you ask." },
+      { "wait": 0.3 }
+    ]
+  },
+  "hotspots": [
+    {
+      "id": "branch",
+      "name": "high branch",
+      "region": { "x": 94, "y": 30, "w": 30, "h": 18 },
+      "walkTo": { "x": 104, "y": 136 },
+      "look": [
+        { "requires": ["flag:picked_quince"], "text": "Bare now, and better for it." },
+        {
+          "text": "One perfect quince, exactly one arm's length past the top of your reach."
+        }
+      ],
+      "use": [
+        { "requires": ["flag:picked_quince"], "text": "Nothing left up there but leaves." },
+        { "text": "You jump for it. Not even close." }
+      ],
+      "itemUse": [
+        {
+          "withItem": "hook",
+          "text": "You coax the branch down with the hook. The quince drops into your hand.",
+          "giveItem": "quince",
+          "removeItem": "hook",
+          "setFlags": ["picked_quince"]
+        }
+      ]
+    },
+    {
+      "id": "tree",
+      "name": "quince tree",
+      "region": { "x": 58, "y": 20, "w": 66, "h": 100 },
+      "walkTo": { "x": 92, "y": 138 },
+      "look": [
+        {
+          "text": "An old quince tree, all knuckles and blossom-scars. The low fruit is long since picked."
+        }
+      ],
+      "use": [{ "text": "You shake the trunk. One leaf commits." }]
+    },
+    {
+      "id": "hedge",
+      "name": "box hedge",
+      "region": { "x": 128, "y": 100, "w": 36, "h": 22 },
+      "walkTo": { "x": 146, "y": 132 },
+      "look": [{ "text": "A box hedge, barbered to spirit-level flatness." }],
+      "use": [{ "text": "You pat the hedge. Firm as a mattress in a strict hotel." }]
+    },
+    {
+      "id": "hedge_glint",
+      "name": "something in the hedge",
+      "region": { "x": 164, "y": 104, "w": 26, "h": 18 },
+      "walkTo": { "x": 176, "y": 132 },
+      "requires": ["!flag:took_hook"],
+      "look": [{ "text": "A wooden handle, deep in the clipped green." }],
+      "take": [
+        {
+          "text": "You drag a pruning hook out of the hedge, over the hedge's loud objection.",
+          "giveItem": "hook",
+          "setFlags": ["took_hook"]
+        }
+      ]
+    },
+    {
+      "id": "gate_closed",
+      "name": "garden gate",
+      "region": { "x": 282, "y": 86, "w": 34, "h": 40 },
+      "walkTo": { "x": 294, "y": 140 },
+      "requires": ["!flag:gate_open"],
+      "look": [{ "text": "A stout wooden gate in the wall, bolted from the far side." }],
+      "use": [{ "text": "You rattle it. The bolt doesn't care." }]
+    }
+  ],
+  "characters": [
+    {
+      "id": "gardener",
+      "name": "the gardener",
+      "pos": { "x": 232, "y": 148 },
+      "walkTo": { "x": 208, "y": 150 },
+      "paint": "gardener",
+      "color": [110, 140, 72],
+      "facing": "left",
+      "look": [{ "text": "Straw hat, green apron, the patience of a slow season." }],
+      "talk": [
+        {
+          "requires": ["flag:gate_open"],
+          "speaker": "target",
+          "text": "Mind the ruts in the lane. And come back when the medlars turn."
+        },
+        { "dialogue": "gardener" }
+      ],
+      "itemUse": [
+        {
+          "withItem": "quince",
+          "speaker": "target",
+          "text": "Ah — a proper one. Fair's fair.",
+          "removeItem": "quince",
+          "setFlags": ["gate_open"]
+        },
+        {
+          "withItem": "hook",
+          "speaker": "target",
+          "text": "That's mine, by rights. Keep it while you need it."
+        }
+      ]
+    }
+  ],
+  "exits": [
+    {
+      "id": "gate",
+      "name": "garden gate",
+      "region": { "x": 282, "y": 86, "w": 34, "h": 40 },
+      "walkTo": { "x": 294, "y": 140 },
+      "to": "lane",
+      "requires": ["flag:gate_open"],
+      "look": "The gate stands open on a green lane."
+    }
+  ]
+}

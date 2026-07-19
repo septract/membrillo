@@ -1,0 +1,25 @@
+{
+  "id": "gardener",
+  "start": "start",
+  "nodes": {
+    "start": {
+      "line": "Gate's bolted. I slide it for a quince — one quince, that's the toll.",
+      "options": [
+        { "text": "Where do I find a quince?", "to": "where", "setFlags": ["knows_quince"] },
+        { "text": "Who puts a toll on a garden gate?", "to": "toll" },
+        { "text": "I'll see what I can do.", "to": "end" }
+      ]
+    },
+    "where": {
+      "line": "Tree's right there. The reachable fruit went to the wasps — you'll want the pruning hook I lost in the hedge somewhere.",
+      "options": [{ "text": "I'll have a look.", "to": "end" }]
+    },
+    "toll": {
+      "line": "A gardener does. It's a good gate and a better quince — you'll come out ahead.",
+      "options": [
+        { "text": "Fair enough. Where do I find one?", "to": "where", "setFlags": ["knows_quince"] },
+        { "text": "I'll think it over.", "to": "end" }
+      ]
+    }
+  }
+}

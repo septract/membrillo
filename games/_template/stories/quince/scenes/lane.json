@@ -1,0 +1,9 @@
+{
+  "id": "lane",
+  "name": "The Lane",
+  "beats": [
+    "The bolt slides back. The gate swings on a well-oiled hinge — of course it's well-oiled.",
+    "You walk out into the lane, hands smelling faintly of quince."
+  ],
+  "ending": true
+}

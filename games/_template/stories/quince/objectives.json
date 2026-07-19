@@ -1,0 +1,13 @@
+[
+  {
+    "id": "gate",
+    "text": "Get through the garden gate",
+    "done": ["flag:gate_open"]
+  },
+  {
+    "id": "pick",
+    "text": "Pick a quince for the gardener",
+    "active": ["flag:knows_quince"],
+    "done": ["flag:picked_quince"]
+  }
+]

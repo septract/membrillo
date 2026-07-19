@@ -13,7 +13,9 @@
     "./core/*": "./core/*.ts",
     "./art/*": "./art/*.ts",
     "./walk": "./walk.ts",
-    "./verify-kit": "./tools/drive/kit.mjs"
+    "./verify-kit": "./tools/drive/kit.mjs",
+    "./vite": "./vite.ts",
+    "./tsconfig.base.json": "./tsconfig.base.json"
   },
   "engines": {
     "node": ">=23"

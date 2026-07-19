@@ -1,0 +1,55 @@
+# Build, verify, and deploy this game to GitHub Pages on every push to main.
+#
+# This workflow is INERT while the template lives inside the membrillo repo
+# (workflows only run from a repo root's .github/). It activates when you
+# copy the template out as its own repository. Two things to adjust then:
+#   - BASE_PATH must match your repo name (site serves at
+#     https://<owner>.github.io/<repo>/).
+#   - The membrillo dependency must resolve in CI. Until membrillo is on the
+#     npm registry, vendor a tarball: `npm pack` inside
+#     membrillo/packages/membrillo, commit the .tgz here, and depend on
+#     "membrillo": "file:./membrillo-<version>.tgz".
+# Also enable Pages for the repo: Settings → Pages → Source: GitHub Actions.
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24 # membrillo's tools need native TS stripping (Node >= 23)
+          cache: npm
+      - run: npm ci
+      # The offline proof gates every deploy: story validation + the
+      # winnability model check.
+      - run: npx membrillo check --root ./stories
+      - run: BASE_PATH=/${{ github.event.repository.name }}/ npm run build
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

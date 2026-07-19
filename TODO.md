@@ -29,18 +29,19 @@ design note, it lands here; when it ships, delete it. Dated design notes in
 
 - Hollow + bridge art polish; the placeholder-quality props (skiff reads as
   a table).
-- Palette effects: colour cycling (water, the relay coil), day/night tint.
-- Second Marigold mission — reuse the ship as the hub (the design note's
-  three-act pacing generalizes to episodes with bridge bottlenecks).
+- Palette effects: day/night tint (colour cycling shipped with Gale Reach).
+- Mission 3 (Mike, 2026-07-18): a James Bond-inspired standalone mission with
+  a spunky sidekick heroine — everything renamed absurd/funny/charming, never
+  copyright-infringing (the Marigold treatment for spy fiction). Gadget items
+  are a natural fit for "Use X with Y".
 
 ## Later
 
-- Library follow-ups: `games/_template` starter package; schema/save-format
-  versioning before any npm publish (see docs/2026-07-18-library-plan.md,
-  executed 2026-07-18).
+- Library follow-ups: schema/save-format versioning before any npm publish
+  (see docs/2026-07-18-library-plan.md); publishing also unblocks standalone
+  game repos' CI (today they must vendor an `npm pack` tarball — documented
+  in games/_template/README.md).
 
-- Deploy: GitHub Pages workflow (the kit's recipe; decoupled from any fan
-  content — ship Lamplight/Marigold-class original stories only).
 - Diegetic hint system — "ask the Marigold's computer" wrapper, escalating
   spoiler-managed hints (research rec #5; ship-scale, not demo-scale).
 - Casual/Hard puzzle modes authored up front (research rec #6).
