@@ -3,7 +3,7 @@
   "name": "The Grand Salon, Hôtel Bombe",
   "paint": "salon",
   "size": { "w": 480, "h": 180 },
-  "walk": { "x": 12, "y": 126, "w": 456, "h": 46 },
+  "walk": { "x": 12, "y": 136, "w": 456, "h": 36 },
   "depth": { "far": { "y": 126, "scale": 0.85 }, "near": { "y": 172, "scale": 1.05 } },
   "props": [{ "id": "bar", "paint": "barCounter", "x": 90, "y": 126 }],
   "start": { "x": 40, "y": 150 },
@@ -22,7 +22,7 @@
       "id": "bowl",
       "name": "silver snack bowl",
       "region": { "x": 108, "y": 102, "w": 18, "h": 12 },
-      "walkTo": { "x": 116, "y": 132 },
+      "walkTo": { "x": 116, "y": 140 },
       "requires": ["!flag:took_olive"],
       "look": [
         { "text": "A silver bowl of cocktail olives. One of them has clear leadership qualities." }
@@ -39,7 +39,7 @@
       "id": "tray",
       "name": "drinks tray",
       "region": { "x": 196, "y": 104, "w": 24, "h": 12 },
-      "walkTo": { "x": 206, "y": 134 },
+      "walkTo": { "x": 206, "y": 140 },
       "requires": ["!flag:took_swizzle"],
       "look": [
         { "text": "Abandoned aperitifs. Among the wreckage: one immaculate glass swizzle stick." }
@@ -85,7 +85,7 @@
       "id": "barman",
       "name": "the barman",
       "pos": { "x": 84, "y": 122 },
-      "walkTo": { "x": 92, "y": 134 },
+      "walkTo": { "x": 92, "y": 140 },
       "paint": "barman",
       "portrait": "barmanPortrait",
       "color": [236, 232, 224],

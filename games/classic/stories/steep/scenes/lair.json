@@ -3,7 +3,10 @@
   "name": "The Tea Room of Doom",
   "paint": "lair",
   "size": { "w": 480, "h": 180 },
-  "walk": { "x": 12, "y": 130, "w": 456, "h": 42 },
+  "walk": [
+    { "x": 12, "y": 136, "w": 282, "h": 36 },
+    { "x": 292, "y": 156, "w": 176, "h": 16 }
+  ],
   "depth": { "far": { "y": 130, "scale": 0.88 }, "near": { "y": 172, "scale": 1.05 } },
   "start": { "x": 50, "y": 150 },
   "enter": [{ "requires": ["!flag:knows_plan"], "play": "capture" }],
@@ -37,7 +40,7 @@
       "id": "grid",
       "name": "laser grid",
       "region": { "x": 368, "y": 52, "w": 14, "h": 104 },
-      "walkTo": { "x": 352, "y": 150 },
+      "walkTo": { "x": 352, "y": 158 },
       "look": [
         { "requires": ["flag:grid_off"], "text": "The emitter pylon sulks, cross-phased into a very expensive coat rack." },
         { "text": "Rose-pink lasers, fanned out in front of the Device like a decorative and lethal doily." }
@@ -64,7 +67,7 @@
       "id": "device",
       "name": "the Four O'Clock Device",
       "region": { "x": 390, "y": 34, "w": 78, "h": 122 },
-      "walkTo": { "x": 386, "y": 152 },
+      "walkTo": { "x": 386, "y": 158 },
       "look": [
         { "requires": ["flag:device_stopped"], "text": "Stopped at 3:59. The most beautiful minute-to in horological history." },
         {
@@ -97,7 +100,7 @@
       "id": "samovar",
       "name": "doomsday samovar",
       "region": { "x": 288, "y": 84, "w": 52, "h": 60 },
-      "walkTo": { "x": 314, "y": 150 },
+      "walkTo": { "x": 314, "y": 158 },
       "look": [
         {
           "text": "It steeps, ominously. The tea inside has been brewing since '61 and can probably be weaponised on its own."
