@@ -4,6 +4,11 @@ A browser point-and-click adventure engine in the classic SCUMM spirit.
 Stories are data, kept separate from the engine, and a checker plays through
 every reachable state to catch dead ends before players hit them.
 
+**Built as a human–AI collaboration** by **Mike** ([septract](https://github.com/septract)),
+directing, designing, and playtesting, and **Claude Fable 5** (Anthropic),
+doing the bulk of the implementation and writing. Both halves shaped it; it
+wouldn't look like this from either one alone.
+
 *Named for the gentle coroner of Rubacava. Membrillo is also quince paste —
 sweet, dense, and best cut into small pieces.*
 
