@@ -64,6 +64,26 @@ design note, it lands here; when it ships, delete it. Dated design notes in
 - Save slots (single autosave today); save-format versioning before any
   public release.
 
+## Mobile pass (Mike, 2026-07-19)
+
+- **Landscape font stretched horizontally** — LIKELY A REGRESSION from the
+  landscape height-cap CSS: `#view { width:auto; height:... }` centered in a
+  flex `.stage`, but the `#overlay` canvas is still `width:100%` of `.stage`,
+  so the text overlay no longer matches the pixel canvas box and stretches.
+  Fix: make the overlay track `#view`'s box exactly (size the overlay to the
+  view, not the stage), or don't shrink `#view` width in landscape.
+- **Header title mis-centred vs top buttons when long** (e.g. "The Marigold:
+  Gale Reach") — the `<h1>` and nav don't align on narrow screens. Fix the
+  header flex (wrap/truncate the title, or align-items).
+- **No way to read item/target names on touch** — hover-only; a tap acts
+  immediately and a second tap dismisses. This is the deferred "touch
+  first-tap-shows-name" item: first tap on a target shows the sentence line
+  and arms it, second tap commits (SCUMM-remaster behaviour), and/or label
+  targets in eye-highlight mode.
+- **Fullscreen landscape mode on mobile** — a button using the Fullscreen API
+  (+ optional `screen.orientation.lock('landscape')` where supported) for an
+  immersive phone experience.
+
 ## Next (content/presentation)
 
 - Add a link to the GitHub repo on the running IN-GAME page (bottom line?) —

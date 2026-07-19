@@ -87,6 +87,15 @@ check against any story directory.
 
 Node ≥ 23 (native TS stripping), TypeScript + Vite, nothing at runtime.
 
+## Security
+
+Story *data* is rendered safely (as text and canvas, never HTML or code), and
+builds ship a strict Content-Security-Policy. A story's *drawing code*
+(`paint/index.ts`) runs with full page authority, so loading a game means
+trusting its author — and hosting someone else's story means running their
+code on your origin. [SECURITY.md](SECURITY.md) states the full trust model
+and what to do if you want to load untrusted stories.
+
 ## License
 
 [Apache 2.0](LICENSE). The bundled Pixel Operator font is CC0
