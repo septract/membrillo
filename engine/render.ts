@@ -143,9 +143,21 @@ export function wrapWords(text: string, fits: (candidate: string) => boolean): s
   return lines;
 }
 
+/**
+ * The one text face: Pixel Operator (CC0, vendored in engine/assets/fonts),
+ * with monospace fallbacks while it loads. Used by the overlay canvas and,
+ * via style.css, the DOM panel — everything reads as one game.
+ */
+export const FONT = '"Pixel Operator", ui-monospace, Menlo, monospace';
+
 // A speech line is constant while displayed — wrap and measure it once, not
 // per frame (sticky dialogue lines can be on screen indefinitely).
 let speechCache: { text: string; maxW: number; scale: number; lines: { text: string; w: number }[] } | null = null;
+
+/** Bust measurement caches (call when the webfont finishes loading). */
+export function resetTextCache(): void {
+  speechCache = null;
+}
 
 /**
  * Floating outlined speech text, SCUMM-style, kept inside the camera window.
@@ -160,7 +172,7 @@ export function drawSpeech(
   view: Size,
   scale: number,
 ): void {
-  ctx.font = `${Math.round(8 * scale)}px monospace`;
+  ctx.font = `${Math.round(8 * scale)}px ${FONT}`;
   ctx.textAlign = 'left';
   const maxW = Math.min(180, view.w - 8) * scale;
   if (!speechCache || speechCache.text !== speech.text || speechCache.maxW !== maxW || speechCache.scale !== scale) {
@@ -201,7 +213,7 @@ export function overlayText(
   sizePx: number,
   align: CanvasTextAlign = 'left',
 ): void {
-  ctx.font = `${Math.round(sizePx)}px monospace`;
+  ctx.font = `${Math.round(sizePx)}px ${FONT}`;
   ctx.textAlign = align;
   const outline = Math.max(1, Math.round(sizePx / 11));
   ctx.fillStyle = css(P.black);

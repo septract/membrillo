@@ -31,6 +31,8 @@ Stories may set `manifest.view` (render resolution, default 320×180) and per-sc
 5. Use existing tools where we can.
 6. Environment safety: nothing security-relevant. No secrets, no system modification, no runtime network beyond serving the game; persistence is browser localStorage only. Never install vendored third-party code globally or execute it outside this project.
 
+`TODO.md` is the working backlog: when deferring work, add it there; when shipping it, remove it. Decisions awaiting Mike sit at the top.
+
 ## Layout
 
 - `docs/` — design notes, named date-first (`YYYY-MM-DD-title.md`). `docs/research/` holds research notes. The architecture note in `docs/` is the living design doc — update it in place as decisions are made.

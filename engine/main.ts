@@ -34,8 +34,10 @@ import { loadStories, type LoadedStory } from './loader.ts';
 import {
   bodyBox,
   drawSpeech,
+  FONT,
   overlayText,
   renderScene,
+  resetTextCache,
   sceneSize,
   storyView,
   targetAt,
@@ -966,7 +968,7 @@ function drawCutscene(scene: Scene, scale: number): void {
   ctx.fillRect(0, 0, w, h);
   const beat = (scene.beats ?? [])[session.beat] ?? '';
   const size = 8 * scale;
-  octx.font = `${Math.round(size)}px monospace`;
+  octx.font = `${Math.round(size)}px ${FONT}`;
   const maxW = w * scale * 0.86;
   const lines = wrapWords(beat, (s) => octx.measureText(s).width <= maxW);
   const y0 = (h / 2) * scale - (lines.length - 1) * 6 * scale;
@@ -1045,17 +1047,22 @@ function tick(now: number): void {
       });
       if (sp) drawSpeech(octx, sp, session.camera, session.view, scale);
       if (hover && lastMouse) {
-        // The hover name rides the cursor, same text system as everything else.
+        // The hover name rides the cursor — clamped inside the view, flipping
+        // to the left of the cursor near the right edge.
         const rect = el.canvas.getBoundingClientRect();
         const dpr = el.overlay.width / rect.width;
-        overlayText(
-          octx,
-          hover.name,
-          (lastMouse.clientX - rect.left) * dpr + 12 * dpr,
-          (lastMouse.clientY - rect.top) * dpr - 8 * dpr,
-          P.glow,
-          8 * scale,
+        const size = 8 * scale;
+        octx.font = `${Math.round(size)}px ${FONT}`;
+        const w = octx.measureText(hover.name).width;
+        const pad = 4 * dpr;
+        let x = (lastMouse.clientX - rect.left) * dpr + 12 * dpr;
+        if (x + w > el.overlay.width - pad) x = (lastMouse.clientX - rect.left) * dpr - 12 * dpr - w;
+        x = Math.min(Math.max(x, pad), Math.max(pad, el.overlay.width - w - pad));
+        const y = Math.min(
+          Math.max((lastMouse.clientY - rect.top) * dpr - 8 * dpr, size + pad),
+          el.overlay.height - pad,
         );
+        overlayText(octx, hover.name, x, y, P.glow, size);
       }
       if (session.finished) drawEndCard(scale);
     }
@@ -1191,6 +1198,10 @@ window.__pcc = () =>
     : null;
 
 // --- Boot -------------------------------------------------------------------
+
+// Re-measure cached text once the pixel font finishes loading (early frames
+// fall back to system monospace with different metrics).
+document.fonts?.ready.then(resetTextCache);
 
 const bootQuery = new URLSearchParams(location.search);
 const bootStory = bootQuery.get('story');

@@ -1,3 +1,15 @@
+/* Pixel Operator — CC0, vendored (engine/assets/fonts). The one game face. */
+@font-face {
+  font-family: 'Pixel Operator';
+  src: url('./assets/fonts/PixelOperator.ttf') format('truetype');
+  font-weight: normal;
+}
+@font-face {
+  font-family: 'Pixel Operator';
+  src: url('./assets/fonts/PixelOperator-Bold.ttf') format('truetype');
+  font-weight: bold;
+}
+
 :root {
   color-scheme: dark;
   --bg: #14121a;
@@ -14,7 +26,9 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: ui-monospace, Menlo, monospace;
+  /* Native glyph size is 16px — keep DOM text at 16px for pixel-perfect glyphs. */
+  font-family: 'Pixel Operator', ui-monospace, Menlo, monospace;
+  font-size: 16px;
   display: flex;
   justify-content: center;
 }
@@ -28,7 +42,7 @@ header {
   margin-bottom: 10px;
 }
 
-h1 { font-size: 18px; margin: 0; color: var(--accent); }
+h1 { font-size: 24px; margin: 0; color: var(--accent); font-weight: bold; }
 
 button {
   font: inherit;
@@ -88,7 +102,7 @@ button.secondary { color: var(--dim); }
 
 #sentence {
   color: var(--accent);
-  font-size: 14px;
+  font-size: 16px;
   min-height: 18px;
   padding-left: 2px;
 }
@@ -97,14 +111,14 @@ button.secondary { color: var(--dim); }
 #verbs { display: flex; gap: 8px; }
 
 #inventory { display: flex; gap: 6px; flex-wrap: wrap; min-height: 30px; }
-.chip { padding: 3px 10px; border-radius: 12px; font-size: 13px; }
+.chip { padding: 3px 10px; border-radius: 12px; font-size: 16px; }
 
 #objectives {
   background: var(--panel);
   border: 1px solid var(--edge);
   border-radius: 4px;
   padding: 6px 12px;
-  font-size: 13px;
+  font-size: 16px;
 }
 #objectives .objective { margin: 2px 0; color: var(--text); }
 #objectives .objective.done { color: var(--dim); text-decoration: line-through; }
@@ -116,7 +130,7 @@ button.secondary { color: var(--dim); }
   border: 1px solid var(--edge);
   border-radius: 4px;
   padding: 8px 12px;
-  font-size: 13px;
+  font-size: 16px;
   line-height: 1.45;
 }
 #log p { margin: 0 0 4px; }
