@@ -38,6 +38,14 @@
           "setFlags": ["went_home2"],
           "goto": "sung"
         },
+        {
+          "requires": ["flag:link_ready", "flag:knows_lonely"],
+          "text": "The Marigold: \"Line's patched and you know the why, Ensign. Go TELL the station — it's still singing to strangers.\""
+        },
+        {
+          "requires": ["flag:link_ready"],
+          "text": "The Marigold: \"Line's live but the song hasn't changed. Something's still unsettled — your team may hear what you can't.\""
+        },
         { "text": "The Marigold crackles: \"Song's still on every channel, Ensign.\"" }
       ]
     },
@@ -150,7 +158,7 @@
       "walkTo": { "x": 296, "y": 150 },
       "look": "The stairwell up the beacon shaft — a long climb by the sound of it.",
       "to": "shaft",
-      "entry": { "x": 280, "y": 372 },
+      "entry": { "x": 46, "y": 370 },
       "effects": { "text": "The door rolls aside; the song spills down the shaft to meet you." }
     }
   ]

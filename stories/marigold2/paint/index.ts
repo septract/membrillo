@@ -104,6 +104,10 @@ function shaftStatic(ctx: CanvasRenderingContext2D): void {
   // window frames (glass painted live)
   blk(ctx, 20, 236, 28, 32, hullDark);
   blk(ctx, 270, 156, 28, 32, hullDark);
+  // the door back down to the landing bay (bottom-left landing)
+  blk(ctx, 8, 312, 28, 52, P.woodDark);
+  px(ctx, 11, 316, 22, 46, mix(P.woodDark, P.black, 0.45));
+  px(ctx, 12, 318, 20, 3, P.grassLit); // lit DOWN strip over the lintel
   // Mote's core grille
   blk(ctx, 54, 64, 30, 28, hullDark);
   for (let y = 70; y < 88; y += 4) px(ctx, 58, y, 22, 2, mix(hullDark, P.black, 0.4));

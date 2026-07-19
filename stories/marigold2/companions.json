@@ -7,6 +7,11 @@
     "look": [{ "text": "Lt. Cog, cataloguing the station's tidiness with visible professional respect." }],
     "talk": [
       {
+        "requires": ["flag:link_ready", "!flag:knows_lonely"],
+        "speaker": "target",
+        "text": "\"The link is live, yet the song persists. The hardware is solved, Ensign; the WHY is not. Solace reads deeper than my spectrometers — ask her.\""
+      },
+      {
         "requires": ["flag:heard_song", "!flag:link_ready"],
         "speaker": "target",
         "text": "\"The song is in D minor, transposed from sky-ray calls. Technically flawless. Also: sixty years is 1,893,456,000 seconds, and it counted every one. Draw your own conclusion, Ensign.\""
