@@ -1,0 +1,9 @@
+{
+  "id": "done",
+  "name": "Proven",
+  "beats": [
+    "The rendered room works: its background, its floor perspective, and the depth/walk band a sprite moves by all came out of one floorplan, consistent by construction.",
+    "— pipeline fixture —"
+  ],
+  "ending": true
+}

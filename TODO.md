@@ -66,6 +66,26 @@ design note, it lands here; when it ships, delete it. Dated design notes in
 
 ## Next (content/presentation)
 
+- **Scene render pipeline** (Mike, 2026-07-19) — floorplan → in-house software
+  render → perspective plate, for real 3D depth instead of flat elevations. Full
+  spec + prototype outcome: docs/2026-07-19-scene-render-pipeline.md. Renders
+  SHIP (committed plates; floorplan is source, PNG a build artifact).
+  - **Phase 1 DONE**: `packages/membrillo/tools/render-scene.mjs` +
+    `membrillo scene build <story> <scene>` (writes plate + `<scene>.calib.json`
+    with the auto-derived `{depth,walk}`); `roomdemo` fixture wires a plate via
+    `imageScene` and its driver browser-proves a sprite walks the rendered floor,
+    scaling with depth. No Blender.
+  - **Phase 2 (next)**: `membrillo scene check` — re-derive depth/walk from the
+    floorplan and assert the scene JSON still matches (model-checked, like
+    validate/fuzz); auto-patch the scene block on build instead of the manual
+    paste; browser live-preview route for tuning camera/floor.
+  - **Phase 3**: second/third rooms (Monk's, a street/exterior — test scrolling
+    worlds); re-plate "Nothing Doing" as the first real customer.
+  - **Phase 4**: occlusion automation (walk-behind hints from prop boxes),
+    floorplan authoring ergonomics, material/furniture polish.
+  - Baseline still worth a spike to beat: hand-drawn oblique painters (angled
+    floor/raking walls) close ~60–70% of the depth gap in pure code.
+
 - Add a link to the GitHub repo on the running IN-GAME page (bottom line?) —
   Mike, 2026-07-19. (The stories MENU now has a "source on GitHub" footer;
   this is about the in-story screen.)

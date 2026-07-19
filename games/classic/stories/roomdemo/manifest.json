@@ -1,0 +1,8 @@
+{
+  "id": "roomdemo",
+  "title": "Rendered Room (demo)",
+  "description": "Pipeline fixture: a scene whose background and depth/walk band come from `membrillo scene build` off floorplans/apt.json. Proves a sprite walks a rendered plate on the auto-derived calibration.",
+  "category": "demo",
+  "start": "apt",
+  "view": { "w": 320, "h": 180 }
+}

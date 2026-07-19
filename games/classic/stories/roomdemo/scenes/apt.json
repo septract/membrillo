@@ -1,0 +1,29 @@
+{
+  "id": "apt",
+  "name": "Rendered Room",
+  "paint": "apt",
+  "size": { "w": 320, "h": 180 },
+  "walk": { "x": 24, "y": 110, "w": 272, "h": 38 },
+  "depth": { "far": { "y": 110, "scale": 1.339 }, "near": { "y": 148, "scale": 1.848 } },
+  "start": { "x": 160, "y": 140 },
+  "hotspots": [
+    {
+      "id": "couch",
+      "name": "couch",
+      "region": { "x": 210, "y": 66, "w": 86, "h": 30 },
+      "walkTo": { "x": 250, "y": 138 },
+      "look": [{ "text": "A rendered couch on a rendered floor. It sits back where the depth band says it should, and you shrink as you walk toward it." }],
+      "use": [{ "text": "You test the cushions. Schematically, they are perfect." }]
+    }
+  ],
+  "exits": [
+    {
+      "id": "out",
+      "name": "the door",
+      "region": { "x": 250, "y": 44, "w": 38, "h": 52 },
+      "walkTo": { "x": 268, "y": 132 },
+      "to": "done",
+      "look": "The rendered door. Beyond it: proof of concept."
+    }
+  ]
+}
