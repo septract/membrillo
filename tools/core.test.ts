@@ -84,6 +84,11 @@ test('applyRule removes and reports goto/dialogue without applying them', () => 
   assert.equal(out.dialogue, 'bob');
 });
 
+test('applyRule passes the speaker hint through', () => {
+  assert.equal(applyRule(state(), { text: 'aye', speaker: 'target' }).speaker, 'target');
+  assert.equal(applyRule(state(), { text: 'hm' }).speaker, undefined);
+});
+
 const story: Story = {
   manifest: { id: 't', title: 'T', start: 'room' },
   items: {

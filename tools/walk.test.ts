@@ -41,6 +41,14 @@ test('connectivity: connected via the strip; disconnected without it', () => {
   assert.equal(boxesConnected([left]), true);
 });
 
+test('adjacency: edge-touching boxes connect, a 1px gap does not', () => {
+  const a: Box = { x: 0, y: 0, w: 10, h: 10 };
+  const touching: Box = { x: 10, y: 0, w: 10, h: 10 };
+  const gapped: Box = { x: 11, y: 0, w: 10, h: 10 };
+  assert.equal(boxesConnected([a, touching]), true);
+  assert.equal(boxesConnected([a, gapped]), false);
+});
+
 test('findPath routes around the gap through the strip', () => {
   const path = findPath({ x: 50, y: 110 }, { x: 250, y: 110 }, boxes);
   assert.deepEqual(path[path.length - 1], { x: 250, y: 110 });

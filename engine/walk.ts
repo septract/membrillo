@@ -5,6 +5,10 @@
 
 import type { Box, Point, Scene } from './core/types.ts';
 
+export function clamp(v: number, lo: number, hi: number): number {
+  return Math.min(Math.max(v, lo), hi);
+}
+
 export function walkBoxes(scene: Scene): Box[] {
   if (scene.walk === undefined) return [];
   return Array.isArray(scene.walk) ? scene.walk : [scene.walk];
@@ -19,10 +23,7 @@ export function boxIndexAt(p: Point, boxes: Box[]): number {
 }
 
 function clampToBox(p: Point, b: Box): Point {
-  return {
-    x: Math.min(Math.max(p.x, b.x), b.x + b.w),
-    y: Math.min(Math.max(p.y, b.y), b.y + b.h),
-  };
+  return { x: clamp(p.x, b.x, b.x + b.w), y: clamp(p.y, b.y, b.y + b.h) };
 }
 
 /** Nearest standable point across all boxes. */
@@ -40,13 +41,17 @@ export function clampToWalkable(p: Point, boxes: Box[]): Point {
   return best;
 }
 
-/** The shared region two boxes touch/overlap in (expanded by 1px), or null. */
+/**
+ * The shared region two boxes touch/overlap in (expanded by 1px), or null.
+ * Zero-extent portals are rejected: a 1px GAP between boxes must not count
+ * as adjacency (edge-touching boxes still yield a positive-extent seam).
+ */
 function portalRect(a: Box, b: Box): Box | null {
   const x = Math.max(a.x, b.x - 1);
   const y = Math.max(a.y, b.y - 1);
   const x2 = Math.min(a.x + a.w, b.x + b.w + 1);
   const y2 = Math.min(a.y + a.h, b.y + b.h + 1);
-  if (x2 < x || y2 < y) return null;
+  if (x2 <= x || y2 <= y) return null;
   return { x, y, w: x2 - x, h: y2 - y };
 }
 
@@ -116,7 +121,6 @@ export function boxesConnected(boxes: Box[]): boolean {
 export function depthScale(scene: Scene, y: number): number {
   const d = scene.depth;
   if (!d || d.near.y === d.far.y) return 1;
-  const t = (y - d.far.y) / (d.near.y - d.far.y);
-  const clamped = Math.min(Math.max(t, 0), 1);
-  return d.far.scale + (d.near.scale - d.far.scale) * clamped;
+  const t = clamp((y - d.far.y) / (d.near.y - d.far.y), 0, 1);
+  return d.far.scale + (d.near.scale - d.far.scale) * t;
 }

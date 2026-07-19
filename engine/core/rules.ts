@@ -18,8 +18,15 @@ export interface ParsedCondition {
   id: string;
 }
 
+// Condition strings are immutable authoring data but get checked constantly
+// (per-frame visibility filtering, exhaustive fuzz expansion) — parse each
+// distinct string once.
+const parseCache = new Map<Condition, ParsedCondition>();
+
 /** Throws on malformed conditions — the validator catches these offline. */
 export function parseCondition(cond: Condition): ParsedCondition {
+  const cached = parseCache.get(cond);
+  if (cached) return cached;
   const negated = cond.startsWith('!');
   const body = negated ? cond.slice(1) : cond;
   const sep = body.indexOf(':');
@@ -28,7 +35,9 @@ export function parseCondition(cond: Condition): ParsedCondition {
   if (sep < 1 || id === '' || !CONDITION_KINDS.includes(kind)) {
     throw new Error(`Malformed condition "${cond}" (want [!]flag:x, [!]item:x or [!]companion:x)`);
   }
-  return { negated, kind, id };
+  const parsed: ParsedCondition = { negated, kind, id };
+  parseCache.set(cond, parsed);
+  return parsed;
 }
 
 export function checkCondition(state: State, cond: Condition): boolean {
@@ -62,6 +71,8 @@ export interface Outcome {
   text?: string;
   goto?: string;
   dialogue?: string;
+  /** Who says `text` (presentation hint; default: the acting player). */
+  speaker?: 'actor' | 'target';
 }
 
 /** Apply a rule's effects immutably. `goto`/`dialogue` are reported, not applied. */
@@ -77,6 +88,7 @@ export function applyRule(state: State, rule: Rule): Outcome {
   if (rule.text !== undefined) outcome.text = rule.text;
   if (rule.goto !== undefined) outcome.goto = rule.goto;
   if (rule.dialogue !== undefined) outcome.dialogue = rule.dialogue;
+  if (rule.speaker !== undefined) outcome.speaker = rule.speaker;
   return outcome;
 }
 

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A browser-first point-and-click adventure game (engine + story content), restarting from the experiments in `../tng-game` and integrating their lessons. The founding design is in `docs/2026-07-18-architecture.md`; read it before changing the architecture. TypeScript + Vite (the only dependencies); the offline tools run on Node's native type-stripping (Node ≥ 23), so `tools/` imports `engine/core` `.ts` files directly.
+A browser-first point-and-click adventure game (engine + story content), restarting from the experiments in `../tng-game` and integrating their lessons. The founding design is in `docs/2026-07-18-architecture.md`; read it before changing the architecture. TypeScript + Vite (plus `@types/node` for the tools — the only dependencies, all dev-time, zero at runtime); the offline tools run on Node's native type-stripping (Node ≥ 23), so `tools/` imports `engine/core` `.ts` files directly.
 
 ## Commands
 

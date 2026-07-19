@@ -115,10 +115,12 @@
       "itemUse": [
         {
           "withItem": "lens",
+          "speaker": "target",
           "text": "\"Don't show it to me, lad — up the stairs with it! The housing's open.\""
         },
         {
           "withItem": "grapple",
+          "speaker": "target",
           "text": "\"A fine rig. My dredging days are done, though — you swing it.\""
         }
       ]

@@ -30,12 +30,18 @@ import {
   sceneSize,
   storyView,
   targetAt,
+  wrapWords,
   type ActorPose,
   type Speech,
   type TargetRef,
 } from './render.ts';
-import { clampToWalkable, depthScale, findPath, walkBoxes } from './walk.ts';
-import { P, css, type RGB } from './art/palette.ts';
+import { depthScale, findPath, walkBoxes } from './walk.ts';
+import { P, css, rgba, type RGB } from './art/palette.ts';
+import {
+  ACTOR_SPEECH_OFFSET,
+  CHARACTER_SPEECH_OFFSET,
+  type Facing,
+} from './art/sprites.ts';
 import type { Outcome } from './core/rules.ts';
 
 type ArmedVerb = PlayerVerb | 'combine';
@@ -117,7 +123,8 @@ let armedItem: string | null = null;
 let combineSel: string[] = [];
 let hover: TargetRef | undefined;
 let highlight = false;
-let speech: (Speech & { expires: number | null; speakerId: string }) | null = null;
+/** Transient one-shot speech; the floating dialogue line derives live from session.dialogue. */
+let speech: (Speech & { expires: number; speakerId: string }) | null = null;
 let fade: { t0: number; apply: () => void; fired: boolean } | null = null;
 
 // --- Saves & debug params ---------------------------------------------------
@@ -134,13 +141,21 @@ function save(): void {
 
 function loadSave(id: string): State | null {
   const raw = localStorage.getItem(saveKey(id));
-  return raw ? (JSON.parse(raw) as State) : null;
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as State;
+  } catch {
+    // Corrupt save (interrupted write, manual edit): discard rather than
+    // crashing the menu/boot for every future visit.
+    localStorage.removeItem(saveKey(id));
+    return null;
+  }
 }
 
 function debugState(loaded: LoadedStory): State | null {
   const q = new URLSearchParams(location.search);
   const start = q.get('start');
-  if (!start && !q.get('flags') && !q.get('items')) return null;
+  if (!start && !q.get('flags') && !q.get('items') && !q.get('companions')) return null;
   const list = (k: string) => (q.get(k) ?? '').split(',').filter(Boolean).sort();
   return {
     scene: start ?? loaded.story.manifest.start,
@@ -182,6 +197,13 @@ function showMenu(): void {
 function startStory(id: string, state: State | null): void {
   const loaded = stories.get(id);
   if (!loaded) return;
+  // A save or debug URL may reference a scene that no longer exists after a
+  // content change — fall back to a fresh start instead of crashing boot.
+  if (state && !loaded.story.scenes[state.scene]) {
+    console.warn(`Scene "${state.scene}" no longer exists in "${id}" — starting fresh.`);
+    localStorage.removeItem(saveKey(id));
+    state = null;
+  }
   const view = storyView(loaded);
   el.menu.hidden = true;
   el.game.hidden = false;
@@ -233,6 +255,8 @@ function placeInScene(scene: Scene, entry: Point | null): void {
   if (!session) return;
   session.path = null;
   session.pending = null;
+  session.dialogue = null;
+  renderDialogue();
   speech = null;
   hover = undefined;
   el.hoverlabel.hidden = true;
@@ -285,14 +309,14 @@ function log(text: string): void {
 
 // --- Speech -----------------------------------------------------------------
 
-function say(text: string, anchor: Point, color: RGB, speakerId: string, sticky = false): void {
+function say(text: string, anchor: Point, color: RGB, speakerId: string): void {
   speech = {
     text,
     color,
     x: anchor.x,
     y: anchor.y,
     speakerId,
-    expires: sticky ? null : performance.now() + Math.min(SPEECH_MS_MIN + text.length * SPEECH_MS_PER_CHAR, 7000),
+    expires: performance.now() + Math.min(SPEECH_MS_MIN + text.length * SPEECH_MS_PER_CHAR, 7000),
   };
   log(text);
 }
@@ -300,32 +324,78 @@ function say(text: string, anchor: Point, color: RGB, speakerId: string, sticky 
 function actorHead(): Point {
   if (!session) return { x: 0, y: 0 };
   const scale = depthScale(sceneOf(session), session.actor.y);
-  return { x: session.actor.x, y: session.actor.y - 44 * scale };
+  return { x: session.actor.x, y: session.actor.y - ACTOR_SPEECH_OFFSET * scale };
 }
 
 function characterHead(scene: Scene, c: Character): Point {
-  return { x: c.pos.x, y: c.pos.y - 46 * depthScale(scene, c.pos.y) };
+  return { x: c.pos.x, y: c.pos.y - CHARACTER_SPEECH_OFFSET * depthScale(scene, c.pos.y) };
+}
+
+interface Speaker {
+  anchor: Point;
+  color: RGB;
+  id: string;
+}
+
+/** Where (and as whom) a line should float: the acting player, or a target. */
+function speakerFor(target: TargetRef | undefined): Speaker {
+  if (target && session) {
+    const scene = sceneOf(session);
+    if (target.kind === 'character') {
+      const c = visibleCharacters(scene, session.state).find((x) => x.id === target.id);
+      if (c) return { anchor: characterHead(scene, c), color: c.color ?? P.white, id: c.id };
+    }
+    // A talking hotspot (intercom, door grille): float above its region.
+    return {
+      anchor: { x: target.region.x + target.region.w / 2, y: target.region.y - 6 },
+      color: P.white,
+      id: target.id,
+    };
+  }
+  return { anchor: actorHead(), color: P.glow, id: 'actor' };
+}
+
+/** The speech to show this frame: the open dialogue's line, else the transient bark. */
+function currentSpeech(): (Speech & { speakerId: string }) | null {
+  if (session?.dialogue) {
+    const d = session.dialogue;
+    const dlg = session.loaded.story.dialogues[d.id];
+    if (dlg) {
+      return {
+        text: dialogueNode(dlg, d.node).line,
+        color: d.color,
+        x: d.anchor.x,
+        y: d.anchor.y,
+        speakerId: d.speakerId,
+      };
+    }
+  }
+  return speech;
 }
 
 // --- Outcome handling -------------------------------------------------------
 
-function handleOutcome(outcome: Outcome): void {
+function handleOutcome(outcome: Outcome, target?: TargetRef): void {
   if (!session) return;
   session.state = outcome.state;
-  if (outcome.text !== undefined) say(outcome.text, actorHead(), P.glow, 'actor');
-  if (outcome.dialogue !== undefined) openDialogue(outcome.dialogue);
+  if (outcome.text !== undefined) {
+    const who = speakerFor(outcome.speaker === 'target' ? target : undefined);
+    say(outcome.text, who.anchor, who.color, who.id);
+  }
+  if (outcome.dialogue !== undefined) openDialogue(outcome.dialogue, target);
   if (outcome.goto !== undefined) changeScene(outcome.goto, null);
   save();
   renderPanel();
 }
 
+function facingFromDelta(dx: number, dy: number): Facing {
+  return Math.abs(dx) >= Math.abs(dy) ? (dx < 0 ? 'left' : 'right') : dy < 0 ? 'up' : 'down';
+}
+
 function faceTarget(target: TargetRef): void {
   if (!session) return;
   const c = { x: target.region.x + target.region.w / 2, y: target.region.y + target.region.h / 2 };
-  const dx = c.x - session.actor.x;
-  const dy = c.y - session.actor.y;
-  session.actor.facing =
-    Math.abs(dx) >= Math.abs(dy) ? (dx < 0 ? 'left' : 'right') : dy < 0 ? 'up' : 'down';
+  session.actor.facing = facingFromDelta(c.x - session.actor.x, c.y - session.actor.y);
 }
 
 function runPending(): void {
@@ -348,36 +418,42 @@ function runPending(): void {
       ? applyItem(session.loaded.story, session.state, target.id, action.itemId)
       : act(session.loaded.story, session.state, target.id, action.verb);
   if (action.kind === 'apply') armedItem = null;
-  if (outcome) handleOutcome(outcome);
+  if (outcome) handleOutcome(outcome, target);
 }
 
 // --- Dialogue ---------------------------------------------------------------
 
-function openDialogue(dlgId: string): void {
+function openDialogue(dlgId: string, target?: TargetRef): void {
   if (!session) return;
   const dlg = session.loaded.story.dialogues[dlgId];
   if (!dlg) return;
-  const scene = sceneOf(session);
-  // Anchor the floating line over whichever visible character talks this tree.
-  const speaker = visibleCharacters(scene, session.state).find((c) =>
-    (c.talk ?? []).some((r) => r.dialogue === dlgId),
-  );
-  const anchor = speaker ? characterHead(scene, speaker) : actorHead();
-  const color: RGB = speaker?.color ?? P.white;
-  session.dialogue = { id: dlgId, node: dlg.start, anchor, color, speakerId: speaker?.id ?? 'actor' };
+  // The speaker is whoever was talked to; fall back to scanning talk rules
+  // when a dialogue is opened without a target (not currently possible).
+  let who: Speaker;
+  if (target) {
+    who = speakerFor(target);
+  } else {
+    const scene = sceneOf(session);
+    const c = visibleCharacters(scene, session.state).find((ch) =>
+      (ch.talk ?? []).some((r) => r.dialogue === dlgId),
+    );
+    who = c
+      ? { anchor: characterHead(scene, c), color: c.color ?? P.white, id: c.id }
+      : speakerFor(undefined);
+  }
+  session.dialogue = { id: dlgId, node: dlg.start, anchor: who.anchor, color: who.color, speakerId: who.id };
+  log(dialogueNode(dlg, dlg.start).line);
   renderDialogue();
 }
 
 function renderDialogue(): void {
   if (!session || !session.dialogue) {
     el.dialogue.hidden = true;
-    if (speech && speech.expires === null) speech = null;
     return;
   }
   const d = session.dialogue;
   const dlg = session.loaded.story.dialogues[d.id]!;
   const node = dialogueNode(dlg, d.node);
-  say(node.line, d.anchor, d.color, d.speakerId, true);
   el.dialogue.hidden = false;
   el.dialogue.innerHTML = '';
   for (const option of visibleOptions(session.state, node)) {
@@ -392,6 +468,7 @@ function renderDialogue(): void {
         session.dialogue = null;
       } else {
         session.dialogue.node = step.to;
+        log(dialogueNode(dlg, step.to).line);
       }
       save();
       renderDialogue();
@@ -403,12 +480,17 @@ function renderDialogue(): void {
 
 // --- Panel (sentence line, verbs, inventory) --------------------------------
 
-const VERBS: { id: ArmedVerb; label: string; key: string }[] = [
-  { id: 'look', label: 'Look', key: 'l' },
-  { id: 'talk', label: 'Talk', key: 't' },
-  { id: 'interact', label: 'Interact', key: 'i' },
-  { id: 'combine', label: 'Combine', key: 'c' },
+// The hotkey and the underlined initial are both the label's first letter.
+const VERBS: { id: ArmedVerb; label: string }[] = [
+  { id: 'look', label: 'Look' },
+  { id: 'talk', label: 'Talk' },
+  { id: 'interact', label: 'Interact' },
+  { id: 'combine', label: 'Combine' },
 ];
+
+function verbKey(v: { label: string }): string {
+  return v.label[0]!.toLowerCase();
+}
 
 function sentenceText(): string {
   if (!session) return ' ';
@@ -489,41 +571,56 @@ function onItemClick(itemId: string): void {
 
 // --- Canvas input -----------------------------------------------------------
 
-/** Mouse event → WORLD coordinates (view scaling + camera). */
-function worldPoint(ev: MouseEvent): Point {
-  const rect = el.canvas.getBoundingClientRect();
+/**
+ * Screen position → WORLD coordinates (view scaling + camera). The camera is
+ * ROUNDED to match renderScene's translate exactly, so drawn and hit-tested
+ * positions can never disagree mid-lerp.
+ */
+function worldFromClient(clientX: number, clientY: number, rect: DOMRect): Point {
   const view = session?.view ?? { w: 320, h: 180 };
   const cam = session?.camera ?? { x: 0, y: 0 };
   return {
-    x: Math.floor(((ev.clientX - rect.left) / rect.width) * view.w + cam.x),
-    y: Math.floor(((ev.clientY - rect.top) / rect.height) * view.h + cam.y),
+    x: Math.floor(((clientX - rect.left) / rect.width) * view.w + Math.round(cam.x)),
+    y: Math.floor(((clientY - rect.top) / rect.height) * view.h + Math.round(cam.y)),
   };
 }
 
-el.canvas.addEventListener('mousemove', (ev) => {
+function worldPoint(ev: MouseEvent): Point {
+  return worldFromClient(ev.clientX, ev.clientY, el.canvas.getBoundingClientRect());
+}
+
+/** Last known mouse position, so hover can be refreshed when the camera pans under a still cursor. */
+let lastMouse: { clientX: number; clientY: number } | null = null;
+
+function updateHover(clientX: number, clientY: number): void {
   if (!session || session.beat !== null || session.dialogue) {
     hover = undefined;
     el.hoverlabel.hidden = true;
     return;
   }
-  const p = worldPoint(ev);
+  const rect = el.canvas.getBoundingClientRect();
+  const p = worldFromClient(clientX, clientY, rect);
   hover = targetAt(sceneOf(session), session.state, p.x, p.y);
   if (hover) {
     el.hoverlabel.hidden = false;
     el.hoverlabel.textContent = hover.name;
-    const rect = el.canvas.getBoundingClientRect();
     const stage = el.canvas.parentElement!.getBoundingClientRect();
-    el.hoverlabel.style.left = `${ev.clientX - stage.left + 12}px`;
-    el.hoverlabel.style.top = `${ev.clientY - rect.top - 8}px`;
+    el.hoverlabel.style.left = `${clientX - stage.left + 12}px`;
+    el.hoverlabel.style.top = `${clientY - rect.top - 8}px`;
   } else {
     el.hoverlabel.hidden = true;
   }
   renderSentence();
+}
+
+el.canvas.addEventListener('mousemove', (ev) => {
+  lastMouse = { clientX: ev.clientX, clientY: ev.clientY };
+  updateHover(ev.clientX, ev.clientY);
 });
 
 el.canvas.addEventListener('click', (ev) => {
   if (!session || session.finished || session.dialogue || fade) return;
-  if (speech && speech.expires !== null) speech = null; // click skips the line
+  if (speech) speech = null; // click skips the line
   const scene = sceneOf(session);
   if (session.beat !== null) {
     advanceBeat(scene);
@@ -586,17 +683,21 @@ window.addEventListener('keydown', (ev) => {
   }
   if (!session) return;
   if (ev.key === 'Escape') {
-    if (speech && speech.expires !== null) speech = null;
+    if (speech) speech = null;
     if (session.beat !== null && !session.finished) {
-      // Skip the whole cutscene: jump to its consequence.
+      // Skip the whole cutscene by advancing through every beat, so any
+      // future per-beat effects still run exactly as if clicked through.
       const scene = sceneOf(session);
-      session.beat = (scene.beats ?? []).length - 1;
-      advanceBeat(scene);
+      let prev = -1;
+      while (session.beat !== null && session.beat !== prev && !session.finished) {
+        prev = session.beat;
+        advanceBeat(scene);
+      }
     }
     return;
   }
   if (session.dialogue) return;
-  const verb = VERBS.find((v) => v.key === ev.key.toLowerCase());
+  const verb = VERBS.find((v) => verbKey(v) === ev.key.toLowerCase());
   if (verb && !ev.metaKey && !ev.ctrlKey && !ev.altKey) armVerb(verb.id);
 });
 window.addEventListener('keyup', (ev) => {
@@ -613,23 +714,6 @@ el.btnRestart.addEventListener('click', () => {
 
 // --- Render loop ------------------------------------------------------------
 
-function wrapLines(text: string, max: number): string[] {
-  const words = text.split(' ');
-  const lines: string[] = [];
-  let line = '';
-  for (const word of words) {
-    const candidate = line === '' ? word : `${line} ${word}`;
-    if (candidate.length > max && line !== '') {
-      lines.push(line);
-      line = word;
-    } else {
-      line = candidate;
-    }
-  }
-  if (line !== '') lines.push(line);
-  return lines;
-}
-
 function drawCutscene(scene: Scene): void {
   if (!session || session.beat === null) return;
   const { w, h } = session.view;
@@ -639,7 +723,8 @@ function drawCutscene(scene: Scene): void {
   ctx.fillStyle = css(P.white);
   ctx.font = '8px monospace';
   ctx.textAlign = 'center';
-  const lines = wrapLines(beat, Math.floor(w / 5.5));
+  const max = Math.floor(w / 5.5);
+  const lines = wrapWords(beat, (s) => s.length <= max);
   const y0 = h / 2 - (lines.length - 1) * 6;
   lines.forEach((line, i) => ctx.fillText(line, w / 2, y0 + i * 12));
   ctx.fillStyle = css(P.stoneLit);
@@ -683,7 +768,7 @@ let lastTime = performance.now();
 function tick(now: number): void {
   const dt = Math.min((now - lastTime) / 1000, 0.1);
   lastTime = now;
-  if (speech && speech.expires !== null && now > speech.expires) speech = null;
+  if (speech && now > speech.expires) speech = null;
   const alpha = fadeAlpha(now);
   if (session) {
     const scene = sceneOf(session);
@@ -693,12 +778,13 @@ function tick(now: number): void {
       if (session.finished) drawEndCard();
       else drawCutscene(scene);
       if (alpha > 0) {
-        ctx.fillStyle = `rgba(16,14,20,${alpha})`;
+        ctx.fillStyle = rgba(P.black, alpha);
         ctx.fillRect(0, 0, session.view.w, session.view.h);
       }
     } else {
       updateWalk(dt);
       updateCamera(dt);
+      const sp = currentSpeech();
       renderScene(ctx, session.loaded, session.state, {
         t: now / 1000,
         actor: session.actor,
@@ -706,8 +792,8 @@ function tick(now: number): void {
         view: session.view,
         hover,
         highlight,
-        speech,
-        speakingId: speech?.speakerId ?? null,
+        speech: sp,
+        speakingId: sp?.speakerId ?? null,
         fade: alpha,
       });
       if (session.finished) drawEndCard();
@@ -720,8 +806,13 @@ function updateCamera(dt: number): void {
   if (!session) return;
   const target = cameraTargetFor(session);
   const k = Math.min(CAMERA_LERP * dt, 1);
+  const before = Math.round(session.camera.x) + Math.round(session.camera.y) * 1e5;
   session.camera.x += (target.x - session.camera.x) * k;
   session.camera.y += (target.y - session.camera.y) * k;
+  // The world moved under a stationary cursor: refresh the hover affordance
+  // so the label/outline always describe what a click would actually hit.
+  const after = Math.round(session.camera.x) + Math.round(session.camera.y) * 1e5;
+  if (before !== after && lastMouse) updateHover(lastMouse.clientX, lastMouse.clientY);
 }
 
 function updateWalk(dt: number): void {
@@ -750,7 +841,7 @@ function updateWalk(dt: number): void {
   a.y += (dy / dist) * step;
   a.phase += step * STEP_PHASE;
   a.walking = true;
-  a.facing = Math.abs(dx) >= Math.abs(dy) ? (dx < 0 ? 'left' : 'right') : dy < 0 ? 'up' : 'down';
+  a.facing = facingFromDelta(dx, dy);
 }
 
 // --- Debug hook (read-only; used by headless verification and humans) -------

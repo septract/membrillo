@@ -6,11 +6,10 @@
 // to the exact code that will run in the browser.
 
 import { parseCondition } from '../engine/core/rules.ts';
-import type { Box, Point, Rule, Scene, Target } from '../engine/core/types.ts';
-import { boxesConnected, boxIndexAt, walkBoxes } from '../engine/walk.ts';
+import { isCutscene } from '../engine/core/verbs.ts';
+import { DEFAULT_VIEW, type Box, type Point, type Rule, type Scene, type Target } from '../engine/core/types.ts';
+import { boxesConnected, boxIndexAt, inBox, walkBoxes } from '../engine/walk.ts';
 import { loadStoryFiles, storyIdsFromArgv, type StoryFiles } from './load-story.ts';
-
-const DEFAULT_VIEW = { w: 320, h: 180 };
 
 class Report {
   errors: string[] = [];
@@ -25,12 +24,8 @@ class Report {
   }
 }
 
-function inBox(p: Point, b: Box): boolean {
-  return p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h;
-}
-
 function isRoom(scene: Scene): boolean {
-  return scene.beats === undefined;
+  return !isCutscene(scene);
 }
 
 interface ItemUsage {
@@ -111,10 +106,16 @@ function validateStory(files: StoryFiles): Report {
   const dupCheck = (where: string, ids: string[]): void => {
     const seen = new Set<string>();
     for (const x of ids) {
-      if (seen.has(x)) r.error(`${where}: duplicate id "${x}"`);
+      if (seen.has(x)) r.error(`${where}: duplicate id "${x}" — later definitions silently overwrite earlier ones`);
       seen.add(x);
     }
   };
+
+  // Duplicates must be checked against ids AS AUTHORED: the loader collapses
+  // into id-keyed maps, where a duplicate silently replaces its predecessor.
+  dupCheck('scenes/', files.rawIds.scenes);
+  dupCheck('items.json', files.rawIds.items);
+  dupCheck('dialogue/', files.rawIds.dialogues);
 
   // --- Scenes ---------------------------------------------------------------
   let endings = 0;
@@ -160,6 +161,9 @@ function validateStory(files: StoryFiles): Report {
     }
     for (const prop of scene.props ?? []) {
       if (prop.y < 0 || prop.y > size.h) r.error(`${where}#${prop.id}: prop y outside the scene`);
+      if (prop.x !== undefined && (prop.x < 0 || prop.x > size.w)) {
+        r.error(`${where}#${prop.id}: prop x outside the scene`);
+      }
       checkPaintRef(r, files, `${where}#${prop.id}`, prop.paint);
     }
 
@@ -214,7 +218,6 @@ function validateStory(files: StoryFiles): Report {
   if (endings === 0) r.error('story has no ending scene');
 
   // --- Items ----------------------------------------------------------------
-  dupCheck('items.json', Object.keys(items));
   for (const item of Object.values(items)) {
     const where = `items.json#${item.id}`;
     (item.look ?? []).forEach((rule, i) =>
@@ -268,9 +271,10 @@ function validateStory(files: StoryFiles): Report {
 
 /** Static check: the painter name must appear in the story's paint module source. */
 function checkPaintRef(r: Report, files: StoryFiles, where: string, name: string): void {
+  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   if (files.paintSource === null) {
     r.error(`${where}: references painter "${name}" but story has no paint/index.ts`);
-  } else if (!new RegExp(`\\b${name}\\b`).test(files.paintSource)) {
+  } else if (!new RegExp(`\\b${escaped}\\b`).test(files.paintSource)) {
     r.error(`${where}: painter "${name}" not found in paint/index.ts`);
   }
 }

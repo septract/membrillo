@@ -21,6 +21,14 @@ export interface Pose {
 
 export const IDLE_POSE: Pose = { facing: 'left', phase: 0, walking: false, talking: false };
 
+/**
+ * Speech anchors sit this far above the feet (at scale 1). Derived from the
+ * default sprite geometry below: heads top out ~40px up (drawActor: head at
+ * y-36 over a 4px hair/cap crown), plus clearance for the text baseline.
+ */
+export const ACTOR_SPEECH_OFFSET = 44;
+export const CHARACTER_SPEECH_OFFSET = 46;
+
 /** Flat rect. */
 export function px(
   ctx: CanvasRenderingContext2D,

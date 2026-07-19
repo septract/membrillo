@@ -6,6 +6,9 @@ export interface Point { x: number; y: number }
 export interface Box { x: number; y: number; w: number; h: number }
 export interface Size { w: number; h: number }
 
+/** Engine default render resolution (single source — tools import this too). */
+export const DEFAULT_VIEW: Size = { w: 320, h: 180 };
+
 /** "flag:torch_lit" | "item:rope" | "companion:ada", optionally "!"-negated. */
 export type Condition = string;
 
@@ -27,6 +30,11 @@ export interface Rule {
   goto?: string;
   /** Dialogue tree to open (meaningful in `talk` buckets only). */
   dialogue?: string;
+  /**
+   * Who says `text`: the acting player (default) or the target itself —
+   * use "target" for in-character NPC replies authored on that character.
+   */
+  speaker?: 'actor' | 'target';
 }
 
 /**
@@ -100,6 +108,8 @@ export interface Prop {
   /** Painter name from the story's paint module's `props` record. */
   paint: string;
   y: number;
+  /** Horizontal anchor, used by the paint-less placeholder; painters position themselves. */
+  x?: number;
 }
 
 /**

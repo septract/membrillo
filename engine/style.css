@@ -50,7 +50,7 @@ button.secondary { color: var(--dim); }
 #view {
   display: block;
   width: 100%;
-  aspect-ratio: 16 / 9;
+  /* aspect-ratio is set inline per story from manifest.view */
   image-rendering: pixelated;
   border: 1px solid var(--edge);
   border-radius: 4px;

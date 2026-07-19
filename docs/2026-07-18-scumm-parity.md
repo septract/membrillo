@@ -91,6 +91,16 @@ travel; verb hotkeys (L/T/I/C); water shimmer + ambient gulls. A read-only
 verification. Off-screen targets are unclickable by construction (clicks are
 view-relative) — staging toward a target first is intended behaviour.
 
+## Quality-pass note (2026-07-18)
+
+An 8-angle review of the engine commits confirmed 31 findings; all were fixed
+the same day except one, deliberately deferred: **exits bypass the outcome
+pipeline** (they cannot carry text/flags/effects; `useExit`'s returned State
+is used only as a gate). Fixing it properly means giving exits rule buckets —
+a schema decision to make alongside the next story's needs, not a patch.
+Rules gained an optional `speaker: "target"` so in-character NPC replies float
+over the right head.
+
 ## Priority order (agreed 2026-07-18)
 
 1. `itemUse` — schema-changing, so it lands before the first real story is

@@ -37,6 +37,10 @@ export function css(c: RGB): string {
   return `rgb(${c[0]},${c[1]},${c[2]})`;
 }
 
+export function rgba(c: RGB, a: number): string {
+  return `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+}
+
 /** Blend two palette colours; t=0 → a, t=1 → b. */
 export function mix(a: RGB, b: RGB, t: number): RGB {
   return [

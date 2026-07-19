@@ -154,12 +154,14 @@ function fuzzStory(story: Story): FuzzResult {
   const forward = new Map<string, string[]>();
   const reverse = new Map<string, string[]>();
   const pred = new Map<string, { from: string; label: string }>();
+  // Index-head queues: Array.shift() reindexes and turns BFS O(n^2) at scale.
   const queue: Node[] = [start];
+  let head = 0;
   nodes.set(keyOf(start), start);
   let edgeCount = 0;
 
-  while (queue.length > 0) {
-    const node = queue.shift()!;
+  while (head < queue.length) {
+    const node = queue[head++]!;
     const from = keyOf(node);
     const out: string[] = [];
     for (const edge of expand(story, node, seenScenes)) {
@@ -180,6 +182,7 @@ function fuzzStory(story: Story): FuzzResult {
   // Success terminals, and reverse-reachability from them.
   const winning = new Set<string>();
   const rq: string[] = [];
+  let rqHead = 0;
   let endings = 0;
   for (const [key, node] of nodes) {
     if (sceneOf(story, node.state).ending) {
@@ -188,8 +191,8 @@ function fuzzStory(story: Story): FuzzResult {
       rq.push(key);
     }
   }
-  while (rq.length > 0) {
-    for (const from of reverse.get(rq.shift()!) ?? []) {
+  while (rqHead < rq.length) {
+    for (const from of reverse.get(rq[rqHead++]!) ?? []) {
       if (!winning.has(from)) {
         winning.add(from);
         rq.push(from);

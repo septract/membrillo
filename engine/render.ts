@@ -7,14 +7,14 @@
 // this module translates once and draws world-space throughout, then draws
 // screen-space overlays (fade) after restoring.
 
-import type { Box, Point, Scene, Size, State } from './core/types.ts';
+import { DEFAULT_VIEW, type Box, type Point, type Scene, type Size, type State } from './core/types.ts';
 import { visibleCharacters, visibleExits, visibleHotspots } from './core/verbs.ts';
 import type { LoadedStory } from './loader.ts';
-import { P, css, type RGB } from './art/palette.ts';
+import { P, css, rgba, type RGB } from './art/palette.ts';
 import { drawActor, IDLE_POSE, type Facing, type Pose } from './art/sprites.ts';
-import { depthScale, walkBoxes } from './walk.ts';
+import { clamp, depthScale, walkBoxes } from './walk.ts';
 
-export const DEFAULT_VIEW: Size = { w: 320, h: 180 };
+export { DEFAULT_VIEW };
 
 export function storyView(loaded: LoadedStory): Size {
   return loaded.story.manifest.view ?? DEFAULT_VIEW;
@@ -48,8 +48,15 @@ function centre(b: Box): Point {
   return { x: b.x + b.w / 2, y: b.y + b.h / 2 };
 }
 
+// Targets only change when the (immutable) state or scene changes; this is
+// called per mousemove and per highlight frame, so cache the last result.
+let targetsCache: { scene: Scene; state: State; refs: TargetRef[] } | null = null;
+
 /** All clickable targets in the scene, in hit-test priority order. */
 export function sceneTargets(scene: Scene, state: State): TargetRef[] {
+  if (targetsCache && targetsCache.scene === scene && targetsCache.state === state) {
+    return targetsCache.refs;
+  }
   const refs: TargetRef[] = [];
   for (const c of visibleCharacters(scene, state)) {
     const region = characterBox(c.pos, depthScale(scene, c.pos.y));
@@ -61,10 +68,15 @@ export function sceneTargets(scene: Scene, state: State): TargetRef[] {
   for (const e of visibleExits(scene, state)) {
     refs.push({ kind: 'exit', id: e.id, name: e.name, region: e.region, walkTo: e.walkTo ?? centre(e.region) });
   }
+  targetsCache = { scene, state, refs };
   return refs;
 }
 
-/** Hit-test in WORLD coordinates. */
+/**
+ * Hit-test in WORLD coordinates. Deliberately half-open ([x, x+w)) — pixel
+ * hit-testing convention; walk.ts's inBox is inclusive because walk points ON
+ * a box edge are standable ground.
+ */
 export function targetAt(scene: Scene, state: State, x: number, y: number): TargetRef | undefined {
   return sceneTargets(scene, state).find(
     (t) => x >= t.region.x && x < t.region.x + t.region.w && y >= t.region.y && y < t.region.y + t.region.h,
@@ -112,6 +124,27 @@ export interface Speech {
   y: number;
 }
 
+/** Greedy word wrap shared by speech bubbles and cutscene cards. */
+export function wrapWords(text: string, fits: (candidate: string) => boolean): string[] {
+  const lines: string[] = [];
+  let line = '';
+  for (const word of text.split(' ')) {
+    const candidate = line === '' ? word : `${line} ${word}`;
+    if (!fits(candidate) && line !== '') {
+      lines.push(line);
+      line = word;
+    } else {
+      line = candidate;
+    }
+  }
+  if (line !== '') lines.push(line);
+  return lines;
+}
+
+// A speech line is constant while displayed — wrap and measure it once, not
+// per frame (sticky dialogue lines can be on screen indefinitely).
+let speechCache: { text: string; maxW: number; lines: { text: string; w: number }[] } | null = null;
+
 /** Floating outlined speech text, SCUMM-style, kept inside the camera window. */
 export function drawSpeech(
   ctx: CanvasRenderingContext2D,
@@ -122,25 +155,20 @@ export function drawSpeech(
   ctx.font = '8px monospace';
   ctx.textAlign = 'left';
   const maxW = Math.min(180, view.w - 8);
-  const words = speech.text.split(' ');
-  const lines: string[] = [];
-  let line = '';
-  for (const word of words) {
-    const candidate = line === '' ? word : `${line} ${word}`;
-    if (ctx.measureText(candidate).width > maxW && line !== '') {
-      lines.push(line);
-      line = word;
-    } else {
-      line = candidate;
-    }
+  if (!speechCache || speechCache.text !== speech.text || speechCache.maxW !== maxW) {
+    const lines = wrapWords(speech.text, (s) => ctx.measureText(s).width <= maxW);
+    speechCache = {
+      text: speech.text,
+      maxW,
+      lines: lines.map((text) => ({ text, w: ctx.measureText(text).width })),
+    };
   }
-  if (line !== '') lines.push(line);
+  const lines = speechCache.lines;
 
   const lineH = 9;
   const yBase = Math.max(speech.y, camera.y + lines.length * lineH + 2);
-  lines.forEach((text, i) => {
-    const w = ctx.measureText(text).width;
-    const x = Math.min(Math.max(speech.x - w / 2, camera.x + 2), camera.x + view.w - w - 2);
+  lines.forEach(({ text, w }, i) => {
+    const x = clamp(speech.x - w / 2, camera.x + 2, Math.max(camera.x + 2, camera.x + view.w - w - 2));
     const y = yBase - (lines.length - 1 - i) * lineH;
     ctx.fillStyle = css(P.black);
     for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
@@ -175,6 +203,11 @@ export function renderScene(
   const scene = loaded.story.scenes[state.scene];
   if (!scene) return;
   const size = sceneSize(scene, opts.view);
+
+  // Ground fill so a painter that under-covers its scene (or a scene smaller
+  // than the view) never smears stale pixels from the previous frame.
+  ctx.fillStyle = css(P.black);
+  ctx.fillRect(0, 0, opts.view.w, opts.view.h);
 
   ctx.save();
   ctx.translate(-Math.round(opts.camera.x), -Math.round(opts.camera.y));
@@ -217,10 +250,11 @@ export function renderScene(
         if (propPainter) {
           propPainter(ctx, state, opts.t);
         } else {
+          const px = (prop.x ?? size.w / 2) - 20;
           ctx.fillStyle = css(P.stone);
-          ctx.fillRect(140, prop.y - 24, 40, 24);
+          ctx.fillRect(px, prop.y - 24, 40, 24);
           ctx.strokeStyle = css(P.white);
-          ctx.strokeRect(140.5, prop.y - 23.5, 39, 23);
+          ctx.strokeRect(px + 0.5, prop.y - 23.5, 39, 23);
         }
       },
     });
@@ -251,7 +285,7 @@ export function renderScene(
   ctx.restore();
 
   if (opts.fade !== undefined && opts.fade > 0) {
-    ctx.fillStyle = `rgba(16,14,20,${Math.min(opts.fade, 1)})`;
+    ctx.fillStyle = rgba(P.black, Math.min(opts.fade, 1));
     ctx.fillRect(0, 0, opts.view.w, opts.view.h);
   }
 }
