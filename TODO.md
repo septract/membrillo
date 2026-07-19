@@ -10,19 +10,37 @@ design note, it lands here; when it ships, delete it. Dated design notes in
 
 ## Toward first release (Mike, 2026-07-19)
 
-- **QoL audit for "first release" quality** — IN PROGRESS: multi-agent audit
-  (engine correctness, click-coverage, docs/onboarding, UX/mobile) then fix
-  the findings. Do this BEFORE the independent AI test below.
+- **QoL audit for "first release" quality** — DONE (2026-07-19): 4-agent
+  audit (engine correctness, click-coverage, docs/onboarding, UX/mobile),
+  clear wins all fixed + committed; judgment calls resolved with Mike.
 - **Security-practice audit** (Mike, 2026-07-19) — if we're encouraging
-  others to use this, make it as safe as possible. Scope: XSS surface (story
-  text must reach the DOM only via textContent, never innerHTML — audit
-  log/dialogue/sentence/menu); the trust boundary of `paint/index.ts` and
-  driver modules (they run arbitrary JS — fine for a game author's own
-  stories, a hazard if a game ever accepts USER-submitted stories; document
-  it loudly); localStorage key namespacing/collisions; CSP-friendliness of
-  the built site; the offline tools running type-stripped story files under
-  Node; dependency/supply-chain posture (currently zero runtime deps — keep
-  it). Deliverable: a SECURITY.md + any hardening the audit surfaces.
+  others to use this, make it as safe as possible. The core is a
+  **bidirectional trust model** (Mike's framing): loading a game runs the
+  author's painter JS in your browser (you trust the author, = any website,
+  bounded by the same-origin sandbox); and serving someone else's story under
+  YOUR origin runs THEIR painter JS as you (arbitrary code under your origin).
+  My earlier "painters are trusted author code" only holds for the
+  single-author-deploys-own-game case; the story/code split invites the
+  multi-party case (community stories, a load-any-URL viewer, merged story
+  PRs) where it breaks. Goal: minimize *required* trust — make story DATA
+  safe to treat as hostile, make painter CODE an explicit sandboxable
+  boundary. Mitigation ladder:
+    1. Harden the data path (do first): audit that ALL story text reaches the
+       DOM via textContent only (never innerHTML — check log/dialogue/
+       sentence/menu/objectives), no eval, strict CSP on the deployed site.
+       Then a stranger's JSON is safe; only the painter is code.
+    2. Sandbox untrusted painters in an iframe on a SEPARATE origin (cheaper
+       and better-fit than WASM for "load untrusted stories").
+    3. Only if user-generated content becomes a goal: a declarative-only
+       render mode (painters as data/DSL, or WASM with no host access) so a
+       story can be pure data, loadable with zero code trust — where the WASM
+       idea earns its keep.
+  Also: localStorage key namespacing/collisions across games on one origin;
+  the offline tools run type-stripped story files under Node (a story's
+  paint/*.ts and drive/*.mjs execute during check/drive — a supply-chain
+  boundary for anyone running someone else's story through the tools);
+  dependency posture (zero runtime deps — keep it). Deliverable: SECURITY.md
+  stating the trust boundary loudly, plus the step-1 hardening.
 - **Independent AI build test** — have a different AI, in a SEPARATE
   directory (not this repo), build a new game from `games/_template` with no
   hand-holding, to test whether the template + GUIDE are self-sufficient.
