@@ -1,0 +1,38 @@
+{
+  "id": "keeper",
+  "start": "start",
+  "nodes": {
+    "start": {
+      "line": "Lamp's dead, and my lens with it. The crate went off the end of the pier this morning, hoist and all.",
+      "options": [
+        { "text": "Your lens is in the harbour?", "to": "crate", "setFlags": ["knows_crate"] },
+        {
+          "text": "Can't you fish the crate out?",
+          "to": "fish",
+          "requires": ["flag:knows_crate"]
+        },
+        {
+          "text": "I got the lens up. It's on my back.",
+          "to": "raised",
+          "requires": ["item:lens"]
+        },
+        { "text": "I'll see what I can do. (leave)", "to": "end" }
+      ]
+    },
+    "crate": {
+      "line": "Aye. Straight down off the pier end, just past my skiff. Too deep to swim, too heavy to want to.",
+      "options": [
+        { "text": "Let me think on it.", "to": "end" },
+        { "text": "Can't you fish it out yourself?", "to": "fish" }
+      ]
+    },
+    "fish": {
+      "line": "These arms are old rope, lad. But there's good line about the dock, and my boathook's on the rail — a strong back could rig something.",
+      "options": [{ "text": "A grapple. Right.", "to": "end" }]
+    },
+    "raised": {
+      "line": "Ha! Then what are you standing here for? Up the stairs with it — the housing's open and waiting.",
+      "options": [{ "text": "On my way.", "to": "end" }]
+    }
+  }
+}

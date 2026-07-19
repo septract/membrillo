@@ -1,0 +1,48 @@
+{
+  "id": "tower",
+  "name": "The Lamp Room",
+  "paint": "tower",
+  "walk": { "x": 24, "y": 128, "w": 272, "h": 44 },
+  "start": { "x": 42, "y": 154 },
+  "hotspots": [
+    {
+      "id": "housing",
+      "name": "lamp housing",
+      "region": { "x": 138, "y": 58, "w": 44, "h": 54 },
+      "walkTo": { "x": 160, "y": 136 },
+      "look": [
+        { "text": "The great housing sits open like an empty eye socket. No lens, no light." }
+      ],
+      "use": [
+        {
+          "requires": ["item:lens"],
+          "text": "You heave the lens up into the housing.",
+          "removeItem": "lens",
+          "setFlags": ["lamp_lit"],
+          "goto": "lit"
+        },
+        { "text": "Without a lens there is nothing to light." }
+      ]
+    },
+    {
+      "id": "stairs",
+      "name": "spiral stairs",
+      "region": { "x": 232, "y": 88, "w": 40, "h": 52 },
+      "walkTo": { "x": 250, "y": 140 },
+      "look": [
+        { "text": "A hundred and nine steps down to the rock. You counted on the way up." }
+      ]
+    }
+  ],
+  "characters": [],
+  "exits": [
+    {
+      "id": "door",
+      "name": "door to the dock",
+      "region": { "x": 0, "y": 96, "w": 26, "h": 64 },
+      "walkTo": { "x": 30, "y": 152 },
+      "to": "dock",
+      "entry": { "x": 280, "y": 152 }
+    }
+  ]
+}

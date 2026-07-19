@@ -1,0 +1,29 @@
+[
+  {
+    "id": "rope",
+    "name": "coil of line",
+    "look": [{ "text": "Twenty feet of tarred line, still supple." }],
+    "combine": [
+      {
+        "withItem": "hook",
+        "text": "You lash the boathook to the line. A serviceable grapple.",
+        "giveItem": "grapple"
+      }
+    ]
+  },
+  {
+    "id": "hook",
+    "name": "boathook",
+    "look": [{ "text": "A long-shafted boathook. Good steel under the flaking paint." }]
+  },
+  {
+    "id": "grapple",
+    "name": "makeshift grapple",
+    "look": [{ "text": "Boathook, line, and a fisherman's knot. It should drag the bottom." }]
+  },
+  {
+    "id": "lens",
+    "name": "lamp lens",
+    "look": [{ "text": "The fresnel lens, dripping and whole. Heavier than it looks." }]
+  }
+]

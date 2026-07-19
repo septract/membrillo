@@ -1,0 +1,9 @@
+{
+  "id": "glade",
+  "name": "The Glade",
+  "beats": [
+    "With the stream down to a trickle, the old bridge holds.",
+    "You cross into the quiet glade. (Fixture complete.)"
+  ],
+  "ending": true
+}

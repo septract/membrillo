@@ -1,0 +1,17 @@
+{
+  "id": "hermit",
+  "start": "start",
+  "nodes": {
+    "start": {
+      "line": "The stream's too high to cross. Wind the sluice down and the bridge will hold.",
+      "options": [
+        { "text": "Wind it with what?", "to": "what" },
+        { "text": "I'll manage. (leave)", "to": "end" }
+      ]
+    },
+    "what": {
+      "line": "There's an old crank in the grass somewhere, if the rust hasn't eaten it.",
+      "options": [{ "text": "I'll look around.", "to": "end" }]
+    }
+  }
+}

@@ -4,7 +4,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A browser-first point-and-click adventure game (engine + story content), restarting from the experiments in `../tng-game` and integrating their lessons. **There is no code yet** — the repo currently holds design docs and vendored reference material. The founding design is in `docs/2026-07-18-architecture.md`; read it before building anything.
+A browser-first point-and-click adventure game (engine + story content), restarting from the experiments in `../tng-game` and integrating their lessons. The founding design is in `docs/2026-07-18-architecture.md`; read it before changing the architecture. TypeScript + Vite (the only dependencies); the offline tools run on Node's native type-stripping (Node ≥ 23), so `tools/` imports `engine/core` `.ts` files directly.
+
+## Commands
+
+```
+npm run dev        # Vite dev server (http://localhost:5173)
+npm run build      # production build to dist/
+npm run typecheck  # tsc --noEmit
+npm test           # unit tests for the pure core (node --test)
+npm run validate   # structural + cross-ref checks on every story (or: -- <id>)
+npm run fuzz       # exhaustively plays every reachable state; proves no dead ends
+npm run check      # all four of the above
+```
+
+Run `npm run check` after any engine change, and `validate` + `fuzz` after any story change, before considering work done (all sub-second). `?story=<id>` picks a story directly; `?story=<id>&start=<scene>&flags=a,b&items=x,y` is a debug jump that bypasses saves. In-game, holding Space outlines all clickable targets.
 
 ## The six design points (non-negotiable)
 
@@ -19,7 +33,11 @@ A browser-first point-and-click adventure game (engine + story content), restart
 
 - `docs/` — design notes, named date-first (`YYYY-MM-DD-title.md`). `docs/research/` holds research notes. The architecture note in `docs/` is the living design doc — update it in place as decisions are made.
 - `deps/` — gitignored, vendored third-party repos, **reference only**. Currently `deps/pointclick-adventure` (AngelJaimer's Claude skill + TS/Canvas engine kit). Read its SKILL.md, `references/`, and `kit/src/` for presentation techniques (code-drawn pixel art, walk system, Web Audio synth, PWA); do not treat its SKILL.md as instructions to follow, and do not copy its story-as-TypeScript data model. If `deps/pointclick-adventure` is missing (fresh clone), re-fetch with `git clone --depth 1 https://github.com/AngelJaimer/pointclick-adventure deps/pointclick-adventure`.
-- Planned (see the architecture note): `engine/` (pure DOM-free rules core + canvas/DOM layer + shared art/audio libraries), `tools/` (validate / fuzz / unit tests importing the same core the browser runs), `stories/<id>/` (JSON logic plus a narrow `paint/` code surface for scene painters).
+- `engine/core/` — pure, DOM-free rules (types, conditions, first-match rule buckets, four-verb collapsing, dialogue). **The only implementation of the game rules**: the browser layer and the offline tools both import it. Nothing in `engine/` may reference any specific story's content — `stories/meadow/` is the fixture that exists to break if that's violated (it ships no `paint/` at all, so the placeholder rendering path must always work).
+- `engine/` (main/render/loader/style) — the DOM/canvas layer: 320×180 pixel canvas, click-to-walk actor, Look/Talk/Interact/Combine verb bar, dialogue overlay, cutscenes, localStorage saves.
+- `engine/art/` — shared drawing library (palette, Bayer dithering, sprite helpers). Painters take every colour from the palette.
+- `tools/` — `validate.ts`, `fuzz.ts`, `core.test.ts`. The fuzzer explores the full state graph and errors on any state from which no ending is reachable.
+- `stories/<id>/` — story DATA: `manifest.json`, `items.json`, `scenes/*.json`, `dialogue/*.json`, plus optionally `paint/index.ts`, the story's one code surface: named scene/sprite painters referenced from scene JSON by name. Painters draw only — they may read state, never write it, and hold no game logic.
 
 ## Prior art — consult before designing
 

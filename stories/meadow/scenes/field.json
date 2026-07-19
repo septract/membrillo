@@ -1,0 +1,65 @@
+{
+  "id": "field",
+  "name": "The Field",
+  "walk": { "x": 16, "y": 120, "w": 288, "h": 50 },
+  "start": { "x": 40, "y": 150 },
+  "hotspots": [
+    {
+      "id": "crank",
+      "name": "something in the grass",
+      "region": { "x": 40, "y": 130, "w": 18, "h": 10 },
+      "walkTo": { "x": 52, "y": 145 },
+      "requires": ["!flag:took_crank"],
+      "look": [{ "text": "A glint of iron in the long grass." }],
+      "take": [
+        {
+          "text": "You pull a rusty crank handle out of the grass.",
+          "giveItem": "crank",
+          "setFlags": ["took_crank"]
+        }
+      ]
+    },
+    {
+      "id": "sluice",
+      "name": "sluice gate",
+      "region": { "x": 140, "y": 96, "w": 32, "h": 32 },
+      "walkTo": { "x": 156, "y": 130 },
+      "look": [
+        {
+          "requires": ["flag:gate_open"],
+          "text": "The gate is wound down. The stream is a trickle now."
+        },
+        { "text": "A wooden sluice gate above the stream. Its spindle is bare." }
+      ],
+      "use": [
+        {
+          "requires": ["item:crank"],
+          "text": "The crank bites. The gate groans down and the stream thins to a trickle.",
+          "setFlags": ["gate_open"],
+          "removeItem": "crank"
+        },
+        { "text": "The spindle is bare — it wants a crank." }
+      ]
+    }
+  ],
+  "characters": [
+    {
+      "id": "hermit",
+      "name": "the hermit",
+      "pos": { "x": 250, "y": 152 },
+      "walkTo": { "x": 228, "y": 154 },
+      "look": [{ "text": "A patient figure in a patched coat." }],
+      "talk": [{ "dialogue": "hermit" }]
+    }
+  ],
+  "exits": [
+    {
+      "id": "bridge",
+      "name": "old bridge",
+      "region": { "x": 288, "y": 104, "w": 32, "h": 56 },
+      "walkTo": { "x": 298, "y": 145 },
+      "to": "glade",
+      "requires": ["flag:gate_open"]
+    }
+  ]
+}

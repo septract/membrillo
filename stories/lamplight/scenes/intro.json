@@ -1,0 +1,10 @@
+{
+  "id": "intro",
+  "name": "Intro",
+  "beats": [
+    "The ferry dropped you at Graywater Stair an hour before dusk.",
+    "Across the harbour, the lighthouse stands dark.",
+    "Nobody is getting home tonight without that light."
+  ],
+  "next": "dock"
+}

@@ -1,0 +1,97 @@
+{
+  "id": "dock",
+  "name": "Graywater Stair",
+  "paint": "dock",
+  "walk": { "x": 8, "y": 128, "w": 304, "h": 44 },
+  "start": { "x": 30, "y": 158 },
+  "hotspots": [
+    {
+      "id": "rope",
+      "name": "coil of line",
+      "region": { "x": 58, "y": 138, "w": 24, "h": 12 },
+      "walkTo": { "x": 74, "y": 156 },
+      "requires": ["!flag:took_rope"],
+      "look": [{ "text": "Someone left a coil of tarred line by the piling." }],
+      "take": [
+        {
+          "text": "You shoulder the coil of line.",
+          "giveItem": "rope",
+          "setFlags": ["took_rope"]
+        }
+      ]
+    },
+    {
+      "id": "hook",
+      "name": "boathook",
+      "region": { "x": 118, "y": 116, "w": 44, "h": 8 },
+      "walkTo": { "x": 138, "y": 140 },
+      "requires": ["!flag:took_hook"],
+      "look": [{ "text": "A boathook rests across the rail, waiting for a boat." }],
+      "take": [
+        {
+          "text": "You lift the boathook off the rail.",
+          "giveItem": "hook",
+          "setFlags": ["took_hook"]
+        }
+      ]
+    },
+    {
+      "id": "skiff",
+      "name": "keeper's skiff",
+      "region": { "x": 208, "y": 100, "w": 52, "h": 22 },
+      "walkTo": { "x": 226, "y": 140 },
+      "look": [
+        { "text": "The keeper's skiff, tied off and half-bailed. It won't be rowing anywhere heavy." }
+      ]
+    },
+    {
+      "id": "water",
+      "name": "harbour water",
+      "region": { "x": 0, "y": 84, "w": 264, "h": 42 },
+      "walkTo": { "x": 160, "y": 150 },
+      "look": [
+        {
+          "requires": ["flag:knows_crate", "!flag:crate_raised"],
+          "text": "Past the skiff, straight down. Something pale catches the last light — the crate."
+        },
+        { "text": "Cold, dark water, patient as ever." }
+      ],
+      "use": [
+        {
+          "requires": ["item:grapple", "flag:knows_crate", "!flag:crate_raised"],
+          "text": "You swing the grapple out past the skiff and drag the bottom. On the third pass it bites — up comes the crate, and inside, the lens.",
+          "removeItem": "grapple",
+          "giveItem": "lens",
+          "setFlags": ["crate_raised"]
+        },
+        {
+          "requires": ["item:grapple"],
+          "text": "You'd be dragging blind. Better find out where to cast first."
+        },
+        { "text": "You're not swimming in that." }
+      ]
+    }
+  ],
+  "characters": [
+    {
+      "id": "keeper",
+      "name": "the keeper",
+      "pos": { "x": 250, "y": 156 },
+      "walkTo": { "x": 228, "y": 158 },
+      "paint": "keeper",
+      "facing": "left",
+      "look": [{ "text": "The lighthouse keeper. Old rope for arms, weather for a face." }],
+      "talk": [{ "dialogue": "keeper" }]
+    }
+  ],
+  "exits": [
+    {
+      "id": "tower-door",
+      "name": "lighthouse door",
+      "region": { "x": 286, "y": 92, "w": 30, "h": 64 },
+      "walkTo": { "x": 296, "y": 150 },
+      "to": "tower",
+      "entry": { "x": 42, "y": 154 }
+    }
+  ]
+}

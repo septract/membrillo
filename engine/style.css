@@ -1,0 +1,106 @@
+:root {
+  color-scheme: dark;
+  --bg: #14121a;
+  --panel: #1e1b28;
+  --edge: #3a3646;
+  --text: #ece8e0;
+  --dim: #8c848a;
+  --accent: #fce8a0;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: ui-monospace, Menlo, monospace;
+  display: flex;
+  justify-content: center;
+}
+
+#app { width: min(100%, 984px); padding: 12px; }
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 10px;
+}
+
+h1 { font-size: 18px; margin: 0; color: var(--accent); }
+
+button {
+  font: inherit;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--edge);
+  border-radius: 4px;
+  padding: 5px 12px;
+  cursor: pointer;
+}
+button:hover { border-color: var(--dim); }
+button.armed { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+button.secondary { color: var(--dim); }
+
+.story-row { display: flex; gap: 8px; margin-bottom: 8px; }
+
+.stage { position: relative; }
+
+#view {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  image-rendering: pixelated;
+  border: 1px solid var(--edge);
+  border-radius: 4px;
+  cursor: crosshair;
+}
+
+#hoverlabel {
+  position: absolute;
+  pointer-events: none;
+  background: rgba(20, 18, 26, 0.9);
+  border: 1px solid var(--edge);
+  border-radius: 3px;
+  padding: 2px 6px;
+  font-size: 12px;
+  color: var(--accent);
+}
+
+#dialogue {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(20, 18, 26, 0.94);
+  border-top: 1px solid var(--edge);
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 60%;
+  overflow-y: auto;
+}
+#dialogue[hidden] { display: none; }
+#dialogue .npc-line { margin: 0 0 4px; color: var(--accent); }
+#dialogue button { text-align: left; }
+
+.panel { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+
+#verbs { display: flex; gap: 8px; }
+
+#inventory { display: flex; gap: 6px; flex-wrap: wrap; min-height: 30px; }
+.chip { padding: 3px 10px; border-radius: 12px; font-size: 13px; }
+
+#log {
+  height: 130px;
+  overflow-y: auto;
+  background: var(--panel);
+  border: 1px solid var(--edge);
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+#log p { margin: 0 0 4px; }

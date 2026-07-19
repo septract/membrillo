@@ -1,0 +1,10 @@
+{
+  "id": "lit",
+  "name": "Lamplight",
+  "beats": [
+    "The lens seats with a click. You wind the mechanism and strike the wick.",
+    "Light sweeps the harbour. Out past the bar, a ferry answers with its horn.",
+    "Down on the dock, the keeper raises a hand. Graywater's lamp is lit."
+  ],
+  "ending": true
+}
