@@ -112,6 +112,43 @@ button.primary { background: var(--accent); color: var(--bg); border-color: var(
   cursor: crosshair;
 }
 
+/* Landscape / short viewports: cap the canvas so a 16:9 stage never pushes the
+   verb bar and inventory below the fold. Height wins, width follows aspect. */
+@media (max-height: 620px) and (orientation: landscape) {
+  #app { padding: 6px; }
+  .stage { display: flex; justify-content: center; }
+  #view { width: auto; height: min(100%, 62vh); max-width: 100%; }
+}
+
+/* Accessible-only text: the aria-live transcript mirror. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Muted indicator — a reliable CSS strike, not a fragile combining glyph. */
+#btn-mute.muted { text-decoration: line-through; }
+
+.menu-note {
+  color: var(--dim);
+  background: var(--panel);
+  border: 1px solid var(--edge);
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin: 0 0 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
 #overlay {
   position: absolute;
   inset: 0;

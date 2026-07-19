@@ -113,7 +113,12 @@ const WALK_SPEED = 80; // px/s at scale 1
 const STEP_PHASE = 0.45; // walk-cycle radians per px covered
 const SPEECH_MS_MIN = 1600;
 const SPEECH_MS_PER_CHAR = 55;
-const FADE_MS = 440;
+// Respect prefers-reduced-motion: near-instant fades (the switch still happens
+// at the midpoint, just without the drawn-out black) and frozen ambient time
+// so scene/portrait painters stop animating. Walk cycles stay (user-driven).
+const reduceMotion =
+  typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+const FADE_MS = reduceMotion ? 40 : 440;
 const CAMERA_LERP = 5; // 1/s
 let stories!: Map<string, LoadedStory>;
 
@@ -140,6 +145,7 @@ let el!: {
   btnMute: HTMLElement;
   btnMenu: HTMLElement;
   btnRestart: HTMLElement;
+  live: HTMLElement;
 };
 let ctx!: CanvasRenderingContext2D;
 let octx!: CanvasRenderingContext2D;
@@ -149,13 +155,18 @@ function initDom(): void {
   app.innerHTML = `
     <header>
       <h1 id="title">Membrillo</h1>
-      <nav><button id="btn-eye" title="highlight clickable things">👁</button><button id="btn-mute" title="mute">♪</button><button id="btn-menu">Stories</button><button id="btn-restart" hidden>Restart</button></nav>
+      <nav>
+        <button id="btn-eye" aria-label="Outline clickable things" aria-pressed="false" title="highlight clickable things">👁</button>
+        <button id="btn-mute" aria-label="Mute sound" aria-pressed="false" title="mute">♪</button>
+        <button id="btn-menu">Stories</button>
+        <button id="btn-restart" hidden>Restart</button>
+      </nav>
     </header>
     <div id="menu"></div>
     <div id="game" hidden>
       <div class="stage">
-        <canvas id="view"></canvas>
-        <canvas id="overlay"></canvas>
+        <canvas id="view" role="img" aria-label="Game scene"></canvas>
+        <canvas id="overlay" aria-hidden="true"></canvas>
         <button id="btn-skip" hidden>skip ≫</button>
         <div id="dialogue" hidden></div>
       </div>
@@ -164,10 +175,11 @@ function initDom(): void {
         <div id="verbs"></div>
         <div id="inventory"></div>
         <div id="objectives" hidden></div>
-        <button id="btn-log" class="secondary log-toggle">history ▸</button>
+        <button id="btn-log" class="secondary log-toggle" aria-expanded="false">history ▸</button>
         <div id="log" hidden></div>
       </div>
-    </div>`;
+    </div>
+    <div id="live" class="visually-hidden" aria-live="polite"></div>`;
 
   el = {
     title: document.getElementById('title')!,
@@ -187,6 +199,7 @@ function initDom(): void {
     btnMute: document.getElementById('btn-mute')!,
     btnMenu: document.getElementById('btn-menu')!,
     btnRestart: document.getElementById('btn-restart')!,
+    live: document.getElementById('live')!,
   };
   ctx = el.canvas.getContext('2d')!;
   // Text renders on a separate display-resolution overlay stacked above the
@@ -332,21 +345,31 @@ function storyCard(id: string, loaded: LoadedStory): HTMLElement {
   const saved = loadSave(id);
   const play = document.createElement('button');
   play.textContent = saved ? 'Restart' : 'Play';
-  play.addEventListener('click', () => startStory(id, null));
+  play.addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    startStory(id, null);
+  });
   if (saved) {
     const cont = document.createElement('button');
     cont.textContent = 'Continue';
     cont.className = 'primary';
-    cont.addEventListener('click', () => startStory(id, saved));
+    cont.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      startStory(id, saved);
+    });
     actions.append(cont);
     play.className = 'secondary';
   }
   actions.append(play);
   card.append(actions);
+  // The whole card is clickable (its hover style promised as much) — a click
+  // anywhere Continues if there's a save, else Plays; the buttons stop
+  // propagation so an explicit Restart still starts fresh.
+  card.addEventListener('click', () => startStory(id, saved));
   return card;
 }
 
-function showMenu(): void {
+function showMenu(note?: string): void {
   session = null;
   speech = null;
   fade = null;
@@ -360,10 +383,26 @@ function showMenu(): void {
   el.btnMenu.hidden = true; // no "Stories" button while the menu IS the stories
   el.menu.hidden = false;
   el.title.textContent = 'Membrillo';
+  document.title = 'Membrillo';
   el.menu.innerHTML = '';
+
+  if (note) {
+    const n = document.createElement('p');
+    n.className = 'menu-note';
+    n.textContent = note;
+    el.menu.append(n);
+  }
 
   const games = [...stories].filter(([, l]) => (l.story.manifest.category ?? 'story') !== 'demo');
   const demos = [...stories].filter(([, l]) => l.story.manifest.category === 'demo');
+
+  if (stories.size === 0) {
+    const empty = document.createElement('p');
+    empty.className = 'menu-note';
+    empty.textContent =
+      'No stories found. Check the globs passed to boot() — the JSON glob must reach your stories/ directory.';
+    el.menu.append(empty);
+  }
 
   for (const [id, loaded] of games) el.menu.append(storyCard(id, loaded));
 
@@ -406,6 +445,7 @@ function startStory(id: string, state: State | null): void {
   el.btnRestart.hidden = false;
   el.btnMenu.hidden = false; // Stories button returns while in a story
   el.title.textContent = loaded.story.manifest.title;
+  document.title = `${loaded.story.manifest.title} — Membrillo`;
   el.log.innerHTML = '';
   el.canvas.width = view.w;
   el.canvas.height = view.h;
@@ -546,6 +586,9 @@ function log(text: string): void {
   el.log.append(p);
   while (el.log.childElementCount > 80) el.log.firstElementChild?.remove();
   el.log.scrollTop = el.log.scrollHeight;
+  // Mirror every narration/speech line into an always-present aria-live region
+  // so screen-reader users get the story even with the transcript collapsed.
+  el.live.textContent = text;
 }
 
 // --- Speech -----------------------------------------------------------------
@@ -1110,6 +1153,7 @@ function renderDialogue(): void {
     // trap the player (the validator warns about these at author time).
     options.push({ text: '(leave)', to: 'end' });
   }
+  let first: HTMLButtonElement | null = null;
   for (const option of options) {
     const btn = document.createElement('button');
     btn.textContent = option.text;
@@ -1118,7 +1162,11 @@ function renderDialogue(): void {
     if (option.to === 'end') btn.classList.add('dialogue-end');
     btn.addEventListener('click', () => pickOption(option));
     el.dialogue.append(btn);
+    first ??= btn;
   }
+  // Move focus onto the first option so a keyboard user isn't dumped to <body>
+  // after every node change (Enter then picks it; Tab reaches the rest).
+  first?.focus();
 }
 
 function pickOption(option: DialogueOption): void {
@@ -1482,6 +1530,7 @@ function frame(now: number): void {
     // On-canvas skip appears whenever something is skippable (touch's Esc).
     const skippable = !session.finished && (session.beat !== null || session.sequence !== null);
     if (el.btnSkip.hidden === skippable) el.btnSkip.hidden = !skippable;
+    const at = reduceMotion ? 0 : now / 1000; // frozen ambient time when reduced-motion
     syncOverlay();
     octx.clearRect(0, 0, el.overlay.width, el.overlay.height);
     octx.globalAlpha = Math.max(0, 1 - alpha); // overlay text fades with the scene
@@ -1491,7 +1540,7 @@ function frame(now: number): void {
       drawEndCard(scale);
     } else if (session.beat !== null) {
       if (session.finished) drawEndCard(scale);
-      else drawCutscene(scene, scale, now / 1000);
+      else drawCutscene(scene, scale, at);
       if (alpha > 0) {
         ctx.fillStyle = rgba(P.black, alpha);
         ctx.fillRect(0, 0, session.view.w, session.view.h);
@@ -1513,7 +1562,7 @@ function frame(now: number): void {
         }
       }
       renderScene(ctx, session.loaded, session.state, {
-        t: now / 1000,
+        t: at,
         actor: session.actor,
         camera: session.camera,
         view: session.view,
@@ -1545,8 +1594,8 @@ function frame(now: number): void {
         );
         overlayText(octx, hover.name, x, y, P.glow, size);
       }
-      drawVnPortraits(now / 1000); // over speech + hover; the scrim owns the frame
-      drawSeqPortrait(now / 1000);
+      drawVnPortraits(at); // over speech + hover; the scrim owns the frame
+      drawSeqPortrait(at);
       if (session.finished) drawEndCard(scale);
     }
     octx.globalAlpha = 1;
@@ -1822,8 +1871,24 @@ function wireInput(): void {
       return;
     }
     if (!session) return;
+    // End card: Enter or Escape returns to the menu (was click-only).
+    if (session.finished) {
+      if (ev.key === 'Enter' || ev.key === 'Escape') {
+        ev.preventDefault();
+        showMenu();
+      }
+      return;
+    }
     if (ev.key === 'Escape') {
       skipCurrent();
+      return;
+    }
+    // Enter advances a cutscene beat (dialogue option buttons handle their own
+    // Enter via focus — see renderDialogue).
+    if (ev.key === 'Enter' && session.beat !== null) {
+      ev.preventDefault();
+      if (speech) speech = null;
+      advanceBeat(sceneOf(session));
       return;
     }
     if (session.dialogue) return;
@@ -1835,31 +1900,54 @@ function wireInput(): void {
     if (ev.code === 'Space') spaceHeld = false;
   });
 
+  // Autoplay unlock: browsers create the AudioContext suspended until a user
+  // gesture. A deep-linked ?story= boot has none, so resume on the first real
+  // interaction (once), or shared links play silent forever.
+  const unlockAudio = (): void => {
+    audio.ensureRunning();
+    window.removeEventListener('pointerdown', unlockAudio);
+    window.removeEventListener('keydown', unlockAudio);
+  };
+  window.addEventListener('pointerdown', unlockAudio);
+  window.addEventListener('keydown', unlockAudio);
+
   el.btnSkip.addEventListener('click', skipCurrent);
   el.btnLog.addEventListener('click', () => {
     el.log.hidden = !el.log.hidden;
     el.btnLog.textContent = el.log.hidden ? 'history ▸' : 'history ▾';
+    el.btnLog.setAttribute('aria-expanded', String(!el.log.hidden));
     if (!el.log.hidden) el.log.scrollTop = el.log.scrollHeight;
   });
 
   el.btnEye.addEventListener('click', () => {
     eyeLock = !eyeLock;
     el.btnEye.classList.toggle('armed', eyeLock);
+    el.btnEye.setAttribute('aria-pressed', String(eyeLock));
   });
 
   el.btnMute.addEventListener('click', () => {
     audio.ensureRunning();
-    el.btnMute.textContent = audio.toggleMute() ? '♪̸' : '♪';
-    el.btnMute.classList.toggle('secondary', audio.isMuted());
+    const muted = audio.toggleMute();
+    applyMuteState(muted);
   });
 
-  el.btnMenu.addEventListener('click', showMenu);
+  el.btnMenu.addEventListener('click', () => showMenu());
   el.btnRestart.addEventListener('click', () => {
-    if (session) {
-      localStorage.removeItem(saveKey(session.id));
-      startStory(session.id, null);
-    }
+    if (!session) return;
+    // Destructive with only one save slot — confirm before wiping progress.
+    if (!confirm('Restart from the beginning? This clears your saved progress.')) return;
+    localStorage.removeItem(saveKey(session.id));
+    startStory(session.id, null);
   });
+}
+
+/** Reflect mute state on the button — a CSS strike, not a fragile combining glyph. */
+function applyMuteState(muted: boolean): void {
+  el.btnMute.classList.toggle('muted', muted);
+  el.btnMute.classList.toggle('secondary', muted);
+  el.btnMute.setAttribute('aria-pressed', String(muted));
+  el.btnMute.setAttribute('aria-label', muted ? 'Unmute sound' : 'Mute sound');
+  el.btnMute.title = muted ? 'unmute' : 'mute';
 }
 
 /**
@@ -1879,10 +1967,7 @@ export function boot(sources: StorySources): void {
   document.fonts?.ready.then(resetTextCache);
 
   // Reflect the persisted mute state on the button.
-  if (audio.isMuted()) {
-    el.btnMute.textContent = '♪̸';
-    el.btnMute.classList.add('secondary');
-  }
+  if (audio.isMuted()) applyMuteState(true);
 
   const bootQuery = new URLSearchParams(location.search);
   const bootStory = bootQuery.get('story');
@@ -1890,7 +1975,9 @@ export function boot(sources: StorySources): void {
     const loaded = stories.get(bootStory)!;
     startStory(bootStory, debugState(loaded) ?? loadSave(bootStory));
   } else {
-    showMenu();
+    // A shared/typo'd ?story= id that doesn't exist shouldn't drop silently to
+    // the menu with no explanation.
+    showMenu(bootStory ? `No story called "${bootStory}". Pick one below.` : undefined);
   }
   requestAnimationFrame(tick);
 }

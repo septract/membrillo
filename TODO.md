@@ -13,6 +13,16 @@ design note, it lands here; when it ships, delete it. Dated design notes in
 - **QoL audit for "first release" quality** — IN PROGRESS: multi-agent audit
   (engine correctness, click-coverage, docs/onboarding, UX/mobile) then fix
   the findings. Do this BEFORE the independent AI test below.
+- **Security-practice audit** (Mike, 2026-07-19) — if we're encouraging
+  others to use this, make it as safe as possible. Scope: XSS surface (story
+  text must reach the DOM only via textContent, never innerHTML — audit
+  log/dialogue/sentence/menu); the trust boundary of `paint/index.ts` and
+  driver modules (they run arbitrary JS — fine for a game author's own
+  stories, a hazard if a game ever accepts USER-submitted stories; document
+  it loudly); localStorage key namespacing/collisions; CSP-friendliness of
+  the built site; the offline tools running type-stripped story files under
+  Node; dependency/supply-chain posture (currently zero runtime deps — keep
+  it). Deliverable: a SECURITY.md + any hardening the audit surfaces.
 - **Independent AI build test** — have a different AI, in a SEPARATE
   directory (not this repo), build a new game from `games/_template` with no
   hand-holding, to test whether the template + GUIDE are self-sufficient.

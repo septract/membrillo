@@ -37,7 +37,7 @@ export async function run(kit) {
   if (!mg.state.flags.includes('arrived')) throw new Error('mobile skip lost effects');
   console.log('  tap-through cutscene + skip button ✓');
   // The eye toggle latches hotspot highlighting (no Space key on a phone).
-  await mp.getByRole('button', { name: '👁' }).tap();
+  await mp.getByRole('button', { name: 'Outline clickable things' }).tap();
   await mp.waitForTimeout(200);
   await mp.screenshot({ path: `${SHOTS}70-mobile-highlight.png` });
   console.log('  shot 70-mobile-highlight');
