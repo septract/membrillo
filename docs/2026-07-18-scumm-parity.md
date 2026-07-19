@@ -123,6 +123,17 @@ exercises companions/objectives with no painters):
   (chord loop + scale + style), crossfade on scene change, engine-event SFX
   (pickup/door/success), mute button. Silent for stories without a config.
 
+## Verb-model revision (2026-07-18, later)
+
+Mike flagged that the Combine verb was counter-intuitive: "combine" on the
+lens then clicking the housing did nothing, because Combine only paired
+inventory items while item-on-world needed Interact+armed-item — a mode split
+SCUMM never had. **The Combine verb is removed.** The bar is Look/Talk/
+Interact; under Interact, clicking an item arms it and the next click —
+another inventory item OR a scene target — completes "Use X with Y". Core
+`combine`/`applyItem` are unchanged (and still separately fuzzed); this was
+purely a controller/UI unification.
+
 ## Priority order (agreed 2026-07-18)
 
 1. `itemUse` — schema-changing, so it lands before the first real story is

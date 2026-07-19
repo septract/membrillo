@@ -58,6 +58,7 @@
       "name": "old bridge",
       "region": { "x": 230, "y": 84, "w": 26, "h": 44 },
       "walkTo": { "x": 238, "y": 116 },
+      "look": "A plank bridge over the stream, mossy but sound.",
       "to": "glade",
       "requires": ["flag:gate_open"]
     }

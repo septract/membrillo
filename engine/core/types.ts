@@ -95,6 +95,8 @@ export interface Exit {
   entry?: Point;
   /** Visibility gate. For a locked-door message, pair a gated exit with a hotspot. */
   requires?: Condition[];
+  /** Look-verb description (plain text — looking at an exit never travels). */
+  look?: string;
   /**
    * Effects applied on travel (text/flags/items) — `goto`, `dialogue` and
    * `play` are not allowed here (validator enforces); `to` is the destination.

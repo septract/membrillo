@@ -110,6 +110,9 @@ function validateStory(files: StoryFiles): Report {
 
   const checkTarget = (where: string, target: Target, sequences: Record<string, SeqStep[]> | null): void => {
     checkConds(where, target.requires);
+    if (target.look === undefined) {
+      r.warn(`${where}: no look text — Look falls back to the generic default`);
+    }
     if (target.use !== undefined && target.take !== undefined) {
       r.error(`${where}: defines both "use" and "take" — Interact must resolve to exactly one`);
     }

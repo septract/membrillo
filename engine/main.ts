@@ -52,7 +52,11 @@ import {
 } from './art/sprites.ts';
 import type { Outcome } from './core/rules.ts';
 
-type ArmedVerb = PlayerVerb | 'combine';
+// Look / Talk / Interact. There is deliberately no Combine verb: with
+// Interact, clicking an inventory item arms it ("Use X with …"), and the next
+// click — another item OR a scene target — completes the sentence. One mental
+// model whether Y is in the inventory or the world.
+type ArmedVerb = PlayerVerb;
 
 type PendingAction = { kind: 'verb'; verb: PlayerVerb } | { kind: 'apply'; itemId: string };
 
@@ -147,7 +151,6 @@ const ctx = el.canvas.getContext('2d')!;
 let session: Session | null = null;
 let armed: ArmedVerb = 'look';
 let armedItem: string | null = null;
-let combineSel: string[] = [];
 let hover: TargetRef | undefined;
 let highlight = false;
 /** Transient one-shot speech; the floating dialogue line derives live from session.dialogue. */
@@ -243,7 +246,6 @@ function startStory(id: string, state: State | null): void {
   ctx.imageSmoothingEnabled = false;
   armed = 'look';
   armedItem = null;
-  combineSel = [];
   speech = null;
   fade = null;
   audio.ensureRunning(); // startStory always runs from a user gesture
@@ -606,7 +608,13 @@ function renderDialogue(): void {
   const node = dialogueNode(dlg, d.node);
   el.dialogue.hidden = false;
   el.dialogue.innerHTML = '';
-  for (const option of visibleOptions(session.state, node)) {
+  const options = visibleOptions(session.state, node);
+  if (options.length === 0) {
+    // Safety net: a node whose options are all condition-gated must never
+    // trap the player (the validator warns about these at author time).
+    options.push({ text: '(leave)', to: 'end' });
+  }
+  for (const option of options) {
     const btn = document.createElement('button');
     btn.textContent = option.text;
     btn.addEventListener('click', () => {
@@ -635,7 +643,6 @@ const VERBS: { id: ArmedVerb; label: string }[] = [
   { id: 'look', label: 'Look' },
   { id: 'talk', label: 'Talk' },
   { id: 'interact', label: 'Interact' },
-  { id: 'combine', label: 'Combine' },
 ];
 
 function verbKey(v: { label: string }): string {
@@ -647,17 +654,18 @@ function sentenceText(): string {
   const itemName = (id: string | null) =>
     id === null ? null : (session!.loaded.story.items[id]?.name ?? id);
   const targetName = hover?.name;
-  if (armed === 'combine') {
-    const parts = combineSel.map((i) => itemName(i));
-    return `Combine ${parts[0] ?? '…'} with ${parts[1] ?? '…'}`;
+  // Exits: the sentence must promise what a click DOES — Look describes,
+  // everything else travels, armed item or not.
+  if (hover?.kind === 'exit') {
+    return armed === 'look' ? `Look at ${targetName}` : `Go to ${targetName}`;
   }
   const held = itemName(armedItem);
   if (held !== null) {
-    return `Use ${held} on ${targetName ?? '…'}`;
+    return `Use ${held} with ${targetName ?? '…'}`;
   }
   const verbPhrase =
     armed === 'look' ? 'Look at' : armed === 'talk' ? 'Talk to' : 'Interact with';
-  if (targetName) return hover!.kind === 'exit' ? `Go to ${targetName}` : `${verbPhrase} ${targetName}`;
+  if (targetName) return `${verbPhrase} ${targetName}`;
   return `${verbPhrase} …`;
 }
 
@@ -678,7 +686,7 @@ function renderPanel(): void {
   if (session) {
     for (const itemId of session.state.inventory) {
       const item = session.loaded.story.items[itemId];
-      const selected = itemId === armedItem || combineSel.includes(itemId);
+      const selected = itemId === armedItem;
       const chip = document.createElement('button');
       chip.className = 'chip' + (selected ? ' armed' : '');
       chip.textContent = item?.name ?? itemId;
@@ -709,25 +717,23 @@ function renderObjectives(): void {
 function armVerb(id: ArmedVerb): void {
   armed = id;
   armedItem = null;
-  combineSel = [];
   renderPanel();
 }
 
 function onItemClick(itemId: string): void {
   if (!session) return;
-  if (armed === 'combine') {
-    combineSel = combineSel.includes(itemId)
-      ? combineSel.filter((x) => x !== itemId)
-      : [...combineSel, itemId];
-    if (combineSel.length === 2) {
-      const outcome = combine(session.loaded.story, session.state, combineSel[0]!, combineSel[1]!);
-      combineSel = [];
+  if (armed === 'interact') {
+    if (armedItem === null) {
+      armedItem = itemId; // arm: "Use <item> with …"
+    } else if (armedItem === itemId) {
+      armedItem = null; // disarm
+    } else {
+      // Second item completes the sentence: combine the pair.
+      const outcome = combine(session.loaded.story, session.state, armedItem, itemId);
+      armedItem = null;
       handleOutcome(outcome);
       return;
     }
-  } else if (armed === 'interact') {
-    // Arm the item: the next scene click is "use <item> on <target>".
-    armedItem = armedItem === itemId ? null : itemId;
   } else {
     const outcome = lookAtItem(session.loaded.story, session.state, itemId);
     handleOutcome(outcome);
@@ -801,8 +807,10 @@ el.canvas.addEventListener('click', (ev) => {
     session.pending = null;
     return;
   }
-  if (armed === 'combine') {
-    say('Combine works on two inventory items — pick them below.', actorHead(), P.glow, 'actor');
+  // Looking at an exit describes it — it must never surprise-travel.
+  if (target.kind === 'exit' && armed === 'look') {
+    const exit = (scene.exits ?? []).find((e) => e.id === target.id);
+    say(exit?.look ?? `That way: ${target.name}.`, actorHead(), P.glow, 'actor');
     return;
   }
   const action: PendingAction =
