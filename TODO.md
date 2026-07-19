@@ -6,10 +6,9 @@ design note, it lands here; when it ships, delete it. Dated design notes in
 
 ## Decisions needed (Mike)
 
-- **Audio verdict** — the synth themes (ship drone, hollow pluck, dusk/lamp)
-  need human ears; tune or rethink `engine/audio` voicing accordingly.
-- **Where the demo goes next**: grow the Marigold (second mission), polish
-  what exists, or pivot to deploy-and-share.
+- **Where the demo goes next**: grow the Marigold (second mission) or polish
+  what exists. (Deploy shipped; audio verdict in: the music is good — synth
+  approach stays.)
 
 ## Next (engine)
 
@@ -25,6 +24,10 @@ design note, it lands here; when it ships, delete it. Dated design notes in
   public release.
 
 ## Next (content/presentation)
+
+- Hide the event log by default (Mike, 2026-07-18) — it's a transcript, not
+  primary UI; keep it in the DOM (the browser driver asserts against its
+  textContent) behind a small "history" toggle.
 
 - Pixelization tool: `tools/pixelize.mjs` — box-downscale + palette
   quantization + ordered dither over PNGs (we already have a zero-dep PNG
