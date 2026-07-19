@@ -6,7 +6,8 @@
 // to the exact code that will run in the browser.
 
 import { parseCondition } from '../engine/core/rules.ts';
-import type { Box, Item, Point, Rule, Scene, Target } from '../engine/core/types.ts';
+import type { Box, Point, Rule, Scene, Target } from '../engine/core/types.ts';
+import { boxesConnected, boxIndexAt, walkBoxes } from '../engine/walk.ts';
 import { loadStoryFiles, storyIdsFromArgv, type StoryFiles } from './load-story.ts';
 
 const VIEW_W = 320;
@@ -98,6 +99,12 @@ function validateStory(files: StoryFiles): Report {
         checkRule(`${where}.${bucket}[${i}]`, rule, { talk: bucket === 'talk' }),
       );
     }
+    (target.itemUse ?? []).forEach((rule, i) => {
+      const w = `${where}.itemUse[${i}]`;
+      if (!items[rule.withItem]) r.error(`${w}: withItem "${rule.withItem}" unknown`);
+      usage.sinks.add(rule.withItem);
+      checkRule(w, rule, { talk: false });
+    });
   };
 
   const dupCheck = (where: string, ids: string[]): void => {
@@ -127,14 +134,28 @@ function validateStory(files: StoryFiles): Report {
       continue;
     }
 
-    const walk = scene.walk;
-    if (!walk || !scene.start) {
+    const boxes = walkBoxes(scene);
+    if (boxes.length === 0 || !scene.start) {
       r.error(`${where}: room scene needs walk and start`);
       continue;
     }
-    if (!inBox(scene.start, walk)) r.error(`${where}: start is outside the walk box`);
-    if (walk.x < 0 || walk.y < 0 || walk.x + walk.w > VIEW_W || walk.y + walk.h > VIEW_H) {
-      r.error(`${where}: walk box leaves the ${VIEW_W}x${VIEW_H} view`);
+    if (boxIndexAt(scene.start, boxes) === -1) r.error(`${where}: start is outside every walk box`);
+    for (const b of boxes) {
+      if (b.x < 0 || b.y < 0 || b.x + b.w > VIEW_W || b.y + b.h > VIEW_H) {
+        r.error(`${where}: a walk box leaves the ${VIEW_W}x${VIEW_H} view`);
+      }
+    }
+    if (!boxesConnected(boxes)) {
+      r.error(`${where}: walk boxes are not all connected — the actor can be stranded`);
+    }
+    const depth = scene.depth;
+    if (depth) {
+      if (depth.far.scale <= 0 || depth.near.scale <= 0) r.error(`${where}: depth scales must be > 0`);
+      if (depth.far.y === depth.near.y) r.error(`${where}: depth far.y and near.y must differ`);
+    }
+    for (const prop of scene.props ?? []) {
+      if (prop.y < 0 || prop.y > VIEW_H) r.error(`${where}#${prop.id}: prop y off-view`);
+      checkPaintRef(r, files, `${where}#${prop.id}`, prop.paint);
     }
 
     dupCheck(where, [
@@ -149,7 +170,7 @@ function validateStory(files: StoryFiles): Report {
       }
     };
     const checkWalkTo = (w: string, p: Point | undefined): void => {
-      if (p && !inBox(p, walk)) r.error(`${w}: walkTo is outside the walk box`);
+      if (p && boxIndexAt(p, boxes) === -1) r.error(`${w}: walkTo is outside every walk box`);
     };
 
     for (const h of scene.hotspots ?? []) {
@@ -173,12 +194,13 @@ function validateStory(files: StoryFiles): Report {
       const dest = scenes[e.to];
       if (!dest) {
         r.error(`${w}: exit to unknown scene "${e.to}"`);
-      } else if (isRoom(dest) && dest.walk) {
+      } else if (isRoom(dest)) {
         // The kit's hardest-won lesson: the spawn point must be sane ground
         // in the DESTINATION, or the player teleports oddly.
+        const destBoxes = walkBoxes(dest);
         const entry = e.entry ?? dest.start;
-        if (entry && !inBox(entry, dest.walk)) {
-          r.error(`${w}: entry (${entry.x},${entry.y}) outside walk box of "${e.to}"`);
+        if (entry && destBoxes.length > 0 && boxIndexAt(entry, destBoxes) === -1) {
+          r.error(`${w}: entry (${entry.x},${entry.y}) outside every walk box of "${e.to}"`);
         }
       }
     }

@@ -12,6 +12,7 @@ import { initialState, stateKey } from '../engine/core/rules.ts';
 import type { Scene, State, Story } from '../engine/core/types.ts';
 import {
   act,
+  applyItem,
   availableVerbs,
   chooseOption,
   combine,
@@ -82,20 +83,34 @@ function expand(story: Story, node: Node, seenScenes: Set<string>): Edge[] {
     return edges;
   }
 
+  const outcomeNode = (outcome: { state: State; goto?: string; dialogue?: string }): Node => {
+    let next: Node = { state: outcome.state, dlg: null };
+    if (outcome.dialogue !== undefined) {
+      const dlg = story.dialogues[outcome.dialogue];
+      if (dlg) next = { ...next, dlg: { id: dlg.id, node: dlg.start } };
+    }
+    if (outcome.goto !== undefined) {
+      next = { ...next, state: settle(story, enterScene(next.state, outcome.goto), seenScenes) };
+    }
+    return next;
+  };
+
   const targets = [...visibleHotspots(scene, node.state), ...visibleCharacters(scene, node.state)];
   for (const target of targets) {
     for (const verb of availableVerbs(target)) {
       const outcome = act(story, node.state, target.id, verb);
       if (!outcome) continue;
-      let next: Node = { state: outcome.state, dlg: null };
-      if (outcome.dialogue !== undefined) {
-        const dlg = story.dialogues[outcome.dialogue];
-        if (dlg) next = { ...next, dlg: { id: dlg.id, node: dlg.start } };
-      }
-      if (outcome.goto !== undefined) {
-        next = { ...next, state: settle(story, enterScene(next.state, outcome.goto), seenScenes) };
-      }
+      const next = outcomeNode(outcome);
       if (keyOf(next) !== keyOf(node)) edges.push({ label: `${verb} ${target.id}`, next });
+    }
+    // SCUMM's "Use X on Y": every held item against every target.
+    for (const itemId of node.state.inventory) {
+      const outcome = applyItem(story, node.state, target.id, itemId);
+      if (!outcome) continue;
+      const next = outcomeNode(outcome);
+      if (keyOf(next) !== keyOf(node)) {
+        edges.push({ label: `use ${itemId} on ${target.id}`, next });
+      }
     }
   }
   for (const exit of visibleExits(scene, node.state)) {

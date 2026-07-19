@@ -21,11 +21,12 @@ import { applyRule, checkAll, firstMatch, type Outcome } from './rules.ts';
 
 export type PlayerVerb = 'look' | 'talk' | 'interact';
 
-export const DEFAULT_TEXT: Record<PlayerVerb | 'combine', string> = {
+export const DEFAULT_TEXT: Record<PlayerVerb | 'combine' | 'apply', string> = {
   look: 'Nothing unusual about it.',
   talk: 'No reply.',
   interact: "That doesn't seem to do anything.",
   combine: "Those don't go together.",
+  apply: "That doesn't work.",
 };
 
 export function currentScene(story: Story, state: State): Scene {
@@ -81,6 +82,28 @@ export function act(story: Story, state: State, targetId: string, verb: PlayerVe
   const bucket = verb === 'interact' ? interactBucket(target) : target[verb];
   const rule = firstMatch(state, bucket);
   if (!rule) return { state, text: DEFAULT_TEXT[verb] };
+  return applyRule(state, rule);
+}
+
+/**
+ * Apply a held inventory item to a visible target — SCUMM's "Use X on Y" /
+ * "Give X to Y". First itemUse rule matching the item whose requires pass
+ * wins; a default rebuff otherwise, so experimenting always gets a response.
+ * Returns null only for an unknown/invisible target.
+ */
+export function applyItem(
+  story: Story,
+  state: State,
+  targetId: string,
+  itemId: string,
+): Outcome | null {
+  const target = findTarget(currentScene(story, state), state, targetId);
+  if (!target) return null;
+  if (!state.inventory.includes(itemId)) return { state, text: DEFAULT_TEXT.apply };
+  const rule = (target.itemUse ?? []).find(
+    (r) => r.withItem === itemId && checkAll(state, r.requires),
+  );
+  if (!rule) return { state, text: DEFAULT_TEXT.apply };
   return applyRule(state, rule);
 }
 

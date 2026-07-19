@@ -13,6 +13,7 @@ import {
 } from '../engine/core/rules.ts';
 import {
   act,
+  applyItem,
   availableVerbs,
   chooseOption,
   combine,
@@ -112,6 +113,17 @@ const story: Story = {
           requires: ['flag:seance'],
           look: [{ text: 'boo' }],
         },
+        {
+          id: 'lock',
+          name: 'lock',
+          region: { x: 40, y: 0, w: 10, h: 10 },
+          use: [{ text: 'It is locked.' }],
+          itemUse: [
+            { withItem: 'grapple', requires: ['flag:brave'], text: 'hooked!', setFlags: ['door_open'] },
+            { withItem: 'grapple', text: 'You hesitate.' },
+            { withItem: 'rope', text: 'Too soft to pick a lock.' },
+          ],
+        },
       ],
       exits: [
         {
@@ -142,7 +154,7 @@ test('acting without a matching bucket yields the default text and no change', (
 });
 
 test('targets gated by requires are invisible and unactionable', () => {
-  assert.equal(visibleHotspots(story.scenes['room']!, state()).length, 1);
+  assert.equal(visibleHotspots(story.scenes['room']!, state()).length, 2); // chest + lock, not ghost
   assert.equal(act(story, state(), 'ghost', 'look'), null);
   const seeing = state({ flags: ['seance'] });
   assert.equal(act(story, seeing, 'ghost', 'look')?.text, 'boo');
@@ -157,6 +169,23 @@ test('combine works in either direction, consumes components, gives the result',
   }
   assert.equal(combine(story, s, 'rope', 'rope').text, DEFAULT_TEXT.combine);
   assert.equal(combine(story, state({ inventory: ['rope'] }), 'rope', 'hook').text, DEFAULT_TEXT.combine);
+});
+
+test('applyItem: player-chosen item resolves the first matching itemUse rule', () => {
+  const holding = state({ inventory: ['grapple', 'rope'] });
+  // Ordered rules: gated rule first, flavour fallback for the same item after.
+  assert.equal(applyItem(story, holding, 'lock', 'grapple')?.text, 'You hesitate.');
+  const brave = state({ inventory: ['grapple'], flags: ['brave'] });
+  const out = applyItem(story, brave, 'lock', 'grapple');
+  assert.equal(out?.text, 'hooked!');
+  assert.deepEqual(out?.state.flags, ['brave', 'door_open']);
+  // Wrong-item flavour response, and the default rebuff.
+  assert.equal(applyItem(story, holding, 'lock', 'rope')?.text, 'Too soft to pick a lock.');
+  assert.equal(applyItem(story, holding, 'chest', 'rope')?.text, DEFAULT_TEXT.apply);
+  // Item not actually held → rebuff, no effects.
+  assert.equal(applyItem(story, state(), 'lock', 'grapple')?.text, DEFAULT_TEXT.apply);
+  // Invisible target → null.
+  assert.equal(applyItem(story, holding, 'ghost', 'grapple'), null);
 });
 
 test('exits honour their requires gate', () => {

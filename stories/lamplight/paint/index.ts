@@ -126,6 +126,20 @@ function tower(ctx: CanvasRenderingContext2D, _state: State, t: number): void {
   ctx.fillRect(62, 46, 18, 12);
 }
 
+// --- Props (occluders — drawn in the body pass at their baseline y) ---------
+
+function crates(ctx: CanvasRenderingContext2D, _state: State, _t: number): void {
+  // Stacked packing crates mid-dock; the actor paths around and behind them.
+  blk(ctx, 144, 130, 24, 24, P.wood);
+  px(ctx, 146, 132, 20, 2, P.woodLit);
+  px(ctx, 146, 141, 20, 1, P.woodDark);
+  blk(ctx, 168, 136, 22, 18, P.wood);
+  px(ctx, 170, 138, 18, 2, P.woodLit);
+  blk(ctx, 150, 112, 20, 18, P.woodDark);
+  px(ctx, 152, 114, 16, 2, P.wood);
+  px(ctx, 156, 120, 8, 4, P.stoneDark); // stencilled mark
+}
+
 // --- Sprites ----------------------------------------------------------------
 
 const keeper: SpritePainter = (ctx, fx, fy, facing, t) => {
@@ -151,3 +165,4 @@ const keeper: SpritePainter = (ctx, fx, fy, facing, t) => {
 
 export const scenes = { dock, tower };
 export const sprites = { keeper };
+export const props = { crates };

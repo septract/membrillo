@@ -31,14 +31,14 @@
         },
         { "text": "A wooden sluice gate above the stream. Its spindle is bare." }
       ],
-      "use": [
+      "use": [{ "text": "The spindle is bare — it wants a crank." }],
+      "itemUse": [
         {
-          "requires": ["item:crank"],
+          "withItem": "crank",
           "text": "The crank bites. The gate groans down and the stream thins to a trickle.",
           "setFlags": ["gate_open"],
           "removeItem": "crank"
-        },
-        { "text": "The spindle is bare — it wants a crank." }
+        }
       ]
     }
   ],

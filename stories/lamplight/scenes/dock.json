@@ -2,7 +2,17 @@
   "id": "dock",
   "name": "Graywater Stair",
   "paint": "dock",
-  "walk": { "x": 8, "y": 128, "w": 304, "h": 44 },
+  "walk": [
+    { "x": 8, "y": 128, "w": 130, "h": 44 },
+    { "x": 196, "y": 128, "w": 116, "h": 44 },
+    { "x": 8, "y": 128, "w": 304, "h": 10 },
+    { "x": 8, "y": 156, "w": 304, "h": 16 }
+  ],
+  "depth": {
+    "far": { "y": 128, "scale": 0.68 },
+    "near": { "y": 172, "scale": 1.05 }
+  },
+  "props": [{ "id": "crates", "paint": "crates", "y": 154 }],
   "start": { "x": 30, "y": 158 },
   "hotspots": [
     {
@@ -24,7 +34,7 @@
       "id": "hook",
       "name": "boathook",
       "region": { "x": 118, "y": 116, "w": 44, "h": 8 },
-      "walkTo": { "x": 138, "y": 140 },
+      "walkTo": { "x": 130, "y": 140 },
       "requires": ["!flag:took_hook"],
       "look": [{ "text": "A boathook rests across the rail, waiting for a boat." }],
       "take": [
@@ -36,9 +46,18 @@
       ]
     },
     {
+      "id": "crates",
+      "name": "packing crates",
+      "region": { "x": 142, "y": 118, "w": 50, "h": 36 },
+      "walkTo": { "x": 165, "y": 164 },
+      "look": [
+        { "text": "Empty packing crates, stacked chest-high. The lens crate isn't among them." }
+      ]
+    },
+    {
       "id": "skiff",
       "name": "keeper's skiff",
-      "region": { "x": 208, "y": 100, "w": 52, "h": 22 },
+      "region": { "x": 208, "y": 100, "w": 52, "h": 16 },
       "walkTo": { "x": 226, "y": 140 },
       "look": [
         { "text": "The keeper's skiff, tied off and half-bailed. It won't be rowing anywhere heavy." }
@@ -47,8 +66,8 @@
     {
       "id": "water",
       "name": "harbour water",
-      "region": { "x": 0, "y": 84, "w": 264, "h": 42 },
-      "walkTo": { "x": 160, "y": 150 },
+      "region": { "x": 0, "y": 84, "w": 264, "h": 32 },
+      "walkTo": { "x": 220, "y": 158 },
       "look": [
         {
           "requires": ["flag:knows_crate", "!flag:crate_raised"],
@@ -56,19 +75,28 @@
         },
         { "text": "Cold, dark water, patient as ever." }
       ],
-      "use": [
+      "use": [{ "text": "You're not swimming in that." }],
+      "itemUse": [
         {
-          "requires": ["item:grapple", "flag:knows_crate", "!flag:crate_raised"],
+          "withItem": "grapple",
+          "requires": ["flag:knows_crate", "!flag:crate_raised"],
           "text": "You swing the grapple out past the skiff and drag the bottom. On the third pass it bites — up comes the crate, and inside, the lens.",
           "removeItem": "grapple",
           "giveItem": "lens",
           "setFlags": ["crate_raised"]
         },
         {
-          "requires": ["item:grapple"],
+          "withItem": "grapple",
           "text": "You'd be dragging blind. Better find out where to cast first."
         },
-        { "text": "You're not swimming in that." }
+        {
+          "withItem": "rope",
+          "text": "Just line, no bite. It wants something with teeth on the end."
+        },
+        {
+          "withItem": "hook",
+          "text": "Throw the boathook in bare and the harbour keeps it. It needs a line."
+        }
       ]
     }
   ],
@@ -80,8 +108,19 @@
       "walkTo": { "x": 228, "y": 158 },
       "paint": "keeper",
       "facing": "left",
+      "color": [178, 210, 224],
       "look": [{ "text": "The lighthouse keeper. Old rope for arms, weather for a face." }],
-      "talk": [{ "dialogue": "keeper" }]
+      "talk": [{ "dialogue": "keeper" }],
+      "itemUse": [
+        {
+          "withItem": "lens",
+          "text": "\"Don't show it to me, lad — up the stairs with it! The housing's open.\""
+        },
+        {
+          "withItem": "grapple",
+          "text": "\"A fine rig. My dredging days are done, though — you swing it.\""
+        }
+      ]
     }
   ],
   "exits": [

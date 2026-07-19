@@ -3,6 +3,10 @@
   "name": "The Lamp Room",
   "paint": "tower",
   "walk": { "x": 24, "y": 128, "w": 272, "h": 44 },
+  "depth": {
+    "far": { "y": 128, "scale": 0.78 },
+    "near": { "y": 172, "scale": 1.05 }
+  },
   "start": { "x": 42, "y": 154 },
   "hotspots": [
     {
@@ -13,15 +17,19 @@
       "look": [
         { "text": "The great housing sits open like an empty eye socket. No lens, no light." }
       ],
-      "use": [
+      "use": [{ "text": "Without a lens there is nothing to light." }],
+      "itemUse": [
         {
-          "requires": ["item:lens"],
+          "withItem": "lens",
           "text": "You heave the lens up into the housing.",
           "removeItem": "lens",
           "setFlags": ["lamp_lit"],
           "goto": "lit"
         },
-        { "text": "Without a lens there is nothing to light." }
+        {
+          "withItem": "rope",
+          "text": "Lash the housing shut? It wants a lens, not rigging."
+        }
       ]
     },
     {

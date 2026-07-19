@@ -15,6 +15,8 @@ export type ScenePainter = (ctx: CanvasRenderingContext2D, state: State, t: numb
 export interface PaintModule {
   scenes?: Record<string, ScenePainter>;
   sprites?: Record<string, SpritePainter>;
+  /** Occluder painters, referenced by scene `props` entries. */
+  props?: Record<string, ScenePainter>;
 }
 
 export interface LoadedStory {

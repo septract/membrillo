@@ -28,6 +28,15 @@ export interface Rule {
   dialogue?: string;
 }
 
+/**
+ * "Use/give <item> on/to this target": first rule whose `withItem` matches the
+ * item the player applied AND whose `requires` pass wins. This is the player-
+ * chosen counterpart to a bare Interact — the SCUMM "Use X on Y".
+ */
+export interface ItemUseRule extends Rule {
+  withItem: string;
+}
+
 /** Shared rule surface of hotspots and characters. */
 export interface Target {
   id: string;
@@ -39,6 +48,7 @@ export interface Target {
   /** A target may define `use` or `take`, never both (validator enforces). */
   use?: Rule[];
   take?: Rule[];
+  itemUse?: ItemUseRule[];
 }
 
 export interface Hotspot extends Target {
@@ -54,6 +64,8 @@ export interface Character extends Target {
   /** Sprite painter name from the story's paint module; box placeholder if absent. */
   paint?: string;
   facing?: 'left' | 'right';
+  /** Speech colour over the head, [r,g,b]; default white. */
+  color?: [number, number, number];
 }
 
 export interface Exit {
@@ -69,6 +81,27 @@ export interface Exit {
 }
 
 /**
+ * Perspective: sprite scale as a linear function of feet-y, clamped outside
+ * the far..near range. SCUMM-style "scale is a property of the ground".
+ */
+export interface Depth {
+  far: { y: number; scale: number };
+  near: { y: number; scale: number };
+}
+
+/**
+ * A foreground/midground occluder: a painter drawn in the body pass at
+ * baseline `y`. Actors with feet above it (behind) are drawn under it;
+ * actors below it (in front) draw over it.
+ */
+export interface Prop {
+  id: string;
+  /** Painter name from the story's paint module's `props` record. */
+  paint: string;
+  y: number;
+}
+
+/**
  * A scene is either a room (walk/start/hotspots/characters/exits) or a
  * cutscene (`beats` + `next`, or `beats` + `ending`). The validator enforces
  * that exactly one shape is used.
@@ -78,8 +111,14 @@ export interface Scene {
   name: string;
   /** Scene painter name from the story's paint module; flat placeholder if absent. */
   paint?: string;
-  walk?: Box;
+  /**
+   * Walkable ground: one rect or several. Overlapping/touching rects are
+   * connected; the actor paths through their shared edges (engine/walk.ts).
+   */
+  walk?: Box | Box[];
   start?: Point;
+  depth?: Depth;
+  props?: Prop[];
   hotspots?: Hotspot[];
   characters?: Character[];
   exits?: Exit[];
