@@ -19,7 +19,7 @@ import type {
   Story,
   Target,
 } from './types.ts';
-import { applyRule, checkAll, firstMatch, type Outcome } from './rules.ts';
+import { applyRule, checkAll, counterBounds, firstMatch, type CounterBounds, type Outcome } from './rules.ts';
 
 export type PlayerVerb = 'look' | 'talk' | 'interact';
 
@@ -92,7 +92,7 @@ export function act(story: Story, state: State, targetId: string, verb: PlayerVe
   const bucket = verb === 'interact' ? interactBucket(target) : target[verb];
   const rule = firstMatch(state, bucket);
   if (!rule) return { state, text: DEFAULT_TEXT[verb] };
-  return applyRule(state, rule);
+  return applyRule(state, rule, counterBounds(story.manifest.counters));
 }
 
 /**
@@ -114,7 +114,7 @@ export function applyItem(
     (r) => r.withItem === itemId && checkAll(state, r.requires),
   );
   if (!rule) return { state, text: DEFAULT_TEXT.apply };
-  return applyRule(state, rule);
+  return applyRule(state, rule, counterBounds(story.manifest.counters));
 }
 
 /** Look at an inventory item. */
@@ -122,7 +122,7 @@ export function lookAtItem(story: Story, state: State, itemId: string): Outcome 
   const item = story.items[itemId];
   const rule = item ? firstMatch(state, item.look) : undefined;
   if (!rule) return { state, text: DEFAULT_TEXT.look };
-  return applyRule(state, rule);
+  return applyRule(state, rule, counterBounds(story.manifest.counters));
 }
 
 /**
@@ -165,7 +165,9 @@ export function combine(story: Story, state: State, itemA: string, itemB: string
 export function useExit(story: Story, state: State, exitId: string): Outcome | null {
   const exit = visibleExits(currentScene(story, state), state).find((e) => e.id === exitId);
   if (!exit) return null;
-  const out = exit.effects ? applyRule(state, exit.effects) : { state };
+  const out = exit.effects
+    ? applyRule(state, exit.effects, counterBounds(story.manifest.counters))
+    : { state };
   return { ...out, state: { ...out.state, scene: exit.to } };
 }
 
@@ -192,12 +194,14 @@ export interface DialogueStep {
   to: string;
 }
 
-export function chooseOption(state: State, option: DialogueOption): DialogueStep {
+export function chooseOption(state: State, option: DialogueOption, bounds: CounterBounds = {}): DialogueStep {
   const rule: Rule = {};
   if (option.setFlags !== undefined) rule.setFlags = option.setFlags;
   if (option.giveItem !== undefined) rule.giveItem = option.giveItem;
   if (option.addCompanion !== undefined) rule.addCompanion = option.addCompanion;
-  return { state: applyRule(state, rule).state, to: option.to };
+  if (option.addCounter !== undefined) rule.addCounter = option.addCounter;
+  if (option.setCounter !== undefined) rule.setCounter = option.setCounter;
+  return { state: applyRule(state, rule, bounds).state, to: option.to };
 }
 
 // --- Scripted sequences -----------------------------------------------------
@@ -211,6 +215,8 @@ export function stepRule(step: SeqStep): Rule {
   if (step.removeItem !== undefined) rule.removeItem = step.removeItem;
   if (step.addCompanion !== undefined) rule.addCompanion = step.addCompanion;
   if (step.removeCompanion !== undefined) rule.removeCompanion = step.removeCompanion;
+  if (step.addCounter !== undefined) rule.addCounter = step.addCounter;
+  if (step.setCounter !== undefined) rule.setCounter = step.setCounter;
   return rule;
 }
 
@@ -219,9 +225,9 @@ export function stepRule(step: SeqStep): Rule {
  * for whole sequences; the engine uses it when Esc-skipping a running one —
  * so a skipped sequence provably ends in the same state as a watched one.
  */
-export function applySequenceEffects(state: State, steps: SeqStep[], from = 0): State {
+export function applySequenceEffects(state: State, steps: SeqStep[], from = 0, bounds: CounterBounds = {}): State {
   let s = state;
-  for (const step of steps.slice(from)) s = applyRule(s, stepRule(step)).state;
+  for (const step of steps.slice(from)) s = applyRule(s, stepRule(step), bounds).state;
   return s;
 }
 

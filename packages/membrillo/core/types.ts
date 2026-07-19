@@ -12,8 +12,27 @@ export const DEFAULT_VIEW: Size = { w: 320, h: 180 };
 /** 4-way facing (the sprite layer aliases this as its Facing). */
 export type Direction = 'left' | 'right' | 'up' | 'down';
 
-/** "flag:torch_lit" | "item:rope" | "companion:ada", optionally "!"-negated. */
+/**
+ * "flag:torch_lit" | "item:rope" | "companion:ada", optionally "!"-negated,
+ * or a bounded-counter comparison "counter:money>=8" (ops: >= <= == != > <).
+ */
 export type Condition = string;
+
+/**
+ * A bounded resource counter (money, a score, a tally). Declared in the
+ * manifest with a fixed range so the state space stays finite — the fuzzer's
+ * exhaustive-winnability check depends on it. Every effect clamps into
+ * [min, max].
+ */
+export interface CounterDecl {
+  min: number;
+  max: number;
+  start: number;
+  /** Display name in the panel strip (default: the counter's key). */
+  label?: string;
+  /** Prefix shown before the value, e.g. "$" → "Wallet: $3". */
+  unit?: string;
+}
 
 /**
  * One entry in a rule bucket. Buckets are ordered: the first rule whose
@@ -29,6 +48,10 @@ export interface Rule {
   removeItem?: string;
   addCompanion?: string;
   removeCompanion?: string;
+  /** Add a signed delta to a counter (clamped to its declared [min,max]). */
+  addCounter?: Record<string, number>;
+  /** Set a counter to an absolute value (clamped to its declared [min,max]). */
+  setCounter?: Record<string, number>;
   /** Scene to move to after this rule's effects apply. */
   goto?: string;
   /** Dialogue tree to open (meaningful in `talk` buckets only). */
@@ -167,6 +190,8 @@ export interface SeqStep {
   removeItem?: string;
   addCompanion?: string;
   removeCompanion?: string;
+  addCounter?: Record<string, number>;
+  setCounter?: Record<string, number>;
 }
 
 /** Entry trigger: first entry whose `requires` pass plays its sequence. */
@@ -233,6 +258,8 @@ export interface DialogueOption {
   setFlags?: string[];
   giveItem?: string;
   addCompanion?: string;
+  addCounter?: Record<string, number>;
+  setCounter?: Record<string, number>;
 }
 
 export interface DialogueNode {
@@ -320,6 +347,12 @@ export interface Manifest {
   actorPortrait?: string;
   /** Optional music/SFX config; stories without it are silent. */
   audio?: AudioConfig;
+  /**
+   * Bounded resource counters, by name. Each seeds `state.counters` at its
+   * `start` and clamps to [min, max]. Referenced in conditions
+   * ("counter:money>=8") and moved by addCounter/setCounter effects.
+   */
+  counters?: Record<string, CounterDecl>;
 }
 
 export interface Story {
@@ -343,4 +376,6 @@ export interface State {
   flags: string[];
   inventory: string[];
   companions: string[];
+  /** Bounded counter values, seeded from Manifest.counters; {} if none. */
+  counters: Record<string, number>;
 }

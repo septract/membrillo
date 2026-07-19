@@ -55,6 +55,13 @@ function validateStory(files: StoryFiles): Report {
   if (manifest.actorPortrait !== undefined) {
     checkPaintRef(r, files, 'manifest.json actorPortrait', manifest.actorPortrait);
   }
+  for (const [name, d] of Object.entries(manifest.counters ?? {})) {
+    const w = `manifest.json counters.${name}`;
+    if (!(d.min <= d.start && d.start <= d.max)) r.error(`${w}: need min ≤ start ≤ max (got ${d.min}/${d.start}/${d.max})`);
+    if (d.max - d.min > 100) {
+      r.warn(`${w}: range ${d.min}..${d.max} is large — big counters bloat the fuzz state space; prefer a few thresholds`);
+    }
+  }
 
   const usage: ItemUsage = { sources: new Set(), sinks: new Set() };
 
@@ -68,6 +75,9 @@ function validateStory(files: StoryFiles): Report {
         }
         if (parsed.kind === 'companion' && !story.companions[parsed.id]) {
           r.error(`${where}: condition "${cond}" names unknown companion`);
+        }
+        if (parsed.kind === 'counter' && !(manifest.counters ?? {})[parsed.id]) {
+          r.error(`${where}: condition "${cond}" names undeclared counter "${parsed.id}"`);
         }
       } catch (err) {
         r.error(`${where}: ${(err as Error).message}`);
@@ -94,6 +104,9 @@ function validateStory(files: StoryFiles): Report {
     }
     for (const c of [rule.addCompanion, rule.removeCompanion]) {
       if (c !== undefined && !story.companions[c]) r.error(`${where}: unknown companion "${c}"`);
+    }
+    for (const name of [...Object.keys(rule.addCounter ?? {}), ...Object.keys(rule.setCounter ?? {})]) {
+      if (!(manifest.counters ?? {})[name]) r.error(`${where}: effect names undeclared counter "${name}"`);
     }
     if (rule.goto !== undefined) {
       if (!scenes[rule.goto]) r.error(`${where}: goto "${rule.goto}" names unknown scene`);

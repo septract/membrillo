@@ -8,7 +8,7 @@
 // a following camera lets scenes be larger than the story's view resolution.
 
 import type { Character, DialogueOption, Point, Scene, SeqStep, Size, State, Target } from './core/types.ts';
-import { applyRule, initialState } from './core/rules.ts';
+import { applyRule, counterBounds, initialCounters, initialState } from './core/rules.ts';
 import {
   act,
   applyItem,
@@ -138,6 +138,7 @@ let el!: {
   verbs: HTMLElement;
   inventory: HTMLElement;
   objectives: HTMLElement;
+  counters: HTMLElement;
   log: HTMLElement;
   btnLog: HTMLElement;
   btnEye: HTMLElement;
@@ -176,6 +177,7 @@ function initDom(): void {
         <div id="sentence">&nbsp;</div>
         <div id="verbs"></div>
         <div id="inventory"></div>
+        <div id="counters" hidden></div>
         <div id="objectives" hidden></div>
         <button id="btn-log" class="secondary log-toggle" aria-expanded="false">history ▸</button>
         <div id="log" hidden></div>
@@ -194,6 +196,7 @@ function initDom(): void {
     verbs: document.getElementById('verbs')!,
     inventory: document.getElementById('inventory')!,
     objectives: document.getElementById('objectives')!,
+    counters: document.getElementById('counters')!,
     log: document.getElementById('log')!,
     btnLog: document.getElementById('btn-log')!,
     btnEye: document.getElementById('btn-eye')!,
@@ -254,6 +257,11 @@ function saveKey(id: string): string {
  */
 let dialogueEntry: State | null = null;
 
+/** Counter [min,max] ranges for the running story (empty if none). */
+function activeBounds(): ReturnType<typeof counterBounds> {
+  return session ? counterBounds(session.loaded.story.manifest.counters) : {};
+}
+
 function save(): void {
   if (!session || session.finished) return;
   let state = session.state;
@@ -262,7 +270,7 @@ function save(): void {
     // its skip-converged end state (+ afterGoto) so a reload mid-sequence lands
     // on the proven end, never a partial state that can strand the player.
     const seq = session.sequence;
-    state = applySequenceEffects(state, seq.steps, seq.index + 1);
+    state = applySequenceEffects(state, seq.steps, seq.index + 1, activeBounds());
     if (seq.afterGoto !== null) state = enterScene(state, seq.afterGoto);
   } else if (session.dialogue && dialogueEntry) {
     state = dialogueEntry;
@@ -288,11 +296,20 @@ function loadSave(id: string): State | null {
     if (!s || typeof s.scene !== 'string') throw new Error('save missing scene');
     const strs = (v: unknown): string[] =>
       Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
+    const nums = (v: unknown): Record<string, number> => {
+      const out: Record<string, number> = {};
+      if (v && typeof v === 'object') {
+        for (const [k, n] of Object.entries(v)) if (typeof n === 'number') out[k] = n;
+      }
+      return out;
+    };
+    // startStory re-seeds any declared counter missing here; saved values win.
     return {
       scene: s.scene,
       flags: strs(s.flags),
       inventory: strs(s.inventory),
       companions: strs(s.companions),
+      counters: nums(s.counters),
     };
   } catch {
     // Corrupt or unusable save: discard rather than crashing the menu/boot for
@@ -312,6 +329,7 @@ function debugState(loaded: LoadedStory): State | null {
     flags: list('flags'),
     inventory: list('items'),
     companions: list('companions'),
+    counters: initialCounters(loaded.story.manifest.counters),
   };
 }
 
@@ -463,11 +481,18 @@ function startStory(id: string, state: State | null): void {
   vnLeft = null;
   vnRight = null;
   audio.ensureRunning();
+  // Seed declared counters at their starts, then let any saved/debug values
+  // override — so a save predating a counter (or a debug jump) still has every
+  // declared counter present, and the fuzzer/UI never hit an undefined.
+  const seeded = initialCounters(loaded.story.manifest.counters);
+  const withCounters: State | null = state
+    ? { ...state, counters: { ...seeded, ...state.counters } }
+    : initialState(loaded.story.manifest.start, seeded);
   session = {
     id,
     loaded,
     view,
-    state: state ?? initialState(loaded.story.manifest.start),
+    state: withCounters,
     actor: { x: 0, y: 0, facing: 'right', phase: 0, walking: false },
     camera: { x: 0, y: 0 },
     path: null,
@@ -787,7 +812,7 @@ function advanceSequence(): void {
     return;
   }
   const step = seq.steps[seq.index]!;
-  session.state = applyRule(session.state, stepRule(step)).state;
+  session.state = applyRule(session.state, stepRule(step), activeBounds()).state;
   if (step.face !== undefined) {
     if ((step.who ?? 'actor') === 'actor') session.actor.facing = step.face;
     else session.facingOverrides[step.who!] = step.face;
@@ -834,7 +859,7 @@ function advanceSequence(): void {
 function skipSequence(): void {
   if (!session || !session.sequence) return;
   const seq = session.sequence;
-  session.state = applySequenceEffects(session.state, seq.steps, seq.index + 1);
+  session.state = applySequenceEffects(session.state, seq.steps, seq.index + 1, activeBounds());
   session.sequence = null;
   session.path = null;
   seqPortrait = null;
@@ -1175,7 +1200,7 @@ function renderDialogue(): void {
 function pickOption(option: DialogueOption): void {
   if (!session || !session.dialogue) return;
   const dlg = session.loaded.story.dialogues[session.dialogue.id]!;
-  const step = chooseOption(session.state, option);
+  const step = chooseOption(session.state, option, activeBounds());
   session.state = step.state;
   log(`> ${option.text}`);
   if (step.to === 'end') {
@@ -1265,8 +1290,26 @@ function renderPanel(): void {
       el.inventory.append(chip);
     }
   }
+  renderCounters();
   renderObjectives();
   renderSentence();
+}
+
+function renderCounters(): void {
+  const decls = session?.loaded.story.manifest.counters;
+  if (!session || !decls || Object.keys(decls).length === 0) {
+    el.counters.hidden = true;
+    return;
+  }
+  el.counters.hidden = false;
+  el.counters.innerHTML = '';
+  for (const [name, d] of Object.entries(decls)) {
+    const v = session.state.counters[name] ?? 0;
+    const span = document.createElement('span');
+    span.className = 'counter';
+    span.textContent = `${d.label ?? name}: ${d.unit ?? ''}${v}`;
+    el.counters.append(span);
+  }
 }
 
 function renderObjectives(): void {

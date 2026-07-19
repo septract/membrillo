@@ -90,16 +90,32 @@ fallback last.
 ]
 ```
 
-**Conditions** are strings: `flag:x`, `item:x`, `companion:x`, each
-`!`-negatable. That's the whole language — no counters, no timers, no
-randomness in logic (this is what keeps the fuzzer's proof exhaustive).
-Randomness and timing belong in painters (presentation only).
+**Conditions** are strings: `flag:x`, `item:x`, `companion:x` (each
+`!`-negatable), plus **bounded counters** `counter:name<op>N` (ops `>= <= ==
+!= > <`, e.g. `counter:money>=8`). No timers, no randomness in logic — those
+stay in painters (presentation only) so the fuzzer's check stays exhaustive.
+
+**Bounded counters** are the one numeric resource (money, a score, a tally).
+Declare each in the manifest with a fixed range — the range must stay small,
+because it multiplies the fuzz state space:
+
+```jsonc
+"counters": { "money": { "min": 0, "max": 9, "start": 3, "label": "Wallet", "unit": "$" } }
+```
+
+`label`/`unit` are for the on-screen strip ("Wallet: $3"). Effects
+`addCounter` (signed delta) and `setCounter` (absolute) move them, always
+clamped to `[min, max]`. Conditions gate on thresholds. Because the range is
+bounded, the state space stays finite and winnability stays exhaustively
+checked. If you find yourself wanting a big range, collapse it to a few
+meaningful thresholds instead.
 
 **Rule effects** (all optional): `text`, `setFlags`, `clearFlags`,
-`giveItem`, `removeItem`, `addCompanion`, `removeCompanion`, `goto` (scene),
-`dialogue` (talk buckets only), `play` (scene sequence; runs after effects,
-before any `goto`), `speaker` (`"target"` floats `text` over the target
-instead of the player — use for in-character NPC replies).
+`giveItem`, `removeItem`, `addCompanion`, `removeCompanion`, `addCounter`,
+`setCounter`, `goto` (scene), `dialogue` (talk buckets only), `play` (scene
+sequence; runs after effects, before any `goto`), `speaker` (`"target"`
+floats `text` over the target instead of the player). Dialogue options and
+sequence steps carry the same effect fields, counters included.
 
 ## Scenes
 

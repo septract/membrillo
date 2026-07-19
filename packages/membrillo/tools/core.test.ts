@@ -26,13 +26,56 @@ import { objectiveViews } from '../core/objectives.ts';
 import type { Scene, State, Story } from '../core/types.ts';
 
 function state(partial: Partial<State> = {}): State {
-  return { scene: 'room', flags: [], inventory: [], companions: [], ...partial };
+  return { scene: 'room', flags: [], inventory: [], companions: [], counters: {}, ...partial };
 }
 
 test('parseCondition accepts the three kinds and negation', () => {
   assert.deepEqual(parseCondition('flag:door_open'), { negated: false, kind: 'flag', id: 'door_open' });
   assert.deepEqual(parseCondition('!item:rope'), { negated: true, kind: 'item', id: 'rope' });
   assert.equal(parseCondition('companion:ada').kind, 'companion');
+});
+
+test('parseCondition parses bounded-counter comparisons', () => {
+  assert.deepEqual(parseCondition('counter:money>=8'), {
+    negated: false,
+    kind: 'counter',
+    id: 'money',
+    op: '>=',
+    value: 8,
+  });
+  assert.equal(parseCondition('!counter:heat==0').negated, true);
+  assert.throws(() => parseCondition('counter:money'));
+  assert.throws(() => parseCondition('counter:money=>8'));
+});
+
+test('checkCondition evaluates counter comparisons (missing counter = 0)', () => {
+  const s = state({ counters: { money: 5 } });
+  assert.equal(checkCondition(s, 'counter:money>=5'), true);
+  assert.equal(checkCondition(s, 'counter:money>5'), false);
+  assert.equal(checkCondition(s, 'counter:money<=5'), true);
+  assert.equal(checkCondition(s, 'counter:money!=5'), false);
+  assert.equal(checkCondition(s, '!counter:money>=9'), true);
+  // an undeclared/unseen counter reads as 0
+  assert.equal(checkCondition(s, 'counter:debt==0'), true);
+});
+
+test('applyRule moves counters and clamps to bounds', () => {
+  const bounds = { money: { min: 0, max: 9 } };
+  const s0 = state({ counters: { money: 3 } });
+  assert.equal(applyRule(s0, { addCounter: { money: 4 } }, bounds).state.counters.money, 7);
+  // clamp high
+  assert.equal(applyRule(s0, { addCounter: { money: 20 } }, bounds).state.counters.money, 9);
+  // clamp low
+  assert.equal(applyRule(s0, { addCounter: { money: -10 } }, bounds).state.counters.money, 0);
+  // setCounter clamps too
+  assert.equal(applyRule(s0, { setCounter: { money: 99 } }, bounds).state.counters.money, 9);
+  // without bounds, no clamping (counter-free callers) but still applies
+  assert.equal(applyRule(s0, { addCounter: { money: 4 } }).state.counters.money, 7);
+});
+
+test('stateKey distinguishes counter values', () => {
+  assert.notEqual(stateKey(state({ counters: { m: 1 } })), stateKey(state({ counters: { m: 2 } })));
+  assert.equal(stateKey(state({ counters: { m: 1 } })), stateKey(state({ counters: { m: 1 } })));
 });
 
 test('parseCondition rejects malformed conditions', () => {

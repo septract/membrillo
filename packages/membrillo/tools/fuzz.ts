@@ -8,7 +8,7 @@
 //
 // Usage: node tools/fuzz.ts [storyId ...]
 
-import { checkAll, initialState, stateKey } from '../core/rules.ts';
+import { checkAll, counterBounds, initialCounters, initialState, stateKey } from '../core/rules.ts';
 import type { Scene, State, Story } from '../core/types.ts';
 import {
   act,
@@ -80,7 +80,7 @@ function checkSequenceWhos(
         );
       }
     }
-    s = applySequenceEffects(s, [step]);
+    s = applySequenceEffects(s, [step], 0, counterBounds(story.manifest.counters));
   }
   return s;
 }
@@ -114,7 +114,7 @@ function expand(story: Story, node: Node, seenScenes: Set<string>, whoProblems: 
   if (node.dlg) {
     const dlg = story.dialogues[node.dlg.id]!;
     for (const option of visibleOptions(node.state, dialogueNode(dlg, node.dlg.node))) {
-      const step = chooseOption(node.state, option);
+      const step = chooseOption(node.state, option, counterBounds(story.manifest.counters));
       edges.push({
         label: `say "${option.text}"`,
         next: {
@@ -205,7 +205,12 @@ function fuzzStory(story: Story): FuzzResult {
   const seenScenes = new Set<string>();
   const whoProblems = new Set<string>();
   const start: Node = {
-    state: settle(story, initialState(story.manifest.start), seenScenes, whoProblems),
+    state: settle(
+      story,
+      initialState(story.manifest.start, initialCounters(story.manifest.counters)),
+      seenScenes,
+      whoProblems,
+    ),
     dlg: null,
   };
 
