@@ -5,17 +5,23 @@ everything your game *is* lives in your story directory as JSON data, plus one
 narrow code surface (`paint/index.ts`) for drawing. If a rule here disagrees
 with the code, the code wins — then fix this file.
 
-Run after every change, before considering work done:
+Run after every change, before considering work done. From your own game
+(the template, or any standalone consumer) use the CLI:
 
 ```
-npm run validate -- <id>    # structure + cross-references
-npm run fuzz -- <id>        # plays every reachable state; proves winnability
+npx membrillo validate <id> --root ./stories   # structure + cross-references
+npx membrillo fuzz <id> --root ./stories        # plays every reachable state
+npx membrillo check --root ./stories            # both, over every story
 ```
 
-The fuzzer is an explicit-state model checker over your story's flag/item/
-companion state space. A passing run **proves** there are no unwinnable
-states, every scene is reachable, and every objective can complete. This is
-the engine's core guarantee — protect it by keeping logic declarative (no
+(Inside this engine repo, the equivalents are `npm run validate -- <id>` and
+`npm run fuzz -- <id>`, which point at `games/classic/stories`.)
+
+The fuzzer is an explicit-state checker over your story's flag/item/companion
+state space. The space is finite, so the search is exhaustive: a clean run
+means there are no reachable dead ends, every scene is reachable, and every
+objective can complete — a complete check, not a formal proof. It's the
+engine's core guarantee; protect it by keeping logic declarative (no
 conditions the fuzzer can't see).
 
 ## Directory layout
@@ -40,8 +46,13 @@ painters); `games/classic/stories/lamplight/` is the full-featured one.
 The manifest carries the menu presentation too: `description` is a one-line,
 **spoiler-free** blurb (tease the tone, never the reveal), and `category`
 is `"story"` (default, a real game) or `"demo"` (an engine fixture, shown
-under a collapsed section). The consumer's `boot({ ..., repoUrl })` adds a
-"source on GitHub" footer to the menu.
+under a collapsed section).
+
+`view` sets the render resolution and the default scene size:
+`"view": { "w": 320, "h": 180 }` (the engine default if omitted). A scene's
+own `size` may exceed the view — larger scenes scroll under a following
+camera. `actor` / `actorPortrait` name the player's sprite / dialogue
+portrait painters (below); `audio` is the music config (below).
 
 ## The player's verbs
 
@@ -297,10 +308,20 @@ pixel shapes, `talkMouth`/`blinking` for faces. Recipes:
   sequences) is unaffected — the room stays SCUMM; conversations get the big
   art. The painter gets `(ctx, state, t, talking)`: run the mouth while
   `talking` (timed to line length). Author portraits facing viewer-RIGHT —
-  the engine's mirroring makes the pair face each other. Image art drops in
-  through the same seam: `portraitImage(url)` from `membrillo/art/images`
-  cover-fits any resolution. No portrait on the interlocutor → that dialogue
-  renders classically; portraits are presentation only, never logic.
+  the engine's mirroring makes the pair face each other. No portrait on the
+  interlocutor → that dialogue renders classically; portraits are presentation
+  only, never logic.
+  - **Image portraits**: `portraitImage(url, framing?)` from
+    `membrillo/art/images` wraps a PNG/JPG. It cover-fits any resolution into
+    the 9:16 frame, and if the image has a flat **chroma-green** background it
+    auto-keys it out (generate on green to float the bust over the scene).
+    `framing` (`{ zoom, anchorX, anchorY }`) tunes the crop so heads line up
+    across a differently-shot cast — see steep's `localPortrait` helper.
+  - **Local-art overlay**: a gitignored `paint/assets-local/` beside your
+    story lets you drop generated art that replaces the code-drawn painters on
+    your machine only, never in the repo — glob it in the paint module and
+    fall back to the code-drawn version (steep and quince show the pattern).
+    Whether generated art *ships* is your project's call.
 
 **Image assets** work through the same seam — a painter is draw code, and
 `membrillo/art/images` wraps PNGs into painters (`games/classic/stories/postcard/` is the
@@ -322,12 +343,43 @@ export const sprites = {
 Author art at world scale (1 image pixel = 1 scene pixel; backgrounds at the
 scene's `size`, sprite frames feet-anchored at bottom-centre). Don't mix
 image-painted backdrops with code-drawn sprites in one scene without
-restyling the cast to match — they clash. The engine's `tools/make-test-art.mjs` generates
-placeholder PNGs to rough out scenes before real art exists.
+restyling the cast to match — they clash. To rough out scenes before real art
+exists, the engine ships a zero-dependency placeholder generator; from a
+consumer game run `node node_modules/membrillo/tools/make-test-art.mjs`
+(reads/writes under `STORIES_ROOT`, default `./stories`).
+
+The worked examples named above (`games/classic/stories/lamplight`,
+`.../postcard`, and the design-guide note under `docs/research/`) live in the
+[Membrillo repo](https://github.com/septract/membrillo), not the npm package —
+open them there. The template's `quince` story ships with your starter and
+covers most of the same ground.
+
+## Browser verification (the feel, not just the rules)
+
+`validate`/`fuzz` prove the rules; they can't see whether a click lands or
+speech floats over the right head. After any presentation or story change,
+drive the game in a real browser. The kit is exported as
+`membrillo/verify-kit`; a game's `drive.mjs` names its story modules and each
+module gets the kit:
+
+```
+npm run dev                        # in one shell
+npm i --no-save playwright-core    # once per checkout; uses system Chrome
+npm run drive                      # plays every module in drive/
+```
+
+Kit helpers a driver module receives: `freshStory(id)` (boot with cleared
+storage), `worldClick(x,y)` / `walkTo(x,y)` (world coords, camera-aware),
+`verb(name)` / `chip(name)` (verb bar / inventory), `waitLog(text)` (assert a
+line appeared), `hook()` (`window.__pcc()` — scene/state/actor/camera/view,
+read-only), `shot(name)` (screenshot to `shots-browser/` — **read it; a green
+log with a broken screenshot is a failure**), and `errors` (console/page
+errors fail the run). Off-screen targets can't be clicked; walk in hops. New
+stories add a module and list it in `drive.mjs`.
 
 ## Design rules (enforced or strongly conventional)
 
-1. **No deaths, no dead ends, no unwinnable states.** The fuzzer proves it;
+1. **No deaths, no dead ends, no unwinnable states.** The fuzzer checks it;
    your job is to make the proof mean something by keeping logic declarative.
 2. **Problem before solution.** Let the player find the locked thing before
    the key (gate the key's use, or its visibility, on knowing the problem).

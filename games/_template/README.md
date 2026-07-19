@@ -4,6 +4,11 @@ A complete, working Membrillo game with one small example story, **The Quince
 Tree** (two puzzle links, one ending, fully painted). Copy it, rename it,
 replace the story with yours.
 
+**Prerequisites:** Node **≥ 23** (the offline tools run story TypeScript with
+Node's native type-stripping — on Node 20/22 `npm run dev` works but
+`npm run check` dies with `ERR_UNKNOWN_FILE_EXTENSION .ts`), and a system
+**Chrome/Chromium** for `npm run drive` (browser verification).
+
 ## Inside the membrillo repo (the easy path)
 
 ```
@@ -11,44 +16,54 @@ cp -r games/_template games/mygame
 # edit games/mygame/package.json: rename "@membrillo/template" → "@membrillo/mygame"
 npm install                       # link the new workspace
 npm run dev -w games/mygame       # play at the printed port
-npm run check -w games/mygame     # validate + prove winnability
+npm run check -w games/mygame     # validate + winnability check
 ```
 
 ## As a standalone repository
 
-Copy this directory anywhere and point the `membrillo` dependency at a
-checkout of the engine:
+The `package.json` here depends on `"membrillo": "*"`, which resolves to the
+local package **only inside the membrillo workspace**. Standalone, you must
+replace that dependency *before* the first `npm install` — otherwise npm goes
+to the registry and installs the wrong thing (or fails). Steps:
 
-```
-"dependencies": { "membrillo": "file:../membrillo/packages/membrillo" }
-```
+1. Clone the engine somewhere: `git clone https://github.com/septract/membrillo`.
+2. Copy this directory out to its own folder.
+3. Edit its `package.json`: point the dependency at your engine checkout —
+   `"dependencies": { "membrillo": "file:../membrillo/packages/membrillo" }`.
+4. `npm install && npm run dev` — that's the whole setup.
 
-`npm install && npm run dev` — that's the whole setup. For CI (where a
-relative `file:` path won't exist), vendor a tarball: run `npm pack` inside
-`membrillo/packages/membrillo`, commit the `.tgz`, and depend on
-`"membrillo": "file:./membrillo-<version>.tgz"`. Once membrillo is published
+For CI (where a relative `file:` path won't exist), vendor a tarball: run
+`npm pack` inside `membrillo/packages/membrillo`, commit the `.tgz`, and depend
+on `"membrillo": "file:./membrillo-<version>.tgz"`. Once membrillo is published
 to npm this becomes a normal versioned dependency.
+
+The bundled `.github/workflows/deploy.yml` also needs a committed
+`package-lock.json` (it uses `npm ci` with npm caching) — run `npm install`
+once and commit the lockfile before pushing.
 
 `.github/workflows/deploy.yml` deploys to GitHub Pages when this directory is
 a repo root (it is inert inside the membrillo repo) — see its header comment.
 
 ## Writing your story
 
-The full authoring reference is the engine's `GUIDE.md`
-(`packages/membrillo/GUIDE.md`, shipped with the package) — rules, scenes,
-dialogue, companions, sequences, painters, audio, and the design rules the
-tools enforce. The loop:
+The full authoring reference is the engine's `GUIDE.md` — it ships with the
+package, so standalone it's at `node_modules/membrillo/GUIDE.md` (in this repo,
+`packages/membrillo/GUIDE.md`). It covers rules, scenes, dialogue, companions,
+sequences, painters, portraits, audio, the design rules the tools enforce, and
+browser verification. The loop:
 
 ```
 $EDITOR stories/mystory/manifest.json ...
 npm run check       # membrillo check --root ./stories: structure + winnability
 ```
 
-A passing `check` is a model-checking result: every reachable state was
-played, no dead ends exist, every objective can complete. Keep story logic
-declarative (flags/items/companions only) and that proof stays exhaustive.
+A passing `check` means the tools explored every reachable state and found no
+dead ends, all scenes reachable, every objective completable. The state space
+is finite so the check is exhaustive (a complete check, not a formal proof) —
+it stays that way as long as story logic is declarative (flags/items/
+companions only).
 
-The browser is the other half of verification — `check` proves the rules, not
+The browser is the other half of verification — `check` covers the rules, not
 the feel:
 
 ```

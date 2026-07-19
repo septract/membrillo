@@ -53,7 +53,11 @@ art; `postcard` uses image assets).
 
 Read `packages/membrillo/GUIDE.md` — the full authoring reference — and
 `docs/2026-07-18-marigold-demo-design.md` for a worked example (with a puzzle
-dependency chart). The loop:
+dependency chart).
+
+To **start your own game**, copy `games/_template` (see its README). To **add
+a story to the classic collection**, drop a directory under
+`games/classic/stories/` and run the loop:
 
 ```
 mkdir games/classic/stories/mystory && $EDITOR .../manifest.json ...
