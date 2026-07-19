@@ -115,7 +115,7 @@ const stories = loadStories();
 const app = document.getElementById('app')!;
 app.innerHTML = `
   <header>
-    <h1 id="title">Point &amp; Click</h1>
+    <h1 id="title">Membrillo</h1>
     <nav><button id="btn-mute" title="mute">♪</button><button id="btn-menu">Stories</button><button id="btn-restart" hidden>Restart</button></nav>
   </header>
   <div id="menu"></div>
@@ -230,7 +230,7 @@ function showMenu(): void {
   el.game.hidden = true;
   el.btnRestart.hidden = true;
   el.menu.hidden = false;
-  el.title.textContent = 'Point & Click';
+  el.title.textContent = 'Membrillo';
   el.menu.innerHTML = '';
   for (const [id, loaded] of stories) {
     const row = document.createElement('div');

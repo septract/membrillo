@@ -159,6 +159,15 @@ node tools regardless. This is the one place we trade tng-game's
 "zero dependencies" purity for tooling leverage; keep the dependency count
 near zero anyway (Vite + TypeScript, nothing at runtime).
 
+## Naming (2026-07-18)
+
+The engine is **Membrillo**, after Grim Fandango's gentle coroner (the word
+is Spanish for quince — continuing the project's accidental botanical
+streak: meadow, Marigold, Verdant Hollow, the candidate Verbena). Chosen
+from an obscure-minor-LucasArts-character slate over Chepito and Hetchel;
+"Wick" was disqualified by collision with the Wick Editor. Checked clean on
+npm and in the game-tools space at naming time.
+
 ## Deliberately deferred
 
 - Which story ships first (the tng pilot's structure is reusable; its

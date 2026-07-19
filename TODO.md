@@ -6,26 +6,9 @@ design note, it lands here; when it ships, delete it. Dated design notes in
 
 ## Decisions needed (Mike)
 
-- **Name the framework.** It needs one before any public artifact (deploy,
-  README, npm-ability). Current direction: obscure minor-LucasArts-character
-  names (checked clean 2026-07-18):
-  - **Chepito** (Grim Fandango) — the little man walking the sea floor in
-    circles, lantern in hand, perfectly content. Lamplight/harbor resonance;
-    zero software collisions.
-  - **Hetchel** (Loom) — Bobbin's guardian, named for the comb that readies
-    flax threads for the loom — an engine that readies stories. Only a
-    dormant GitHub username in the namespace.
-  - **Membrillo** (Grim Fandango) — the gentle coroner; Spanish for quince,
-    extending the accidental botanical streak. No software presence.
-  - Bench: **Cobb** (MI's "Ask me about LOOM" pirate — tagline: *Ask me
-    about it*), **chuck-the-plant** (the eternal cameo), **Velasco** (harbor
-    master).
-  - Earlier slate (backronyms MOIST/BILGE, Eventually, Verbena, QED) parked;
-    ~~Wick~~ out — conflicted three ways (Wick Editor, the 2015 candlelight
-    horror game, Wicked Engine).
-  - Note: minor-NPC names carry no real IP risk for a free engine (names
-    aren't copyrightable; no marks on minor characters) — homage only, never
-    art or likenesses.
+- **Choose a license** before pushing anywhere public (README exists; repo
+  has none). The vendored font is CC0; playwright-core is `--no-save`
+  dev-only — no constraints either way.
 - **Audio verdict** — the synth themes (ship drone, hollow pluck, dusk/lamp)
   need human ears; tune or rethink `engine/audio` voicing accordingly.
 - **Where the demo goes next**: grow the Marigold (second mission), polish
