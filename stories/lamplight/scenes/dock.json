@@ -15,6 +15,16 @@
   },
   "props": [{ "id": "crates", "paint": "crates", "y": 154 }],
   "start": { "x": 30, "y": 158 },
+  "sequences": {
+    "arrival": [
+      { "setFlags": ["arrived"] },
+      { "walkTo": { "x": 70, "y": 158 } },
+      { "who": "keeper", "say": "You there! Off the ferry! Don't waste what light's left, lad." },
+      { "say": "That lamp of yours is dead, isn't it." },
+      { "wait": 0.4 }
+    ]
+  },
+  "enter": [{ "requires": ["!flag:arrived"], "play": "arrival" }],
   "hotspots": [
     {
       "id": "rope",

@@ -5,7 +5,15 @@
 
 import { readdirSync, readFileSync, existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import type { Dialogue, Item, Manifest, Scene, Story } from '../engine/core/types.ts';
+import type {
+  Companion,
+  Dialogue,
+  Item,
+  Manifest,
+  Objective,
+  Scene,
+  Story,
+} from '../engine/core/types.ts';
 
 export const STORIES_ROOT = new URL('../stories', import.meta.url).pathname;
 
@@ -21,7 +29,7 @@ export interface StoryFiles {
    * Ids AS AUTHORED, before collapsing into maps — duplicate detection must
    * run on these, because the maps silently overwrite duplicates.
    */
-  rawIds: { scenes: string[]; items: string[]; dialogues: string[] };
+  rawIds: { scenes: string[]; items: string[]; dialogues: string[]; companions: string[]; objectives: string[] };
 }
 
 function readJson<T>(path: string): T {
@@ -48,7 +56,7 @@ export function loadStoryFiles(id: string, root: string = STORIES_ROOT): StoryFi
   const dir = join(root, id);
   const manifest = readJson<Manifest>(join(dir, 'manifest.json'));
 
-  const rawIds: StoryFiles['rawIds'] = { scenes: [], items: [], dialogues: [] };
+  const rawIds: StoryFiles['rawIds'] = { scenes: [], items: [], dialogues: [], companions: [], objectives: [] };
 
   const scenes: Record<string, Scene> = {};
   const sceneFiles: Record<string, string> = {};
@@ -79,10 +87,33 @@ export function loadStoryFiles(id: string, root: string = STORIES_ROOT): StoryFi
     dialogues[dlg.id] = dlg;
   }
 
+  const companions: Record<string, Companion> = {};
+  const companionsPath = join(dir, 'companions.json');
+  if (existsSync(companionsPath)) {
+    for (const c of readJson<Companion[]>(companionsPath)) {
+      rawIds.companions.push(c.id);
+      companions[c.id] = c;
+    }
+  }
+
+  let objectives: Objective[] = [];
+  const objectivesPath = join(dir, 'objectives.json');
+  if (existsSync(objectivesPath)) {
+    objectives = readJson<Objective[]>(objectivesPath);
+    rawIds.objectives.push(...objectives.map((o) => o.id));
+  }
+
   const paintPath = join(dir, 'paint', 'index.ts');
   const paintSource = existsSync(paintPath) ? readFileSync(paintPath, 'utf8') : null;
 
-  return { id, dir, story: { manifest, scenes, items, dialogues }, paintSource, sceneFiles, rawIds };
+  return {
+    id,
+    dir,
+    story: { manifest, scenes, items, dialogues, companions, objectives },
+    paintSource,
+    sceneFiles,
+    rawIds,
+  };
 }
 
 /** Which story ids to operate on, from argv (all stories when none given). */

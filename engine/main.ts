@@ -7,31 +7,39 @@
 // the actor paths through walkboxes and behind props, room changes fade, and
 // a following camera lets scenes be larger than the story's view resolution.
 
-import type { Character, Point, Scene, Size, State } from './core/types.ts';
-import { initialState } from './core/rules.ts';
+import type { Character, Point, Scene, SeqStep, Size, State } from './core/types.ts';
+import { applyRule, initialState } from './core/rules.ts';
 import {
   act,
   applyItem,
+  applySequenceEffects,
   chooseOption,
   combine,
   currentScene,
   dialogueNode,
   enterScene,
+  enterSequenceId,
   isCutscene,
   lookAtItem,
+  stepRule,
   useExit,
   visibleCharacters,
   visibleOptions,
   type PlayerVerb,
 } from './core/verbs.ts';
+import { objectiveViews } from './core/objectives.ts';
+import { followGap, pushTrail, resetTrail, trailPointAt, type Trail } from './followers.ts';
+import * as audio from './audio/engine.ts';
 import { loadStories, type LoadedStory } from './loader.ts';
 import {
+  bodyBox,
   renderScene,
   sceneSize,
   storyView,
   targetAt,
   wrapWords,
   type ActorPose,
+  type FollowerView,
   type Speech,
   type TargetRef,
 } from './render.ts';
@@ -53,6 +61,15 @@ interface Pending {
   action: PendingAction;
 }
 
+interface RunningSequence {
+  steps: SeqStep[];
+  index: number;
+  /** Timestamp the current step completes at (null: waiting on the walk). */
+  until: number | null;
+  /** Scene to travel to once the sequence ends (a rule's play+goto). */
+  afterGoto: string | null;
+}
+
 interface Session {
   id: string;
   loaded: LoadedStory;
@@ -67,6 +84,13 @@ interface Session {
   dialogue: { id: string; node: string; anchor: Point; color: RGB; speakerId: string } | null;
   /** Cutscene beat index, if the current scene is a cutscene. */
   beat: number | null;
+  /** In-room scripted sequence currently playing (blocks input). */
+  sequence: RunningSequence | null;
+  /** Companion follower presentation state, keyed by companion id. */
+  followers: Map<string, ActorPose>;
+  trail: Trail;
+  /** Sequence-set facing overrides for scene characters; reset per scene. */
+  facingOverrides: Record<string, Facing>;
   finished: boolean;
 }
 
@@ -84,7 +108,7 @@ const app = document.getElementById('app')!;
 app.innerHTML = `
   <header>
     <h1 id="title">Point &amp; Click</h1>
-    <nav><button id="btn-menu">Stories</button><button id="btn-restart" hidden>Restart</button></nav>
+    <nav><button id="btn-mute" title="mute">♪</button><button id="btn-menu">Stories</button><button id="btn-restart" hidden>Restart</button></nav>
   </header>
   <div id="menu"></div>
   <div id="game" hidden>
@@ -97,6 +121,7 @@ app.innerHTML = `
       <div id="sentence">&nbsp;</div>
       <div id="verbs"></div>
       <div id="inventory"></div>
+      <div id="objectives" hidden></div>
       <div id="log"></div>
     </div>
   </div>`;
@@ -111,7 +136,9 @@ const el = {
   sentence: document.getElementById('sentence')!,
   verbs: document.getElementById('verbs')!,
   inventory: document.getElementById('inventory')!,
+  objectives: document.getElementById('objectives')!,
   log: document.getElementById('log')!,
+  btnMute: document.getElementById('btn-mute')!,
   btnMenu: document.getElementById('btn-menu')!,
   btnRestart: document.getElementById('btn-restart')!,
 };
@@ -219,6 +246,7 @@ function startStory(id: string, state: State | null): void {
   combineSel = [];
   speech = null;
   fade = null;
+  audio.ensureRunning(); // startStory always runs from a user gesture
   session = {
     id,
     loaded,
@@ -230,6 +258,10 @@ function startStory(id: string, state: State | null): void {
     pending: null,
     dialogue: null,
     beat: null,
+    sequence: null,
+    followers: new Map(),
+    trail: { points: [] },
+    facingOverrides: {},
     finished: false,
   };
   placeInScene(sceneOf(session), null);
@@ -251,15 +283,25 @@ function cameraTargetFor(s: Session): Point {
   };
 }
 
+function applyTheme(scene: Scene): void {
+  if (!session) return;
+  const cfg = session.loaded.story.manifest.audio;
+  const themeName = cfg?.sceneTheme[scene.id];
+  audio.setTheme(themeName !== undefined ? (cfg!.themes[themeName] ?? null) : null);
+}
+
 function placeInScene(scene: Scene, entry: Point | null): void {
   if (!session) return;
   session.path = null;
   session.pending = null;
   session.dialogue = null;
+  session.sequence = null;
+  session.facingOverrides = {};
   renderDialogue();
   speech = null;
   hover = undefined;
   el.hoverlabel.hidden = true;
+  applyTheme(scene);
   if (isCutscene(scene)) {
     session.beat = 0;
   } else {
@@ -267,13 +309,17 @@ function placeInScene(scene: Scene, entry: Point | null): void {
     const at = entry ?? scene.start ?? { x: session.view.w / 2, y: session.view.h - 20 };
     session.actor = { ...session.actor, x: at.x, y: at.y, walking: false };
     session.camera = cameraTargetFor(session); // snap, don't pan, on entry
+    resetTrail(session.trail, at);
+    session.followers.clear(); // re-seeded next tick at the entry point
+    const seqId = enterSequenceId(scene, session.state);
+    if (seqId !== null) startSequence(seqId, null);
   }
   save();
 }
 
-function changeSceneNow(sceneId: string, entry: Point | null): void {
+function changeSceneNow(sceneId: string, entry: Point | null, withState?: State): void {
   if (!session) return;
-  session.state = enterScene(session.state, sceneId);
+  session.state = withState ?? enterScene(session.state, sceneId);
   const scene = sceneOf(session);
   if (scene.ending && !isCutscene(scene)) {
     finish();
@@ -283,12 +329,16 @@ function changeSceneNow(sceneId: string, entry: Point | null): void {
   renderPanel();
 }
 
-/** Room changes go through a fade; the switch happens at full black. */
-function changeScene(sceneId: string, entry: Point | null): void {
+/**
+ * Room changes go through a fade; the switch happens at full black.
+ * `withState` (e.g. an exit outcome's state) is also applied at the midpoint,
+ * so the render keeps showing the departing scene until then.
+ */
+function changeScene(sceneId: string, entry: Point | null, withState?: State): void {
   fade = {
     t0: performance.now(),
     fired: false,
-    apply: () => changeSceneNow(sceneId, entry),
+    apply: () => changeSceneNow(sceneId, entry, withState),
   };
 }
 
@@ -296,6 +346,8 @@ function finish(): void {
   if (!session) return;
   session.finished = true;
   localStorage.removeItem(saveKey(session.id));
+  audio.setTheme(null);
+  audio.sfx('success');
   log('— The End —');
 }
 
@@ -345,6 +397,14 @@ function speakerFor(target: TargetRef | undefined): Speaker {
       const c = visibleCharacters(scene, session.state).find((x) => x.id === target.id);
       if (c) return { anchor: characterHead(scene, c), color: c.color ?? P.white, id: c.id };
     }
+    if (target.kind === 'companion') {
+      const f = session.followers.get(target.id);
+      const c = session.loaded.story.companions[target.id];
+      if (f) {
+        const y = f.y - CHARACTER_SPEECH_OFFSET * depthScale(scene, f.y);
+        return { anchor: { x: f.x, y }, color: c?.color ?? P.white, id: target.id };
+      }
+    }
     // A talking hotspot (intercom, door grille): float above its region.
     return {
       anchor: { x: target.region.x + target.region.w / 2, y: target.region.y - 6 },
@@ -353,6 +413,20 @@ function speakerFor(target: TargetRef | undefined): Speaker {
     };
   }
   return { anchor: actorHead(), color: P.glow, id: 'actor' };
+}
+
+/** Hit-test the companion followers (they sit on top of scene targets). */
+function followerTargetAt(p: Point): TargetRef | undefined {
+  if (!session) return undefined;
+  const scene = sceneOf(session);
+  for (const [id, pose] of session.followers) {
+    const region = bodyBox({ x: pose.x, y: pose.y }, depthScale(scene, pose.y));
+    if (p.x >= region.x && p.x < region.x + region.w && p.y >= region.y && p.y < region.y + region.h) {
+      const c = session.loaded.story.companions[id];
+      return { kind: 'companion', id, name: c?.name ?? id, region, walkTo: { x: pose.x - 16, y: pose.y } };
+    }
+  }
+  return undefined;
 }
 
 /** The speech to show this frame: the open dialogue's line, else the transient bark. */
@@ -373,17 +447,90 @@ function currentSpeech(): (Speech & { speakerId: string }) | null {
   return speech;
 }
 
+// --- Scripted sequences -----------------------------------------------------
+
+function seqSpeaker(who: string | undefined): Speaker {
+  if (!session || who === undefined || who === 'actor') return speakerFor(undefined);
+  const scene = sceneOf(session);
+  const c = visibleCharacters(scene, session.state).find((x) => x.id === who);
+  if (c) return { anchor: characterHead(scene, c), color: c.color ?? P.white, id: c.id };
+  const f = session.followers.get(who);
+  if (f) {
+    const region = bodyBox({ x: f.x, y: f.y }, depthScale(scene, f.y));
+    return speakerFor({ kind: 'companion', id: who, name: who, region, walkTo: { x: f.x, y: f.y } });
+  }
+  return speakerFor(undefined);
+}
+
+function startSequence(seqId: string, afterGoto: string | null): void {
+  if (!session) return;
+  const steps = sceneOf(session).sequences?.[seqId];
+  if (!steps || steps.length === 0) {
+    if (afterGoto !== null) changeScene(afterGoto, null);
+    return;
+  }
+  session.sequence = { steps, index: -1, until: null, afterGoto };
+  advanceSequence();
+}
+
+function advanceSequence(): void {
+  if (!session || !session.sequence) return;
+  const seq = session.sequence;
+  seq.index++;
+  if (seq.index >= seq.steps.length) {
+    session.sequence = null;
+    if (seq.afterGoto !== null) changeScene(seq.afterGoto, null);
+    return;
+  }
+  const step = seq.steps[seq.index]!;
+  session.state = applyRule(session.state, stepRule(step)).state;
+  if (step.face !== undefined) {
+    if ((step.who ?? 'actor') === 'actor') session.actor.facing = step.face;
+    else session.facingOverrides[step.who!] = step.face;
+  }
+  seq.until = 0; // effect-only steps advance next tick
+  if (step.say !== undefined) {
+    const who = seqSpeaker(step.who);
+    say(step.say, who.anchor, who.color, who.id);
+    seq.until = speech?.expires ?? 0;
+  } else if (step.walkTo !== undefined) {
+    session.path = findPath({ x: session.actor.x, y: session.actor.y }, step.walkTo, walkBoxes(sceneOf(session)));
+    session.pending = null;
+    seq.until = null; // completes when the walk does
+  } else if (step.wait !== undefined) {
+    seq.until = performance.now() + step.wait * 1000;
+  }
+  save();
+  renderPanel();
+}
+
+/** Esc: apply the remaining steps' effects instantly and end the sequence. */
+function skipSequence(): void {
+  if (!session || !session.sequence) return;
+  const seq = session.sequence;
+  session.state = applySequenceEffects(session.state, seq.steps, seq.index + 1);
+  session.sequence = null;
+  session.path = null;
+  speech = null;
+  if (seq.afterGoto !== null) changeScene(seq.afterGoto, null);
+  save();
+  renderPanel();
+}
+
 // --- Outcome handling -------------------------------------------------------
 
 function handleOutcome(outcome: Outcome, target?: TargetRef): void {
   if (!session) return;
+  const hadItems = session.state.inventory.length;
   session.state = outcome.state;
+  if (outcome.state.inventory.length > hadItems) audio.sfx('pickup');
   if (outcome.text !== undefined) {
     const who = speakerFor(outcome.speaker === 'target' ? target : undefined);
     say(outcome.text, who.anchor, who.color, who.id);
   }
   if (outcome.dialogue !== undefined) openDialogue(outcome.dialogue, target);
-  if (outcome.goto !== undefined) changeScene(outcome.goto, null);
+  if (outcome.play !== undefined) startSequence(outcome.play, outcome.goto ?? null);
+  else if (outcome.goto !== undefined) changeScene(outcome.goto, null);
   save();
   renderPanel();
 }
@@ -406,10 +553,13 @@ function runPending(): void {
   if (target.kind === 'exit') {
     const scene = sceneOf(session);
     const exit = (scene.exits ?? []).find((e) => e.id === target.id);
-    // useExit validates the gate; the actual switch happens at fade midpoint,
-    // so the state (and the render) stay in this scene until then.
-    if (exit && useExit(session.loaded.story, session.state, target.id)) {
-      changeScene(exit.to, exit.entry ?? null);
+    // useExit applies exit effects and validates the gate; the state switch
+    // happens at fade midpoint so the render stays in this scene until then.
+    const outcome = exit ? useExit(session.loaded.story, session.state, target.id) : null;
+    if (exit && outcome) {
+      if (outcome.text !== undefined) say(outcome.text, actorHead(), P.glow, 'actor');
+      audio.sfx('door');
+      changeScene(exit.to, exit.entry ?? null, outcome.state);
     }
     return;
   }
@@ -536,7 +686,24 @@ function renderPanel(): void {
       el.inventory.append(chip);
     }
   }
+  renderObjectives();
   renderSentence();
+}
+
+function renderObjectives(): void {
+  if (!session) {
+    el.objectives.hidden = true;
+    return;
+  }
+  const views = objectiveViews(session.loaded.story, session.state);
+  el.objectives.hidden = views.length === 0;
+  el.objectives.innerHTML = '';
+  for (const view of views) {
+    const p = document.createElement('p');
+    p.className = view.done ? 'objective done' : 'objective';
+    p.textContent = `${view.done ? '✓' : '·'} ${view.text}`;
+    el.objectives.append(p);
+  }
 }
 
 function armVerb(id: ArmedVerb): void {
@@ -593,14 +760,14 @@ function worldPoint(ev: MouseEvent): Point {
 let lastMouse: { clientX: number; clientY: number } | null = null;
 
 function updateHover(clientX: number, clientY: number): void {
-  if (!session || session.beat !== null || session.dialogue) {
+  if (!session || session.beat !== null || session.dialogue || session.sequence) {
     hover = undefined;
     el.hoverlabel.hidden = true;
     return;
   }
   const rect = el.canvas.getBoundingClientRect();
   const p = worldFromClient(clientX, clientY, rect);
-  hover = targetAt(sceneOf(session), session.state, p.x, p.y);
+  hover = followerTargetAt(p) ?? targetAt(sceneOf(session), session.state, p.x, p.y);
   if (hover) {
     el.hoverlabel.hidden = false;
     el.hoverlabel.textContent = hover.name;
@@ -619,7 +786,7 @@ el.canvas.addEventListener('mousemove', (ev) => {
 });
 
 el.canvas.addEventListener('click', (ev) => {
-  if (!session || session.finished || session.dialogue || fade) return;
+  if (!session || session.finished || session.dialogue || session.sequence || fade) return;
   if (speech) speech = null; // click skips the line
   const scene = sceneOf(session);
   if (session.beat !== null) {
@@ -628,7 +795,7 @@ el.canvas.addEventListener('click', (ev) => {
   }
   const p = worldPoint(ev);
   const boxes = walkBoxes(scene);
-  const target = targetAt(scene, session.state, p.x, p.y);
+  const target = followerTargetAt(p) ?? targetAt(scene, session.state, p.x, p.y);
   if (!target) {
     session.path = findPath({ x: session.actor.x, y: session.actor.y }, p, boxes);
     session.pending = null;
@@ -650,7 +817,7 @@ el.canvas.addEventListener('click', (ev) => {
 
 // Double-click an exit: skip the walk, travel now.
 el.canvas.addEventListener('dblclick', () => {
-  if (!session || session.finished || session.dialogue || fade || session.beat !== null) return;
+  if (!session || session.finished || session.dialogue || session.sequence || fade || session.beat !== null) return;
   const pending = session.pending;
   if (pending && pending.target.kind === 'exit') {
     session.actor.x = pending.target.walkTo.x;
@@ -684,6 +851,10 @@ window.addEventListener('keydown', (ev) => {
   if (!session) return;
   if (ev.key === 'Escape') {
     if (speech) speech = null;
+    if (session.sequence) {
+      skipSequence();
+      return;
+    }
     if (session.beat !== null && !session.finished) {
       // Skip the whole cutscene by advancing through every beat, so any
       // future per-beat effects still run exactly as if clicked through.
@@ -704,6 +875,11 @@ window.addEventListener('keyup', (ev) => {
   if (ev.code === 'Space') highlight = false;
 });
 
+el.btnMute.addEventListener('click', () => {
+  audio.ensureRunning();
+  el.btnMute.textContent = audio.toggleMute() ? '♪̸' : '♪';
+  el.btnMute.classList.toggle('secondary', audio.isMuted());
+});
 el.btnMenu.addEventListener('click', showMenu);
 el.btnRestart.addEventListener('click', () => {
   if (session) {
@@ -783,6 +959,8 @@ function tick(now: number): void {
       }
     } else {
       updateWalk(dt);
+      updateFollowers(dt);
+      updateSequence(now);
       updateCamera(dt);
       const sp = currentSpeech();
       renderScene(ctx, session.loaded, session.state, {
@@ -794,12 +972,77 @@ function tick(now: number): void {
         highlight,
         speech: sp,
         speakingId: sp?.speakerId ?? null,
+        followers: followerViews(),
+        facingOverrides: session.facingOverrides,
         fade: alpha,
       });
       if (session.finished) drawEndCard();
     }
   }
   requestAnimationFrame(tick);
+}
+
+/** Advance the running scripted sequence when its current step completes. */
+function updateSequence(now: number): void {
+  if (!session || !session.sequence || fade) return;
+  const seq = session.sequence;
+  const step = seq.steps[seq.index];
+  if (!step) return;
+  const done = step.walkTo !== undefined ? session.path === null : seq.until !== null && now >= seq.until;
+  if (done) advanceSequence();
+}
+
+/** Keep the follower roster synced with state and walk them along the trail. */
+function updateFollowers(dt: number): void {
+  if (!session) return;
+  const scene = sceneOf(session);
+  const party = session.state.companions;
+  for (const id of [...session.followers.keys()]) {
+    if (!party.includes(id)) session.followers.delete(id);
+  }
+  party.forEach((id, i) => {
+    if (!session!.followers.has(id)) {
+      session!.followers.set(id, {
+        x: session!.actor.x - 12 * (i + 1),
+        y: session!.actor.y,
+        facing: session!.actor.facing,
+        phase: 0,
+        walking: false,
+      });
+    }
+  });
+  if (session.actor.walking) pushTrail(session.trail, { x: session.actor.x, y: session.actor.y });
+  let index = 0;
+  for (const id of party) {
+    const f = session.followers.get(id);
+    if (!f) continue;
+    const target = trailPointAt(session.trail, followGap(index));
+    const dx = target.x - f.x;
+    const dy = target.y - f.y;
+    const dist = Math.hypot(dx, dy);
+    const step = WALK_SPEED * depthScale(scene, f.y) * dt;
+    if (dist <= Math.max(step, 1)) {
+      f.x = target.x;
+      f.y = target.y;
+      f.walking = false;
+    } else {
+      f.x += (dx / dist) * step;
+      f.y += (dy / dist) * step;
+      f.phase += step * STEP_PHASE;
+      f.walking = true;
+      f.facing = facingFromDelta(dx, dy);
+    }
+    index++;
+  }
+}
+
+function followerViews(): FollowerView[] {
+  if (!session) return [];
+  const views: FollowerView[] = [];
+  for (const [id, pose] of session.followers) {
+    views.push({ id, pose, paint: session.loaded.story.companions[id]?.paint });
+  }
+  return views;
 }
 
 function updateCamera(dt: number): void {

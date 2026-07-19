@@ -33,16 +33,18 @@ export interface ActorPose {
 }
 
 export interface TargetRef {
-  kind: 'hotspot' | 'character' | 'exit';
+  kind: 'hotspot' | 'character' | 'exit' | 'companion';
   id: string;
   name: string;
   region: Box;
   walkTo: Point;
 }
 
-function characterBox(pos: Point, scale: number): Box {
+/** Clickable body box for a sprite standing at `pos` (feet anchor). */
+export function bodyBox(pos: Point, scale: number): Box {
   return { x: pos.x - 9 * scale, y: pos.y - 40 * scale, w: 18 * scale, h: 40 * scale };
 }
+const characterBox = bodyBox;
 
 function centre(b: Box): Point {
   return { x: b.x + b.w / 2, y: b.y + b.h / 2 };
@@ -179,6 +181,13 @@ export function drawSpeech(
   });
 }
 
+/** A companion follower's presentation state, owned by the controller. */
+export interface FollowerView {
+  id: string;
+  pose: ActorPose;
+  paint?: string | undefined;
+}
+
 export interface RenderOpts {
   t: number;
   actor: ActorPose | null;
@@ -188,8 +197,11 @@ export interface RenderOpts {
   /** Space held: outline every target (the hotspot-highlight affordance). */
   highlight: boolean;
   speech?: Speech | null;
-  /** Body the current speech belongs to: 'actor' or a character id. */
+  /** Body the current speech belongs to: 'actor', a character id, or a companion id. */
   speakingId?: string | null;
+  followers?: FollowerView[];
+  /** Scripted-sequence facing overrides for scene characters. */
+  facingOverrides?: Record<string, Facing>;
   /** 0..1 black overlay for room-change fades. */
   fade?: number;
 }
@@ -224,7 +236,7 @@ export function renderScene(
     const sprite = c.paint !== undefined ? loaded.paint.sprites?.[c.paint] : undefined;
     const pose: Pose = {
       ...IDLE_POSE,
-      facing: c.facing ?? 'left',
+      facing: opts.facingOverrides?.[c.id] ?? c.facing ?? 'left',
       talking: opts.speakingId === c.id && !!opts.speech,
     };
     bodies.push({
@@ -255,6 +267,31 @@ export function renderScene(
           ctx.fillRect(px, prop.y - 24, 40, 24);
           ctx.strokeStyle = css(P.white);
           ctx.strokeRect(px + 0.5, prop.y - 23.5, 39, 23);
+        }
+      },
+    });
+  }
+  for (const f of opts.followers ?? []) {
+    const scale = depthScale(scene, f.pose.y);
+    const sprite = f.paint !== undefined ? loaded.paint.sprites?.[f.paint] : undefined;
+    const pose: Pose = {
+      facing: f.pose.facing,
+      phase: f.pose.phase,
+      walking: f.pose.walking,
+      talking: opts.speakingId === f.id && !!opts.speech,
+    };
+    const { x, y } = f.pose;
+    bodies.push({
+      y,
+      draw: () => {
+        if (sprite) {
+          scaled(ctx, x, y, scale, () => sprite(ctx, x, y, pose, opts.t));
+        } else {
+          const b = bodyBox({ x, y }, scale);
+          ctx.fillStyle = css(P.stone);
+          ctx.fillRect(b.x, b.y, b.w, b.h);
+          ctx.strokeStyle = css(P.white);
+          ctx.strokeRect(b.x + 0.5, b.y + 0.5, b.w - 1, b.h - 1);
         }
       },
     });

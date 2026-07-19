@@ -6,6 +6,7 @@
 
 import type {
   Character,
+  Companion,
   Dialogue,
   DialogueNode,
   DialogueOption,
@@ -13,6 +14,7 @@ import type {
   Hotspot,
   Rule,
   Scene,
+  SeqStep,
   State,
   Story,
   Target,
@@ -51,10 +53,18 @@ export function visibleExits(scene: Scene, state: State): Exit[] {
   return (scene.exits ?? []).filter((e) => checkAll(state, e.requires));
 }
 
-function findTarget(scene: Scene, state: State, targetId: string): Target | undefined {
+/** Party members currently travelling with the player (scene-independent). */
+export function partyCompanions(story: Story, state: State): Companion[] {
+  return state.companions
+    .map((id) => story.companions[id])
+    .filter((c): c is Companion => c !== undefined);
+}
+
+function findTarget(story: Story, scene: Scene, state: State, targetId: string): Target | undefined {
   return (
     visibleHotspots(scene, state).find((h) => h.id === targetId) ??
-    visibleCharacters(scene, state).find((c) => c.id === targetId)
+    visibleCharacters(scene, state).find((c) => c.id === targetId) ??
+    partyCompanions(story, state).find((c) => c.id === targetId)
   );
 }
 
@@ -77,7 +87,7 @@ export function availableVerbs(target: Target): PlayerVerb[] {
  * Returns null only if the target is unknown or not currently visible.
  */
 export function act(story: Story, state: State, targetId: string, verb: PlayerVerb): Outcome | null {
-  const target = findTarget(currentScene(story, state), state, targetId);
+  const target = findTarget(story, currentScene(story, state), state, targetId);
   if (!target) return null;
   const bucket = verb === 'interact' ? interactBucket(target) : target[verb];
   const rule = firstMatch(state, bucket);
@@ -97,7 +107,7 @@ export function applyItem(
   targetId: string,
   itemId: string,
 ): Outcome | null {
-  const target = findTarget(currentScene(story, state), state, targetId);
+  const target = findTarget(story, currentScene(story, state), state, targetId);
   if (!target) return null;
   if (!state.inventory.includes(itemId)) return { state, text: DEFAULT_TEXT.apply };
   const rule = (target.itemUse ?? []).find(
@@ -148,11 +158,15 @@ export function combine(story: Story, state: State, itemA: string, itemB: string
   return { state, text: DEFAULT_TEXT.combine };
 }
 
-/** Travel through a visible exit. Returns the new state, or null if not usable. */
-export function useExit(story: Story, state: State, exitId: string): State | null {
+/**
+ * Travel through a visible exit: applies the exit's `effects` (if any), then
+ * moves to its destination. Returns null if the exit isn't usable.
+ */
+export function useExit(story: Story, state: State, exitId: string): Outcome | null {
   const exit = visibleExits(currentScene(story, state), state).find((e) => e.id === exitId);
   if (!exit) return null;
-  return { ...state, scene: exit.to };
+  const out = exit.effects ? applyRule(state, exit.effects) : { state };
+  return { ...out, state: { ...out.state, scene: exit.to } };
 }
 
 /** Move to a scene via a rule's `goto` (or a cutscene's `next`). */
@@ -182,5 +196,37 @@ export function chooseOption(state: State, option: DialogueOption): DialogueStep
   const rule: Rule = {};
   if (option.setFlags !== undefined) rule.setFlags = option.setFlags;
   if (option.giveItem !== undefined) rule.giveItem = option.giveItem;
+  if (option.addCompanion !== undefined) rule.addCompanion = option.addCompanion;
   return { state: applyRule(state, rule).state, to: option.to };
+}
+
+// --- Scripted sequences -----------------------------------------------------
+
+/** The rule-shaped effect subset of one sequence step. */
+export function stepRule(step: SeqStep): Rule {
+  const rule: Rule = {};
+  if (step.setFlags !== undefined) rule.setFlags = step.setFlags;
+  if (step.clearFlags !== undefined) rule.clearFlags = step.clearFlags;
+  if (step.giveItem !== undefined) rule.giveItem = step.giveItem;
+  if (step.removeItem !== undefined) rule.removeItem = step.removeItem;
+  if (step.addCompanion !== undefined) rule.addCompanion = step.addCompanion;
+  if (step.removeCompanion !== undefined) rule.removeCompanion = step.removeCompanion;
+  return rule;
+}
+
+/**
+ * Apply the state effects of steps[from..] atomically. The fuzzer uses this
+ * for whole sequences; the engine uses it when Esc-skipping a running one —
+ * so a skipped sequence provably ends in the same state as a watched one.
+ */
+export function applySequenceEffects(state: State, steps: SeqStep[], from = 0): State {
+  let s = state;
+  for (const step of steps.slice(from)) s = applyRule(s, stepRule(step)).state;
+  return s;
+}
+
+/** The sequence a scene wants to play on entry (first matching trigger). */
+export function enterSequenceId(scene: Scene, state: State): string | null {
+  const trigger = (scene.enter ?? []).find((t) => checkAll(state, t.requires));
+  return trigger?.play ?? null;
 }

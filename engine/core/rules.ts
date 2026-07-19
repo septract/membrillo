@@ -73,6 +73,8 @@ export interface Outcome {
   dialogue?: string;
   /** Who says `text` (presentation hint; default: the acting player). */
   speaker?: 'actor' | 'target';
+  /** Scene sequence to play (effects → sequence → goto). */
+  play?: string;
 }
 
 /** Apply a rule's effects immutably. `goto`/`dialogue` are reported, not applied. */
@@ -89,6 +91,7 @@ export function applyRule(state: State, rule: Rule): Outcome {
   if (rule.goto !== undefined) outcome.goto = rule.goto;
   if (rule.dialogue !== undefined) outcome.dialogue = rule.dialogue;
   if (rule.speaker !== undefined) outcome.speaker = rule.speaker;
+  if (rule.play !== undefined) outcome.play = rule.play;
   return outcome;
 }
 

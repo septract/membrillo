@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit",
     "validate": "node tools/validate.ts",
     "fuzz": "node tools/fuzz.ts",
-    "test": "node --test tools/core.test.ts tools/walk.test.ts",
+    "test": "node --test tools/core.test.ts tools/walk.test.ts tools/followers.test.ts",
     "check": "npm run typecheck && npm test && npm run validate && npm run fuzz"
   },
   "devDependencies": {

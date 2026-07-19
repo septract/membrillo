@@ -1,0 +1,8 @@
+[
+  {
+    "id": "sparrow",
+    "name": "the sparrow",
+    "look": [{ "text": "A small brown sparrow, hopping along behind you." }],
+    "talk": [{ "speaker": "target", "text": "Peep." }]
+  }
+]

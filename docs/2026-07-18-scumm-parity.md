@@ -101,6 +101,28 @@ a schema decision to make alongside the next story's needs, not a patch.
 Rules gained an optional `speaker: "target"` so in-character NPC replies float
 over the right head.
 
+## Demo-readiness batch (2026-07-18, later)
+
+Built the four gaps identified for the TNG-demo stack-up, each as an optional,
+story-agnostic module (unused = zero behaviour change; the meadow fixture
+exercises companions/objectives with no painters):
+
+- **Companions**: `companions.json` party members follow the actor along a
+  breadcrumb trail of his own walked path (`engine/followers.ts`, pure), and
+  are targetable with the full verb surface in any scene. Recruiting is a rule/
+  dialogue effect; the fuzzer explores party combinations as ordinary state.
+- **Objectives**: `objectives.json`, derived live from state
+  (`core/objectives.ts`); the fuzzer errors on objectives that never show or
+  can never complete.
+- **In-room sequences**: scene `sequences` + `enter` triggers + rule `play`;
+  presentation directives play out live, effects are rule-shaped, and Esc-skip
+  applies the remainder via the same core helper the fuzzer uses — skipped and
+  watched sequences provably converge. Exits gained `effects` (the deferred
+  finding), closing the outcome-pipeline gap for travel.
+- **Audio**: `engine/audio/` Web Audio synth, themes-as-data in the manifest
+  (chord loop + scale + style), crossfade on scene change, engine-event SFX
+  (pickup/door/success), mute button. Silent for stories without a config.
+
 ## Priority order (agreed 2026-07-18)
 
 1. `itemUse` — schema-changing, so it lands before the first real story is

@@ -2,7 +2,7 @@
 // stories/. Uses import.meta.glob so dev and build see identical content and
 // the story list can never drift from the directory listing.
 
-import type { Dialogue, Item, Manifest, Scene, State, Story } from './core/types.ts';
+import type { Companion, Dialogue, Item, Manifest, Objective, Scene, State, Story } from './core/types.ts';
 import type { SpritePainter } from './art/sprites.ts';
 
 export type ScenePainter = (ctx: CanvasRenderingContext2D, state: State, t: number) => void;
@@ -40,6 +40,14 @@ const dialogueFiles = import.meta.glob('/stories/*/dialogue/*.json', {
   eager: true,
   import: 'default',
 }) as Record<string, Dialogue>;
+const companionFiles = import.meta.glob('/stories/*/companions.json', {
+  eager: true,
+  import: 'default',
+}) as Record<string, Companion[]>;
+const objectiveFiles = import.meta.glob('/stories/*/objectives.json', {
+  eager: true,
+  import: 'default',
+}) as Record<string, Objective[]>;
 const paintModules = import.meta.glob('/stories/*/paint/index.ts', {
   eager: true,
 }) as Record<string, PaintModule>;
@@ -64,9 +72,12 @@ export function loadStories(): Map<string, LoadedStory> {
     for (const item of collect(itemFiles, id).flat()) items[item.id] = item;
     const dialogues: Record<string, Dialogue> = {};
     for (const dlg of collect(dialogueFiles, id)) dialogues[dlg.id] = dlg;
+    const companions: Record<string, Companion> = {};
+    for (const c of collect(companionFiles, id).flat()) companions[c.id] = c;
+    const objectives: Objective[] = collect(objectiveFiles, id).flat();
     const paintPath = `/stories/${id}/paint/index.ts`;
     out.set(id, {
-      story: { manifest, scenes, items, dialogues },
+      story: { manifest, scenes, items, dialogues, companions, objectives },
       paint: paintModules[paintPath] ?? {},
     });
   }

@@ -1,0 +1,13 @@
+[
+  {
+    "id": "cross",
+    "text": "Cross the stream",
+    "done": ["flag:gate_open"]
+  },
+  {
+    "id": "wind",
+    "text": "Find something to wind the sluice",
+    "active": ["!flag:gate_open"],
+    "done": ["item:crank"]
+  }
+]

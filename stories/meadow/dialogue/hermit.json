@@ -6,7 +6,15 @@
       "line": "The stream's too high to cross. Wind the sluice down and the bridge will hold.",
       "options": [
         { "text": "Wind it with what?", "to": "what" },
+        { "text": "Anyone else out here?", "to": "bird", "requires": ["!companion:sparrow"] },
         { "text": "I'll manage. (leave)", "to": "end" }
+      ]
+    },
+    "bird": {
+      "line": "Only the sparrow. Take her along — she knows the glade better than I do.",
+      "options": [
+        { "text": "Come on then, bird.", "to": "end", "addCompanion": "sparrow" },
+        { "text": "I travel alone.", "to": "end" }
       ]
     },
     "what": {

@@ -101,6 +101,16 @@ button.secondary { color: var(--dim); }
 #inventory { display: flex; gap: 6px; flex-wrap: wrap; min-height: 30px; }
 .chip { padding: 3px 10px; border-radius: 12px; font-size: 13px; }
 
+#objectives {
+  background: var(--panel);
+  border: 1px solid var(--edge);
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 13px;
+}
+#objectives .objective { margin: 2px 0; color: var(--text); }
+#objectives .objective.done { color: var(--dim); text-decoration: line-through; }
+
 #log {
   height: 130px;
   overflow-y: auto;

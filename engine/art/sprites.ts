@@ -7,8 +7,9 @@
 // and a talking flag that runs the mouth while the sprite's speech floats.
 
 import { P, css, type RGB } from './palette.ts';
+import type { Direction } from '../core/types.ts';
 
-export type Facing = 'left' | 'right' | 'up' | 'down';
+export type Facing = Direction;
 
 export interface Pose {
   facing: Facing;

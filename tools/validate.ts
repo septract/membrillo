@@ -6,8 +6,16 @@
 // to the exact code that will run in the browser.
 
 import { parseCondition } from '../engine/core/rules.ts';
-import { isCutscene } from '../engine/core/verbs.ts';
-import { DEFAULT_VIEW, type Box, type Point, type Rule, type Scene, type Target } from '../engine/core/types.ts';
+import { isCutscene, stepRule } from '../engine/core/verbs.ts';
+import {
+  DEFAULT_VIEW,
+  type Box,
+  type Point,
+  type Rule,
+  type Scene,
+  type SeqStep,
+  type Target,
+} from '../engine/core/types.ts';
 import { boxesConnected, boxIndexAt, inBox, walkBoxes } from '../engine/walk.ts';
 import { loadStoryFiles, storyIdsFromArgv, type StoryFiles } from './load-story.ts';
 
@@ -54,13 +62,23 @@ function validateStory(files: StoryFiles): Report {
           usage.sinks.add(parsed.id);
           if (!items[parsed.id]) r.error(`${where}: condition "${cond}" names unknown item`);
         }
+        if (parsed.kind === 'companion' && !story.companions[parsed.id]) {
+          r.error(`${where}: condition "${cond}" names unknown companion`);
+        }
       } catch (err) {
         r.error(`${where}: ${(err as Error).message}`);
       }
     }
   };
 
-  const checkRule = (where: string, rule: Rule, opts: { talk: boolean; effectsOnly?: boolean }): void => {
+  interface RuleOpts {
+    talk: boolean;
+    effectsOnly?: boolean;
+    /** Sequences resolvable from this rule's home scene; null = play not allowed. */
+    sequences?: Record<string, SeqStep[]> | null;
+  }
+
+  const checkRule = (where: string, rule: Rule, opts: RuleOpts): void => {
     checkConds(where, rule.requires);
     if (rule.giveItem !== undefined) {
       usage.sources.add(rule.giveItem);
@@ -70,6 +88,9 @@ function validateStory(files: StoryFiles): Report {
       usage.sinks.add(rule.removeItem);
       if (!items[rule.removeItem]) r.error(`${where}: removeItem "${rule.removeItem}" unknown`);
     }
+    for (const c of [rule.addCompanion, rule.removeCompanion]) {
+      if (c !== undefined && !story.companions[c]) r.error(`${where}: unknown companion "${c}"`);
+    }
     if (rule.goto !== undefined) {
       if (!scenes[rule.goto]) r.error(`${where}: goto "${rule.goto}" names unknown scene`);
       if (opts.effectsOnly) r.error(`${where}: goto is not allowed here`);
@@ -78,9 +99,16 @@ function validateStory(files: StoryFiles): Report {
       if (!opts.talk) r.error(`${where}: dialogue "${rule.dialogue}" outside a talk bucket`);
       else if (!dialogues[rule.dialogue]) r.error(`${where}: unknown dialogue "${rule.dialogue}"`);
     }
+    if (rule.play !== undefined) {
+      if (opts.sequences === null || opts.sequences === undefined || opts.effectsOnly) {
+        r.error(`${where}: play is not allowed here (no scene sequences in scope)`);
+      } else if (!opts.sequences[rule.play]) {
+        r.error(`${where}: play "${rule.play}" names no sequence in this scene`);
+      }
+    }
   };
 
-  const checkTarget = (where: string, target: Target): void => {
+  const checkTarget = (where: string, target: Target, sequences: Record<string, SeqStep[]> | null): void => {
     checkConds(where, target.requires);
     if (target.use !== undefined && target.take !== undefined) {
       r.error(`${where}: defines both "use" and "take" — Interact must resolve to exactly one`);
@@ -92,14 +120,14 @@ function validateStory(files: StoryFiles): Report {
       take: target.take,
     })) {
       (rules ?? []).forEach((rule, i) =>
-        checkRule(`${where}.${bucket}[${i}]`, rule, { talk: bucket === 'talk' }),
+        checkRule(`${where}.${bucket}[${i}]`, rule, { talk: bucket === 'talk', sequences }),
       );
     }
     (target.itemUse ?? []).forEach((rule, i) => {
       const w = `${where}.itemUse[${i}]`;
       if (!items[rule.withItem]) r.error(`${w}: withItem "${rule.withItem}" unknown`);
       usage.sinks.add(rule.withItem);
-      checkRule(w, rule, { talk: false });
+      checkRule(w, rule, { talk: false, sequences });
     });
   };
 
@@ -182,15 +210,16 @@ function validateStory(files: StoryFiles): Report {
       if (p && boxIndexAt(p, boxes) === -1) r.error(`${w}: walkTo is outside every walk box`);
     };
 
+    const sceneSequences = scene.sequences ?? null;
     for (const h of scene.hotspots ?? []) {
       const w = `${where}#${h.id}`;
-      checkTarget(w, h);
+      checkTarget(w, h, sceneSequences);
       checkRegion(w, h.region);
       checkWalkTo(w, h.walkTo);
     }
     for (const c of scene.characters ?? []) {
       const w = `${where}#${c.id}`;
-      checkTarget(w, c);
+      checkTarget(w, c, sceneSequences);
       checkWalkTo(w, c.walkTo);
       if (!inBox(c.pos, { x: 0, y: 0, w: size.w, h: size.h })) r.error(`${w}: pos outside the scene`);
       if (c.paint !== undefined) checkPaintRef(r, files, w, c.paint);
@@ -200,6 +229,13 @@ function validateStory(files: StoryFiles): Report {
       checkConds(w, e.requires);
       checkRegion(w, e.region);
       checkWalkTo(w, e.walkTo);
+      if (e.effects) {
+        // effectsOnly forbids goto/play; talk:false forbids dialogue.
+        checkRule(`${w}.effects`, e.effects, { talk: false, effectsOnly: true, sequences: null });
+        if (e.effects.requires !== undefined) {
+          r.error(`${w}.effects: gate the exit with its own requires, not on effects`);
+        }
+      }
       const dest = scenes[e.to];
       if (!dest) {
         r.error(`${w}: exit to unknown scene "${e.to}"`);
@@ -214,8 +250,72 @@ function validateStory(files: StoryFiles): Report {
       }
     }
     if (scene.paint !== undefined) checkPaintRef(r, files, where, scene.paint);
+
+    // --- Scripted sequences -------------------------------------------------
+    const characterIds = new Set((scene.characters ?? []).map((c) => c.id));
+    for (const [seqId, steps] of Object.entries(scene.sequences ?? {})) {
+      const sw = `${where}$${seqId}`;
+      if (steps.length === 0) r.error(`${sw}: empty sequence`);
+      steps.forEach((step, i) => {
+        const w = `${sw}[${i}]`;
+        const who = step.who ?? 'actor';
+        if (who !== 'actor' && !characterIds.has(who) && !story.companions[who]) {
+          r.error(`${w}: who "${who}" is not the actor, a scene character, or a companion`);
+        }
+        if (step.walkTo !== undefined) {
+          if (who !== 'actor') r.error(`${w}: walkTo is actor-only`);
+          else checkWalkTo(w, step.walkTo);
+        }
+        if (step.wait !== undefined && !(step.wait >= 0)) r.error(`${w}: wait must be >= 0`);
+        // A step's effect subset is exactly a rule — validate it as one.
+        checkRule(w, stepRule(step), { talk: false, effectsOnly: true, sequences: null });
+      });
+    }
+    (scene.enter ?? []).forEach((trigger, i) => {
+      const w = `${where}.enter[${i}]`;
+      checkConds(w, trigger.requires);
+      if (!(scene.sequences ?? {})[trigger.play]) {
+        r.error(`${w}: play "${trigger.play}" names no sequence in this scene`);
+      }
+    });
   }
   if (endings === 0) r.error('story has no ending scene');
+
+  // --- Companions -----------------------------------------------------------
+  dupCheck('companions.json', files.rawIds.companions);
+  for (const companion of Object.values(story.companions)) {
+    // Companions act in ANY scene, so rules on them may not reference
+    // scene-local sequences (sequences: null).
+    checkTarget(`companions.json#${companion.id}`, companion, null);
+    if (companion.paint !== undefined) {
+      checkPaintRef(r, files, `companions.json#${companion.id}`, companion.paint);
+    }
+  }
+
+  // --- Objectives -----------------------------------------------------------
+  dupCheck('objectives.json', files.rawIds.objectives);
+  for (const objective of story.objectives) {
+    const w = `objectives.json#${objective.id}`;
+    if (!objective.text) r.error(`${w}: missing text`);
+    checkConds(w, objective.active);
+    checkConds(w, objective.done);
+  }
+
+  // --- Audio ----------------------------------------------------------------
+  const audio = manifest.audio;
+  if (audio) {
+    for (const [name, theme] of Object.entries(audio.themes)) {
+      const w = `manifest.json audio.themes.${name}`;
+      if (!(theme.bpm > 0)) r.error(`${w}: bpm must be > 0`);
+      if (theme.prog.length === 0) r.error(`${w}: empty chord progression`);
+      if (theme.scale.length === 0) r.error(`${w}: empty scale`);
+    }
+    for (const [sceneId, themeName] of Object.entries(audio.sceneTheme)) {
+      const w = `manifest.json audio.sceneTheme`;
+      if (!scenes[sceneId]) r.error(`${w}: unknown scene "${sceneId}"`);
+      if (!audio.themes[themeName]) r.error(`${w}: unknown theme "${themeName}"`);
+    }
+  }
 
   // --- Items ----------------------------------------------------------------
   for (const item of Object.values(items)) {

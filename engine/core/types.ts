@@ -9,6 +9,9 @@ export interface Size { w: number; h: number }
 /** Engine default render resolution (single source — tools import this too). */
 export const DEFAULT_VIEW: Size = { w: 320, h: 180 };
 
+/** 4-way facing (the sprite layer aliases this as its Facing). */
+export type Direction = 'left' | 'right' | 'up' | 'down';
+
 /** "flag:torch_lit" | "item:rope" | "companion:ada", optionally "!"-negated. */
 export type Condition = string;
 
@@ -35,6 +38,11 @@ export interface Rule {
    * use "target" for in-character NPC replies authored on that character.
    */
   speaker?: 'actor' | 'target';
+  /**
+   * Scripted sequence (from the current scene's `sequences`) to play after
+   * this rule's effects; any `goto` runs after the sequence finishes.
+   */
+  play?: string;
 }
 
 /**
@@ -87,6 +95,11 @@ export interface Exit {
   entry?: Point;
   /** Visibility gate. For a locked-door message, pair a gated exit with a hotspot. */
   requires?: Condition[];
+  /**
+   * Effects applied on travel (text/flags/items) — `goto`, `dialogue` and
+   * `play` are not allowed here (validator enforces); `to` is the destination.
+   */
+  effects?: Rule;
 }
 
 /**
@@ -113,6 +126,35 @@ export interface Prop {
 }
 
 /**
+ * One step of an in-room scripted sequence. Presentation directives (say/
+ * walkTo/face/wait) play out live; effect fields apply to game state exactly
+ * as rule effects do — the fuzzer applies a sequence's effects atomically, so
+ * skipping a sequence (Esc) and watching it must end in the same state.
+ */
+export interface SeqStep {
+  /** Speaker/mover: "actor" (default), a scene character id, or a companion id. */
+  who?: string;
+  say?: string;
+  /** Actor only: walk to this point before continuing. */
+  walkTo?: Point;
+  face?: Direction;
+  /** Pause in seconds. */
+  wait?: number;
+  setFlags?: string[];
+  clearFlags?: string[];
+  giveItem?: string;
+  removeItem?: string;
+  addCompanion?: string;
+  removeCompanion?: string;
+}
+
+/** Entry trigger: first entry whose `requires` pass plays its sequence. */
+export interface EnterTrigger {
+  requires?: Condition[];
+  play: string;
+}
+
+/**
  * A scene is either a room (walk/start/hotspots/characters/exits) or a
  * cutscene (`beats` + `next`, or `beats` + `ending`). The validator enforces
  * that exactly one shape is used.
@@ -135,6 +177,10 @@ export interface Scene {
   hotspots?: Hotspot[];
   characters?: Character[];
   exits?: Exit[];
+  /** Named in-room scripted sequences, referenced by Rule.play / enter. */
+  sequences?: Record<string, SeqStep[]>;
+  /** Played on scene entry (first matching trigger). Gate one-time intros on a flag the sequence sets. */
+  enter?: EnterTrigger[];
   beats?: string[];
   next?: string;
   /** Terminal scene: reaching it ends the story (fuzzer's success criterion). */
@@ -165,6 +211,7 @@ export interface DialogueOption {
   requires?: Condition[];
   setFlags?: string[];
   giveItem?: string;
+  addCompanion?: string;
 }
 
 export interface DialogueNode {
@@ -178,6 +225,47 @@ export interface Dialogue {
   nodes: Record<string, DialogueNode>;
 }
 
+/**
+ * A party member: rendered as a follower trailing the actor while in
+ * `state.companions`, and targetable with the same verb surface as scene
+ * characters (in any scene — companions travel with the player).
+ */
+export interface Companion extends Target {
+  /** Sprite painter name from the story's paint module; box placeholder if absent. */
+  paint?: string;
+  /** Speech colour, [r,g,b]; default white. */
+  color?: [number, number, number];
+}
+
+/**
+ * A goal-log entry, derived LIVE from state (never separately stored):
+ * visible while `active` passes (default always), ticked once `done` passes.
+ */
+export interface Objective {
+  id: string;
+  text: string;
+  active?: Condition[];
+  done?: Condition[];
+}
+
+/** Music theme, as data: the engine's synth interprets it. */
+export interface AudioTheme {
+  bpm: number;
+  /** Chord loop, e.g. ["Am", "F", "C", "G"] ("m" suffix = minor). */
+  prog: string[];
+  /** MIDI notes melodies pick from. */
+  scale: number[];
+  /** 'pluck' (melodic) or 'drone' (sustained fifths). */
+  style?: 'pluck' | 'drone';
+  gain?: number;
+}
+
+export interface AudioConfig {
+  themes: Record<string, AudioTheme>;
+  /** Scene id → theme name; scenes not listed are silent. */
+  sceneTheme: Record<string, string>;
+}
+
 export interface Manifest {
   id: string;
   title: string;
@@ -189,6 +277,8 @@ export interface Manifest {
    * under a following camera.
    */
   view?: Size;
+  /** Optional music/SFX config; stories without it are silent. */
+  audio?: AudioConfig;
 }
 
 export interface Story {
@@ -196,6 +286,10 @@ export interface Story {
   scenes: Record<string, Scene>;
   items: Record<string, Item>;
   dialogues: Record<string, Dialogue>;
+  /** Optional party members (companions.json). */
+  companions: Record<string, Companion>;
+  /** Optional goal log (objectives.json). */
+  objectives: Objective[];
 }
 
 /**

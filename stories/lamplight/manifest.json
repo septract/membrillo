@@ -1,5 +1,27 @@
 {
   "id": "lamplight",
   "title": "Lamplight",
-  "start": "intro"
+  "start": "intro",
+  "audio": {
+    "themes": {
+      "dusk": {
+        "bpm": 76,
+        "prog": ["Am", "F", "C", "G"],
+        "scale": [57, 60, 62, 64, 67, 69, 72],
+        "style": "pluck",
+        "gain": 0.7
+      },
+      "lamp": {
+        "bpm": 60,
+        "prog": ["Dm", "Am"],
+        "scale": [50, 53, 57, 62],
+        "style": "drone",
+        "gain": 0.55
+      }
+    },
+    "sceneTheme": {
+      "dock": "dusk",
+      "tower": "lamp"
+    }
+  }
 }

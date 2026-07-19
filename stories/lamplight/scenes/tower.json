@@ -50,7 +50,8 @@
       "region": { "x": 0, "y": 96, "w": 26, "h": 64 },
       "walkTo": { "x": 30, "y": 152 },
       "to": "dock",
-      "entry": { "x": 430, "y": 154 }
+      "entry": { "x": 430, "y": 154 },
+      "effects": { "text": "Down the hundred and nine steps, back into the dusk." }
     }
   ]
 }

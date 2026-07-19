@@ -14,6 +14,7 @@ import {
 import {
   act,
   applyItem,
+  applySequenceEffects,
   availableVerbs,
   chooseOption,
   combine,
@@ -21,6 +22,7 @@ import {
   useExit,
   visibleHotspots,
 } from '../engine/core/verbs.ts';
+import { objectiveViews } from '../engine/core/objectives.ts';
 import type { Scene, State, Story } from '../engine/core/types.ts';
 
 function state(partial: Partial<State> = {}): State {
@@ -97,6 +99,13 @@ const story: Story = {
     grapple: { id: 'grapple', name: 'grapple' },
   },
   dialogues: {},
+  companions: {
+    ada: { id: 'ada', name: 'Ada', talk: [{ text: 'Ready when you are.', speaker: 'target' }] },
+  },
+  objectives: [
+    { id: 'open', text: 'Open the door', done: ['flag:door_open'] },
+    { id: 'hidden', text: 'Secret goal', active: ['flag:seance'], done: ['flag:never'] },
+  ],
   scenes: {
     room: {
       id: 'room',
@@ -137,6 +146,7 @@ const story: Story = {
           region: { x: 300, y: 0, w: 20, h: 60 },
           to: 'hall',
           requires: ['flag:door_open'],
+          effects: { text: 'The door grinds open.', setFlags: ['left_room'] },
         },
       ],
     } as Scene,
@@ -193,10 +203,48 @@ test('applyItem: player-chosen item resolves the first matching itemUse rule', (
   assert.equal(applyItem(story, holding, 'ghost', 'grapple'), null);
 });
 
-test('exits honour their requires gate', () => {
+test('exits honour their requires gate and apply their effects', () => {
   assert.equal(useExit(story, state(), 'door'), null);
   const open = state({ flags: ['door_open'] });
-  assert.equal(useExit(story, open, 'door')?.scene, 'hall');
+  const out = useExit(story, open, 'door');
+  assert.equal(out?.state.scene, 'hall');
+  assert.equal(out?.text, 'The door grinds open.');
+  assert.deepEqual(out?.state.flags, ['door_open', 'left_room']);
+});
+
+test('companions are targetable in any scene while in the party', () => {
+  assert.equal(act(story, state(), 'ada', 'talk'), null); // not in the party yet
+  const withAda = state({ companions: ['ada'] });
+  const out = act(story, withAda, 'ada', 'talk');
+  assert.equal(out?.text, 'Ready when you are.');
+  assert.equal(out?.speaker, 'target');
+});
+
+test('sequence effects apply atomically and match step-by-step application', () => {
+  const steps = [
+    { say: 'hello' },
+    { setFlags: ['met'], giveItem: 'rope' },
+    { who: 'ada', say: 'hi', addCompanion: 'ada' },
+  ];
+  const after = applySequenceEffects(state(), steps);
+  assert.deepEqual(after.flags, ['met']);
+  assert.deepEqual(after.inventory, ['rope']);
+  assert.deepEqual(after.companions, ['ada']);
+  // Skipping from the middle applies only the remainder.
+  const tail = applySequenceEffects(state(), steps, 2);
+  assert.deepEqual(tail.flags, []);
+  assert.deepEqual(tail.companions, ['ada']);
+});
+
+test('objectiveViews derive live from state', () => {
+  assert.deepEqual(objectiveViews(story, state()), [
+    { id: 'open', text: 'Open the door', done: false },
+  ]);
+  const opened = state({ flags: ['door_open', 'seance'] });
+  assert.deepEqual(objectiveViews(story, opened), [
+    { id: 'open', text: 'Open the door', done: true },
+    { id: 'hidden', text: 'Secret goal', done: false },
+  ]);
 });
 
 test('dialogue options apply effects and report the next node', () => {
