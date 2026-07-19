@@ -3,9 +3,9 @@
   "name": "Gale Reach",
   "paint": "card",
   "beats": [
-    "Gale Reach: one beacon station, one automated caretaker, sixty years of dutiful silence.",
+    "Gale Reach: one beacon station, one caretaker unit named Mote, sixty years of dutiful silence.",
     "Three weeks ago, the beacon began to sing. Ships are diverting around the noise.",
-    "\"Restore normal service,\" says Bramble. \"And Ensign — be polite. It's been alone up there a long time.\""
+    "\"Restore normal service,\" says Bramble. \"And Ensign — be polite. Sixty years of perfect service buys a caretaker some manners.\""
   ],
   "next": "landing"
 }

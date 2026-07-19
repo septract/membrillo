@@ -3,14 +3,14 @@
   "start": "start",
   "nodes": {
     "start": {
-      "line": "The Hollow's crop won't wait, Ensign. Take your team, take your sniffer, and see it done.",
+      "line": "Still aboard, Ensign? Team. Sniffer. Down. See it done.",
       "options": [
         { "text": "Why me, Captain?", "to": "why" },
         { "text": "Aye, Captain.", "to": "end" }
       ]
     },
     "why": {
-      "line": "Because you're due. And because Cog insists your jokes require field study.",
+      "line": "Because you're due. And because Cog says his joke requires field conditions.",
       "options": [{ "text": "...Aye, Captain.", "to": "end" }]
     }
   }

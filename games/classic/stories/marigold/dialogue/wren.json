@@ -15,7 +15,7 @@
       ]
     },
     "deflect": {
-      "line": "Storms! Probably storms. We get... storms?  — she says it a beat too quickly, and picks at her sleeve.",
+      "line": "Storms! Probably storms. We get... storms? — She says it a beat too quickly and picks at her sleeve.",
       "options": [
         { "text": "...Right. Storms.", "to": "start" },
         { "text": "(Leave it, for now.)", "to": "end" }

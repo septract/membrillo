@@ -17,7 +17,7 @@
       { "walkTo": { "x": 120, "y": 150 } },
       { "who": "marzipan", "say": "Behold the Four O'Clock Device. At the top of the hour, every clock on Earth stops at 4:01. One minute PAST teatime. In perpetuity." },
       { "who": "penny", "say": "That's monstrous. That's actually monstrous." },
-      { "who": "marzipan", "say": "Thank you. The escapement is Swiss — nothing short of a sub-atomic jiffy of brine could trouble it. So do enjoy the lasers, and later, the not-tea." },
+      { "who": "marzipan", "say": "Thank you. The escapement is Swiss — nothing short of a sub-atomic jiffy of brine could trouble it. So do enjoy the lasers, and later, the tea. You will not enjoy the tea." },
       { "setFlags": ["knows_plan"] },
       { "say": "Brine, you say. Baron, you really must stop monologuing. It's how they got Goldwhisk." }
     ],
@@ -79,7 +79,7 @@
           "requires": ["flag:grid_off"],
           "text": "The casing is Swiss, and smug about it. Brute force is not on the menu. Something briny is."
         },
-        { "text": "Between you and the Device: a fan of rose-pink lasers. Penny has opinions about lasers; perhaps consult her toolkit." }
+        { "text": "Between you and the Device: a fan of rose-pink lasers. Penny has opinions about lasers, and you own a glass swizzle stick with delusions of grandeur." }
       ],
       "itemUse": [
         {
@@ -144,7 +144,7 @@
       "walkTo": { "x": 40, "y": 150 },
       "to": "terrace",
       "entry": { "x": 176, "y": 148 },
-      "look": "The funicular waits, doors open. The Baron is a gracious host; it's the not-leaving-later you'd want to worry about."
+      "look": "The funicular waits, doors open. The Baron is a gracious host. It's the leaving he's less keen on."
     }
   ]
 }

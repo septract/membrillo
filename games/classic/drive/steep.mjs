@@ -135,8 +135,8 @@ export async function run(kit) {
   // (Walk to the Device end of the room first — it's off-camera from the
   // Baron's tea table.)
   await verb('Look');
-  await walkTo(300, 150); // two hops: even the walk target must be on-screen
-  await walkTo(340, 150);
+  await walkTo(280, 158); // two hops; y158 = the machines' front strip
+  await walkTo(340, 158);
   await verb('Interact');
   await chip('swizzle stick');
   await worldClick(374, 100);

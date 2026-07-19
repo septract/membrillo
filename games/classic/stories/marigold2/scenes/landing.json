@@ -40,7 +40,7 @@
         },
         {
           "requires": ["flag:link_ready", "flag:knows_lonely"],
-          "text": "The Marigold: \"Line's patched and you know the why, Ensign. Go TELL the station — it's still singing to strangers.\""
+          "text": "The Marigold: \"Line's patched and you know why it sings, Ensign. Go TELL the station — it's still singing to strangers.\""
         },
         {
           "requires": ["flag:link_ready"],
@@ -73,7 +73,7 @@
           "giveItem": "cell",
           "setFlags": ["took_cell"]
         },
-        { "text": "The rest are fused solid. Sixty years is also a lot of rust time." }
+        { "text": "The rest are fused solid. Sixty years is also a lot of rust." }
       ]
     },
     {
@@ -129,7 +129,7 @@
         },
         {
           "withItem": "cell",
-          "text": "There's a socket somewhere under the dust, but you don't know its state. Sniff first, slot second."
+          "text": "There's a socket somewhere under the dust, but slotting power into an unknown machine is how ensigns get remembered. Sniff first, slot second."
         },
         {
           "withItem": "sniffer",

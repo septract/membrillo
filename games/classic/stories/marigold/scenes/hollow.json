@@ -102,7 +102,7 @@
           "requires": ["flag:knows_fault", "!flag:got_crystal"],
           "text": "Too narrow and too deep for your arm. Cog's, on the other hand, does not complain about basalt."
         },
-        { "requires": ["!flag:got_crystal"], "text": "You're not reaching into strange planetary geology without a reason." },
+        { "requires": ["!flag:got_crystal"], "text": "Survey regulations are silent on blind spelunking. Your fingers are not." },
         { "text": "Empty now, and welcome to stay that way." }
       ]
     },

@@ -13,7 +13,7 @@
       { "setFlags": ["arrived"] },
       { "walkTo": { "x": 70, "y": 150 } },
       { "who": "barman", "say": "Good evening, sir. Welcome to the Hôtel Bombe." },
-      { "say": "Grey. Earl Grey. I believe I'm expected — by someone." },
+      { "say": "Grey. Earl Grey. I believe I'm expected." },
       { "wait": 0.3 }
     ]
   },
@@ -91,7 +91,7 @@
       "color": [236, 232, 224],
       "facing": "down",
       "look": [
-        { "text": "White jacket, perfect posture, eyes that have seen everything and billed for none of it." }
+        { "text": "White jacket, perfect posture, eyes that have seen everything and repeated none of it." }
       ],
       "talk": [{ "dialogue": "barman" }],
       "itemUse": [

@@ -15,6 +15,7 @@
       "line": "The Royal Garden Party, 1961. My petit-fours — CUT from the programme. For SCONES, Mr. Grey. When the world stops at 4:01, no one will ever be served before me again.",
       "options": [
         { "text": "That's insane. They're just cakes.", "to": "cakes" },
+        { "text": "(Do not, under any circumstances, mention who you work for.)", "to": "end" },
         { "text": "A minute PAST teatime. Diabolical.", "to": "end" }
       ]
     },

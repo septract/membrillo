@@ -37,7 +37,7 @@
       {
         "requires": ["flag:heard_song", "!flag:knows_lonely"],
         "speaker": "target",
-        "text": "\"It isn't malfunction, Ensign. Listen past the deflection: 'visitors, previous, zero.' It's LONELY. It doesn't need repairing — it needs someone to sing to.\"",
+        "text": "\"It isn't malfunction, Ensign. Listen past the deflection: sixty years, and not one visitor. It's LONELY. It doesn't need repairing — it needs someone to sing to.\"",
         "setFlags": ["knows_lonely"]
       },
       {
