@@ -262,10 +262,19 @@ await page.waitForTimeout(400);
 await page.keyboard.press('Escape'); // skip the briefing cutscene
 await page.waitForTimeout(900);
 await waitLog("Verdant Hollow's weather relay is dark");
-await page.keyboard.press('Escape'); // skip the rest of the briefing sequence
-await page.waitForTimeout(300);
+// Click through every briefing line; the click on the CAPTAIN'S LAST LINE
+// must dismiss it immediately (Mike's second click-eater report).
+await worldClick(160, 90);
+await waitLog('un-melted');
+await worldClick(160, 90);
+await waitLog('See it done.');
+await worldClick(160, 90);
+await page.waitForTimeout(150);
 const briefed = await hook();
+if (briefed.sequence) throw new Error('briefing sequence still running');
+if (briefed.speech !== null) throw new Error(`final line lingered: "${briefed.speech}"`);
 if (!briefed.state.inventory.includes('sniffer')) throw new Error('no sniffer after briefing');
+console.log('  final line dismissed by its click ✓');
 await shot('50-bridge');
 
 await verb('Talk');

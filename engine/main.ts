@@ -556,6 +556,9 @@ function advanceSequence(): void {
   seq.index++;
   if (seq.index >= seq.steps.length) {
     session.sequence = null;
+    // The click (or timer) that ends a sequence dismisses its final line too —
+    // otherwise the line lingers on its own timer and the click looks eaten.
+    speech = null;
     if (seq.afterGoto !== null) changeScene(seq.afterGoto, null);
     return;
   }
@@ -1261,6 +1264,8 @@ window.__pcc = () =>
         view: { ...session.view },
         beat: session.beat,
         dialogue: session.dialogue ? { id: session.dialogue.id, node: session.dialogue.node } : null,
+        sequence: session.sequence !== null,
+        speech: currentSpeech()?.text ?? null,
         finished: session.finished,
       }
     : null;
