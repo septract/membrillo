@@ -148,8 +148,10 @@ const el = {
 };
 const ctx = el.canvas.getContext('2d')!;
 
+// Interact is the default verb: a plain click on a door goes through it,
+// on a pickup takes it. Look/Talk are deliberate modes.
 let session: Session | null = null;
-let armed: ArmedVerb = 'look';
+let armed: ArmedVerb = 'interact';
 let armedItem: string | null = null;
 let hover: TargetRef | undefined;
 let highlight = false;
@@ -244,7 +246,7 @@ function startStory(id: string, state: State | null): void {
   el.canvas.height = view.h;
   el.canvas.style.aspectRatio = `${view.w} / ${view.h}`;
   ctx.imageSmoothingEnabled = false;
-  armed = 'look';
+  armed = 'interact';
   armedItem = null;
   speech = null;
   fade = null;
@@ -792,7 +794,14 @@ el.canvas.addEventListener('mousemove', (ev) => {
 });
 
 el.canvas.addEventListener('click', (ev) => {
-  if (!session || session.finished || session.dialogue || session.sequence || fade) return;
+  if (!session || session.finished || session.dialogue || fade) return;
+  if (session.sequence) {
+    // Mandatory dialog: a click hurries the current say/wait step to its end
+    // (walk steps play out; Esc still skips the whole sequence).
+    const step = session.sequence.steps[session.sequence.index];
+    if (step && step.walkTo === undefined) advanceSequence();
+    return;
+  }
   if (speech) speech = null; // click skips the line
   const scene = sceneOf(session);
   if (session.beat !== null) {

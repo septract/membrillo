@@ -144,7 +144,7 @@
       "walkTo": { "x": 456, "y": 150 },
       "look": "An iron-banded door at the lighthouse's foot, standing ajar.",
       "to": "tower",
-      "entry": { "x": 42, "y": 154 }
+      "entry": { "x": 250, "y": 152 }
     }
   ]
 }
