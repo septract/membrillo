@@ -90,6 +90,13 @@ design note, it lands here; when it ships, delete it. Dated design notes in
 
 ## Later
 
+- Ask AngelJaimer for a formal licence on the pointclick-adventure kit
+  (Mike, 2026-07-19, low priority). The kit README grants reuse ("the engine
+  itself is yours to reuse") and we attribute in NOTICE + docs/2026-07-19-kit-
+  reuse-audit.md — sufficient for a fun OSS project. A one-line issue asking
+  them to drop in MIT/CC0/Apache would remove the informal-grant ambiguity for
+  anyone reusing OUR repo downstream, but it's polish, not a blocker.
+
 - Library follow-ups: schema/save-format versioning before any npm publish
   (see docs/2026-07-18-library-plan.md); publishing also unblocks standalone
   game repos' CI (today they must vendor an `npm pack` tarball — documented

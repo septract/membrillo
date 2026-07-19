@@ -1,0 +1,42 @@
+Membrillo
+Copyright 2026 the Membrillo authors (Mike / septract, and Claude Fable 5).
+
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+------------------------------------------------------------------------------
+Third-party engine techniques
+------------------------------------------------------------------------------
+
+Membrillo adapted several presentation techniques from the "pointclick-adventure"
+Claude skill by AngelJaimer:
+
+    https://github.com/AngelJaimer/pointclick-adventure
+
+That kit's README grants reuse ("The engine itself is yours to reuse."). With
+thanks, the following FOUR presentation modules adapted techniques from it. The
+list is precise so the reused portions could be isolated or replaced if ever
+needed (a fuller diff is in docs/2026-07-19-kit-reuse-audit.md):
+
+  - packages/membrillo/art/dither.ts — DERIVED. The ordered (Bayer 4x4)
+    dithering API and algorithm: ditherPick, rampPick, the Pixels ImageData
+    wrapper, and the (BAYER4[y][x] + 0.5) / 16 threshold. Reimplemented and
+    re-commented; rampRect is our addition.
+  - packages/membrillo/art/sprites.ts — PARTIAL. Only the pixel-draw helpers
+    px() and blk() (blk = a 1px-outlined rect) and the left/right mirror trick
+    (faceCtx), from the kit's art/actor.ts. drawActor, the walkFrame gait,
+    Pose, talkMouth, blinking, and portraits are ours.
+  - packages/membrillo/audio/engine.ts — PARTIAL. The "themes as data"
+    model (bpm / progression / scale / style / gain) and the Web Audio
+    lookahead-scheduler + fail-silent architecture. Voices/synthesis are
+    reimplemented and simpler.
+  - packages/membrillo/art/palette.ts — IDIOM ONLY. The "one small shared
+    palette, every colour picked from it" pattern (a P object of named RGB
+    tuples). The colours and names themselves are ours.
+
+Everything else is original to Membrillo (much of the rules model carried over
+from the earlier tng-game, not the kit): the model-checked rules core and
+fuzzer, the JSON story data model, the three-verb interaction model, walkboxes
++ pathfinding, the scrolling camera, followers, the loader/boot seam, the
+render layer, the Pixel Operator text (not the kit's code bitmap font), the
+offline tools and CLI, and all story content. The kit is reference only —
+never a code dependency, and nothing from it ships at runtime.

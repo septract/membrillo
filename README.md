@@ -96,7 +96,13 @@ trusting its author — and hosting someone else's story means running their
 code on your origin. [SECURITY.md](SECURITY.md) states the full trust model
 and what to do if you want to load untrusted stories.
 
-## License
+## Credits & license
 
 [Apache 2.0](LICENSE). The bundled Pixel Operator font is CC0
 (`packages/membrillo/assets/fonts/LICENSE.txt`).
+
+Four presentation modules (dithering, the pixel-draw helpers, the themes-as-data
+audio model, the shared-palette approach) adapt techniques from AngelJaimer's
+[pointclick-adventure](https://github.com/AngelJaimer/pointclick-adventure)
+Claude skill, whose kit grants reuse — with thanks. See [NOTICE](NOTICE) for the
+precise list and `docs/2026-07-19-kit-reuse-audit.md` for the full audit.

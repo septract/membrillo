@@ -1,5 +1,9 @@
 // Ordered (Bayer) dithering — flat fills look cheap; dithered gradients are
 // what sells the VGA feel in skies, seas and glows.
+//
+// The ditherPick/rampPick/Pixels API is adapted from AngelJaimer's
+// pointclick-adventure kit (art/dither.ts), reused under its "yours to reuse"
+// grant — see NOTICE and docs/2026-07-19-kit-reuse-audit.md.
 
 import type { RGB } from './palette.ts';
 

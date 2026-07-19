@@ -30,6 +30,10 @@ export const IDLE_POSE: Pose = { facing: 'left', phase: 0, walking: false, talki
 export const ACTOR_SPEECH_OFFSET = 44;
 export const CHARACTER_SPEECH_OFFSET = 46;
 
+// The px()/blk() helpers and the faceCtx mirror are adapted from AngelJaimer's
+// pointclick-adventure kit (art/actor.ts), under its "yours to reuse" grant —
+// see NOTICE. drawActor, the walk cycle, and everything else here are original.
+
 /** Flat rect. */
 export function px(
   ctx: CanvasRenderingContext2D,

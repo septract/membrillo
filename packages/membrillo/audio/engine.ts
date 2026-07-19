@@ -2,6 +2,13 @@
 // Story-agnostic — themes come from a story's manifest (AudioTheme in core
 // types); a story without an audio config is simply silent.
 //
+// The themes-as-data model (bpm/prog/scale/style/gain) and the lookahead-
+// scheduler + fail-silent architecture are adapted from AngelJaimer's
+// pointclick-adventure kit (audio/engine.ts), under its "yours to reuse" grant
+// (see NOTICE); the voices/synthesis below are our own. The scheduler pattern
+// itself is the standard Web Audio "lookahead" (Chris Wilson, A Tale of Two
+// Clocks).
+//
 // Browsers require a user gesture before audio starts: call init() from a
 // click handler. Every entry point is a no-op until then, so the engine can
 // call setTheme/sfx unconditionally.
