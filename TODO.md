@@ -43,6 +43,22 @@ design note, it lands here; when it ships, delete it. Dated design notes in
 
 ## Later
 
+- **Membrillo as a library, not a fork** (Mike, 2026-07-18). Today a game
+  author forks the repo and adds a `stories/` directory; the regular shape
+  is an npm package plus a consumer template. Sketch:
+  - Publish `membrillo` (engine + tools) with the story-loading seam
+    inverted: instead of the engine globbing `/stories/*`, the consumer's
+    entry calls `boot(stories)` with imported story modules (the glob moves
+    into a template one-liner). Vite plugin optional sugar.
+  - Ship the validator/fuzzer as a CLI (`npx membrillo check ./stories`) —
+    they already read plain directories; the loaders just need a
+    configurable root.
+  - `npm create membrillo` scaffold: template repo with one example story,
+    the deploy workflow, and the browser-verify harness.
+  - Prereqs: story-schema versioning (the JSON contract becomes public API),
+    save-format versioning, and moving the four in-repo stories to an
+    `examples/` consumer to prove the inversion.
+
 - Deploy: GitHub Pages workflow (the kit's recipe; decoupled from any fan
   content — ship Lamplight/Marigold-class original stories only).
 - Diegetic hint system — "ask the Marigold's computer" wrapper, escalating
