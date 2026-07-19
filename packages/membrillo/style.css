@@ -87,8 +87,10 @@ button.secondary { color: var(--dim); }
 
 #dialogue {
   position: absolute;
-  left: 0;
-  right: 0;
+  /* Under VN staging the box pulls in between the standing portraits
+     (insets set from JS); classic dialogue stays full-width. */
+  left: var(--vn-inset-l, 0);
+  right: var(--vn-inset-r, 0);
   bottom: 0;
   background: rgba(20, 18, 26, 0.94);
   border-top: 1px solid var(--edge);

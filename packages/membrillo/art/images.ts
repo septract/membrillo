@@ -46,6 +46,29 @@ function isChromaGreen(d: Uint8ClampedArray, i: number): boolean {
 }
 
 /**
+ * Is this a green-screen image? Sample the whole border (not just corners —
+ * a broad-shouldered subject fills the bottom corners with clothing) and
+ * call it a chroma key if a good fraction of the perimeter is green.
+ */
+function hasChromaBorder(d: Uint8ClampedArray, w: number, h: number): boolean {
+  const step = Math.max(1, Math.floor(Math.min(w, h) / 40));
+  let green = 0;
+  let total = 0;
+  const at = (x: number, y: number): number => (y * w + x) * 4;
+  for (let x = 0; x < w; x += step) {
+    total += 2;
+    if (isChromaGreen(d, at(x, 0))) green++;
+    if (isChromaGreen(d, at(x, h - 1))) green++;
+  }
+  for (let y = 0; y < h; y += step) {
+    total += 2;
+    if (isChromaGreen(d, at(0, y))) green++;
+    if (isChromaGreen(d, at(w - 1, y))) green++;
+  }
+  return green / total >= 0.35;
+}
+
+/**
  * A dialogue portrait from an image: cover-fits the image into the logical
  * 9:16 portrait canvas (any resolution in; the down-scale onto the small
  * canvas plus the overlay's pixelated upscale gives the chunky look for
@@ -69,9 +92,7 @@ export function portraitImage(url: string): PortraitPainter {
     cx.drawImage(img, 0, 0);
     const data = cx.getImageData(0, 0, c.width, c.height);
     const d = data.data;
-    const at = (x: number, y: number): number => (y * c.width + x) * 4;
-    const corners = [at(1, 1), at(c.width - 2, 1), at(1, c.height - 2), at(c.width - 2, c.height - 2)];
-    if (corners.filter((i) => isChromaGreen(d, i)).length >= 3) {
+    if (hasChromaBorder(d, c.width, c.height)) {
       for (let i = 0; i < d.length; i += 4) {
         if (isChromaGreen(d, i)) {
           d[i + 3] = 0;

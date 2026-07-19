@@ -807,8 +807,39 @@ function startPortraitLine(line: string): void {
   portraitTalkUntil = performance.now() + Math.min(1200 + line.length * 45, 7000);
 }
 
+// The dialogue box pulls in between the portraits so the busts stand fully
+// visible at the edges (the box was covering their lower halves). On narrow
+// screens where that would crush the text window below ~45% width, the
+// insets drop and portraits stand behind the box as before.
+let vnInsets = { l: 0, r: 0 };
+
+function syncVnInsets(): void {
+  let l = 0;
+  let r = 0;
+  if (session?.dialogue && vnRight) {
+    const rect = el.canvas.getBoundingClientRect();
+    // Portraits stand flush to the scene edges (see drawVnPortraits); the box
+    // tucks just inside them. Engage only while the middle stays a usable
+    // text column (≥30% of the width) — narrow/portrait screens fall back to
+    // the classic full-width box under the portraits.
+    const pw = rect.height * (PORTRAIT.w / PORTRAIT.h);
+    const rIn = Math.round(pw + 6);
+    const lIn = vnLeft ? rIn : 0;
+    if (rect.width - rIn - lIn >= rect.width * 0.3) {
+      l = lIn;
+      r = rIn;
+    }
+  }
+  if (l !== vnInsets.l || r !== vnInsets.r) {
+    vnInsets = { l, r };
+    el.dialogue.style.setProperty('--vn-inset-l', l > 0 ? `${l}px` : '0');
+    el.dialogue.style.setProperty('--vn-inset-r', r > 0 ? `${r}px` : '0');
+  }
+}
+
 /** Draw the VN layer on the overlay: scrim, then both standing portraits. */
 function drawVnPortraits(t: number): void {
+  syncVnInsets();
   if (!session?.dialogue || !vnRight) return;
   octx.fillStyle = 'rgba(10, 9, 14, 0.45)'; // dim the room; the scene waits
   octx.fillRect(0, 0, el.overlay.width, el.overlay.height);
@@ -826,12 +857,12 @@ function drawVnPortraits(t: number): void {
   const prevSmooth = octx.imageSmoothingEnabled;
   octx.imageSmoothingEnabled = false;
   if (vnLeft) {
-    // the hero listens, slightly dimmed, stage left
+    // the hero listens, slightly dimmed, flush to the left edge
     const lctx = vnBuf.l.getContext('2d')!;
     lctx.clearRect(0, 0, PORTRAIT.w, PORTRAIT.h); // image portraits may be transparent
     vnLeft(lctx, session.state, t, false);
     octx.globalAlpha = 0.62;
-    octx.drawImage(vnBuf.l, Math.round(el.overlay.width * 0.03), 0, w, h);
+    octx.drawImage(vnBuf.l, 0, 0, w, h);
     octx.globalAlpha = 1;
   }
   // the interlocutor speaks, stage right, mirrored to face the hero
@@ -839,7 +870,7 @@ function drawVnPortraits(t: number): void {
   const rctx = vnBuf.r.getContext('2d')!;
   rctx.clearRect(0, 0, PORTRAIT.w, PORTRAIT.h);
   vnRight(rctx, session.state, t, talking);
-  const rx = Math.round(el.overlay.width * 0.97) - w;
+  const rx = el.overlay.width - w;
   octx.save();
   octx.translate(rx + w, 0);
   octx.scale(-1, 1);
