@@ -7,12 +7,17 @@ design note, it lands here; when it ships, delete it. Dated design notes in
 ## Decisions needed (Mike)
 
 - **Name the framework.** It needs one before any public artifact (deploy,
-  README, npm-ability). Candidates to react to, not a shortlist:
+  README, npm-ability). Candidates (each needs a collision check before use):
+  - **MOIST** — *Model-checked Interactive Story Toolkit*; the SCUMM school
+    of naming (gross word, true backronym).
+  - **BILGE** — *Browser-first Interactive Logic Game Engine*; nautical-gross.
+  - **Eventually** — the liveness operator the fuzzer enforces (◇win);
+    "every story ends."
   - **Verbena** — verb + flower; sits nicely beside the *Marigold*.
-  - **Proscenium** — the frame the scene plays behind.
-  - **Tableau** — scenes, staged.
-  - **Baize** — the felt the game is played on.
-  - **Wick** — small, lightable; pairs with Lamplight.
+  - **QED** — *Quest Engine, Declarative*; heavily collided namespace.
+  - ~~Wick~~ — checked 2026-07-18: conflicted three ways (Wick Editor, a
+    browser game-making tool; *Wick* the 2015 candlelight horror game;
+    Wicked Engine). Out.
 - **Audio verdict** — the synth themes (ship drone, hollow pluck, dusk/lamp)
   need human ears; tune or rethink `engine/audio` voicing accordingly.
 - **Where the demo goes next**: grow the Marigold (second mission), polish
