@@ -55,11 +55,42 @@ function sceneOf(story: Story, state: State): Scene {
 }
 
 /**
+ * Verify every step's `who` is actually PRESENT when the sequence triggers
+ * (the engine silently falls back to the actor otherwise — a wrong-speaker
+ * bug no static check can catch, since presence is runtime state). Steps are
+ * applied progressively, so a step after `addCompanion` may name them.
+ */
+function checkSequenceWhos(
+  story: Story,
+  scene: Scene,
+  seqId: string,
+  state: State,
+  problems: Set<string>,
+): State {
+  const steps = scene.sequences?.[seqId] ?? [];
+  let s = state;
+  for (const step of steps) {
+    const who = step.who ?? 'actor';
+    if (who !== 'actor') {
+      const present =
+        visibleCharacters(scene, s).some((c) => c.id === who) || s.companions.includes(who);
+      if (!present) {
+        problems.add(
+          `sequence "${seqId}" in "${scene.id}": who "${who}" is not present when it can trigger`,
+        );
+      }
+    }
+    s = applySequenceEffects(s, [step]);
+  }
+  return s;
+}
+
+/**
  * Follow non-ending cutscenes to the room (or ending) they lead to, then
  * apply that room's enter-sequence effects — mirroring exactly what the
  * engine plays out on entry.
  */
-function settle(story: Story, state: State, seenScenes: Set<string>): State {
+function settle(story: Story, state: State, seenScenes: Set<string>, whoProblems: Set<string>): State {
   let s = state;
   for (let hops = 0; ; hops++) {
     if (hops > 100) throw new Error(`cutscene chain loops at "${s.scene}"`);
@@ -68,14 +99,14 @@ function settle(story: Story, state: State, seenScenes: Set<string>): State {
     if (scene.ending) return s;
     if (!isCutscene(scene)) {
       const seqId = enterSequenceId(scene, s);
-      if (seqId) s = applySequenceEffects(s, scene.sequences?.[seqId] ?? []);
+      if (seqId) s = checkSequenceWhos(story, scene, seqId, s, whoProblems);
       return s;
     }
     s = enterScene(s, scene.next!);
   }
 }
 
-function expand(story: Story, node: Node, seenScenes: Set<string>): Edge[] {
+function expand(story: Story, node: Node, seenScenes: Set<string>, whoProblems: Set<string>): Edge[] {
   const edges: Edge[] = [];
   const scene = sceneOf(story, node.state);
   if (scene.ending) return edges; // success terminal
@@ -99,14 +130,14 @@ function expand(story: Story, node: Node, seenScenes: Set<string>): Edge[] {
     let next: Node = { state: outcome.state, dlg: null };
     if (outcome.play !== undefined) {
       // Effects → sequence → goto, matching the engine's order.
-      next = { ...next, state: applySequenceEffects(next.state, scene.sequences?.[outcome.play] ?? []) };
+      next = { ...next, state: checkSequenceWhos(story, scene, outcome.play, next.state, whoProblems) };
     }
     if (outcome.dialogue !== undefined) {
       const dlg = story.dialogues[outcome.dialogue];
       if (dlg) next = { ...next, dlg: { id: dlg.id, node: dlg.start } };
     }
     if (outcome.goto !== undefined) {
-      next = { ...next, state: settle(story, enterScene(next.state, outcome.goto), seenScenes) };
+      next = { ...next, state: settle(story, enterScene(next.state, outcome.goto), seenScenes, whoProblems) };
     }
     return next;
   };
@@ -138,7 +169,7 @@ function expand(story: Story, node: Node, seenScenes: Set<string>): Edge[] {
     if (outcome) {
       edges.push({
         label: `exit ${exit.id}`,
-        next: { state: settle(story, outcome.state, seenScenes), dlg: null },
+        next: { state: settle(story, outcome.state, seenScenes, whoProblems), dlg: null },
       });
     }
   }
@@ -166,12 +197,15 @@ interface FuzzResult {
   unreachedScenes: string[];
   /** Objectives that never show, or whose done-conditions no reachable state satisfies. */
   brokenObjectives: string[];
+  /** Sequence steps whose `who` can be absent when the sequence triggers. */
+  whoProblems: string[];
 }
 
 function fuzzStory(story: Story): FuzzResult {
   const seenScenes = new Set<string>();
+  const whoProblems = new Set<string>();
   const start: Node = {
-    state: settle(story, initialState(story.manifest.start), seenScenes),
+    state: settle(story, initialState(story.manifest.start), seenScenes, whoProblems),
     dlg: null,
   };
 
@@ -189,7 +223,7 @@ function fuzzStory(story: Story): FuzzResult {
     const node = queue[head++]!;
     const from = keyOf(node);
     const out: string[] = [];
-    for (const edge of expand(story, node, seenScenes)) {
+    for (const edge of expand(story, node, seenScenes, whoProblems)) {
       const to = keyOf(edge.next);
       out.push(to);
       edgeCount++;
@@ -249,7 +283,15 @@ function fuzzStory(story: Story): FuzzResult {
     if (!completable) brokenObjectives.push(`objective "${objective.id}" can never complete`);
   }
 
-  return { states: nodes.size, edges: edgeCount, endings, deadEnds, unreachedScenes, brokenObjectives };
+  return {
+    states: nodes.size,
+    edges: edgeCount,
+    endings,
+    deadEnds,
+    unreachedScenes,
+    brokenObjectives,
+    whoProblems: [...whoProblems],
+  };
 }
 
 function pathTo(key: string, pred: Map<string, { from: string; label: string }>): string[] {
@@ -279,6 +321,7 @@ for (const id of storyIdsFromArgv(process.argv.slice(2))) {
     for (const d of res.deadEnds) problems.push(`DEAD END: ${d}`);
     for (const s of res.unreachedScenes) problems.push(`scene "${s}" is unreachable`);
     for (const o of res.brokenObjectives) problems.push(o);
+    for (const w of res.whoProblems) problems.push(w);
     if (problems.length > 0) {
       failed = true;
       for (const p of problems) console.error(`  ✗ ${id}: ${p}`);

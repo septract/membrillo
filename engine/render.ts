@@ -7,7 +7,7 @@
 // this module translates once and draws world-space throughout, then draws
 // screen-space overlays (fade) after restoring.
 
-import { DEFAULT_VIEW, type Box, type Point, type Scene, type Size, type State } from './core/types.ts';
+import { DEFAULT_VIEW, type Box, type Character, type Point, type Scene, type Size, type State } from './core/types.ts';
 import { visibleCharacters, visibleExits, visibleHotspots } from './core/verbs.ts';
 import type { LoadedStory } from './loader.ts';
 import { P, css, rgba, type RGB } from './art/palette.ts';
@@ -243,6 +243,11 @@ export interface RenderOpts {
   /** Body currently speaking (drives mouth animation): 'actor', a character id, or a companion id. */
   speakingId?: string | null;
   followers?: FollowerView[];
+  /**
+   * A character to keep drawing even though state now hides them — the
+   * dialogue speaker who was just recruited must not vanish mid-sentence.
+   */
+  pinnedCharacter?: Character | undefined;
   /** Scripted-sequence facing overrides for scene characters. */
   facingOverrides?: Record<string, Facing>;
   /** 0..1 black overlay for room-change fades. */
@@ -274,7 +279,11 @@ export function renderScene(
   // Characters, props and the actor share one painter's-algorithm pass by
   // feet/baseline y — that ordering IS the walk-behind occlusion.
   const bodies: { y: number; draw: () => void }[] = [];
-  for (const c of visibleCharacters(scene, state)) {
+  const cast = [...visibleCharacters(scene, state)];
+  if (opts.pinnedCharacter && !cast.some((c) => c.id === opts.pinnedCharacter!.id)) {
+    cast.push(opts.pinnedCharacter);
+  }
+  for (const c of cast) {
     const scale = depthScale(scene, c.pos.y);
     const sprite = c.paint !== undefined ? loaded.paint.sprites?.[c.paint] : undefined;
     const pose: Pose = {

@@ -39,6 +39,7 @@ import {
   renderScene,
   resetTextCache,
   sceneSize,
+  sceneTargets,
   storyView,
   targetAt,
   wrapWords,
@@ -131,7 +132,8 @@ app.innerHTML = `
       <div id="verbs"></div>
       <div id="inventory"></div>
       <div id="objectives" hidden></div>
-      <div id="log"></div>
+      <button id="btn-log" class="secondary log-toggle">history ▸</button>
+      <div id="log" hidden></div>
     </div>
   </div>`;
 
@@ -147,6 +149,7 @@ const el = {
   inventory: document.getElementById('inventory')!,
   objectives: document.getElementById('objectives')!,
   log: document.getElementById('log')!,
+  btnLog: document.getElementById('btn-log')!,
   btnEye: document.getElementById('btn-eye')!,
   btnSkip: document.getElementById('btn-skip')!,
   btnMute: document.getElementById('btn-mute')!,
@@ -241,7 +244,8 @@ function showMenu(): void {
     const row = document.createElement('div');
     row.className = 'story-row';
     const play = document.createElement('button');
-    play.textContent = loaded.story.manifest.title;
+    const done = localStorage.getItem(`pcc:done:${id}`) === '1';
+    play.textContent = loaded.story.manifest.title + (done ? ' ✓' : '');
     play.addEventListener('click', () => startStory(id, null));
     row.append(play);
     if (loadSave(id)) {
@@ -387,6 +391,7 @@ function finish(): void {
   if (!session) return;
   session.finished = true;
   localStorage.removeItem(saveKey(session.id));
+  localStorage.setItem(`pcc:done:${session.id}`, '1');
   audio.setTheme(null);
   audio.sfx('success');
   log('— The End —');
@@ -858,8 +863,16 @@ function updateHover(clientX: number, clientY: number): void {
   const rect = el.canvas.getBoundingClientRect();
   const p = worldFromClient(clientX, clientY, rect);
   hover = followerTargetAt(p) ?? targetAt(sceneOf(session), session.state, p.x, p.y);
+  el.canvas.style.cursor = hover ? 'pointer' : 'crosshair';
   renderSentence();
 }
+
+// Touch has no "pointer leaves": without this, the last tap's hover label
+// and outline squat on screen forever (and overlap later dialogue).
+let touchInput = false;
+el.canvas.addEventListener('pointerdown', (ev) => {
+  touchInput = ev.pointerType === 'touch';
+});
 
 el.canvas.addEventListener('mousemove', (ev) => {
   lastMouse = { clientX: ev.clientX, clientY: ev.clientY };
@@ -939,17 +952,27 @@ el.canvas.addEventListener('click', (ev) => {
   session.pending = { target, action };
 });
 
-// Double-click an exit: skip the walk, travel now.
+// A tap is a click, not a lingering hover.
+el.canvas.addEventListener('click', () => {
+  if (touchInput) {
+    hover = undefined;
+    lastMouse = null;
+    renderSentence();
+  }
+});
+
+// Double-click hurries any walk: snap to the destination and, if a target
+// was clicked, act on it immediately (exits travel, hotspots operate).
 el.canvas.addEventListener('dblclick', () => {
   if (!session || session.finished || session.dialogue || session.sequence || fade || session.beat !== null) return;
-  const pending = session.pending;
-  if (pending && pending.target.kind === 'exit') {
-    session.actor.x = pending.target.walkTo.x;
-    session.actor.y = pending.target.walkTo.y;
-    session.path = null;
-    session.actor.walking = false;
-    runPending();
-  }
+  const end = session.path?.[session.path.length - 1];
+  if (!end) return;
+  session.actor.x = end.x;
+  session.actor.y = end.y;
+  session.path = null;
+  session.actor.walking = false;
+  session.camera = cameraTargetFor(session); // no slow pan after a snap
+  runPending();
 });
 
 function advanceBeat(scene: Scene): void {
@@ -1007,6 +1030,11 @@ window.addEventListener('keyup', (ev) => {
 });
 
 el.btnSkip.addEventListener('click', skipCurrent);
+el.btnLog.addEventListener('click', () => {
+  el.log.hidden = !el.log.hidden;
+  el.btnLog.textContent = el.log.hidden ? 'history ▸' : 'history ▾';
+  if (!el.log.hidden) el.log.scrollTop = el.log.scrollHeight;
+});
 el.btnEye.addEventListener('click', () => {
   eyeLock = !eyeLock;
   el.btnEye.classList.toggle('armed', eyeLock);
@@ -1081,6 +1109,22 @@ function tick(now: number): void {
   if (speech && now > speech.expires) speech = null;
   const alpha = fadeAlpha(now);
   if (session) {
+    // A hovered target that no longer exists (picked up, recruited, hidden by
+    // state) must not leave its outline/label behind.
+    if (hover && session.beat === null) {
+      const h = hover;
+      const stillThere =
+        h.kind === 'companion'
+          ? session.followers.has(h.id)
+          : sceneTargets(sceneOf(session), session.state).some(
+              (t) => t.kind === h.kind && t.id === h.id,
+            );
+      if (!stillThere) {
+        hover = undefined;
+        el.canvas.style.cursor = 'crosshair';
+        renderSentence();
+      }
+    }
     // On-canvas skip appears whenever something is skippable (touch's Esc).
     const skippable = !session.finished && (session.beat !== null || session.sequence !== null);
     if (el.btnSkip.hidden === skippable) el.btnSkip.hidden = !skippable;
@@ -1104,6 +1148,15 @@ function tick(now: number): void {
       updateSequence(now);
       updateCamera(dt);
       const sp = currentSpeech();
+      // A speaker recruited mid-dialogue stays visible until the dialog ends.
+      let pinnedCharacter: Character | undefined;
+      if (session.dialogue && session.dialogue.speakerId !== 'actor') {
+        const id = session.dialogue.speakerId;
+        const scene = sceneOf(session);
+        if (!visibleCharacters(scene, session.state).some((c) => c.id === id)) {
+          pinnedCharacter = (scene.characters ?? []).find((c) => c.id === id);
+        }
+      }
       renderScene(ctx, session.loaded, session.state, {
         t: now / 1000,
         actor: session.actor,
@@ -1113,6 +1166,7 @@ function tick(now: number): void {
         highlight: spaceHeld || eyeLock,
         speakingId: sp?.speakerId ?? null,
         followers: followerViews(),
+        pinnedCharacter,
         facingOverrides: session.facingOverrides,
         fade: alpha,
       });
@@ -1155,6 +1209,10 @@ function updateSequence(now: number): void {
 /** Keep the follower roster synced with state and walk them along the trail. */
 function updateFollowers(dt: number): void {
   if (!session) return;
+  // Recruiting happens mid-dialogue, but the JOINING should read as part of
+  // completing the conversation: no follower spawns or moves while a dialog
+  // is open (they fall in behind you as it closes).
+  if (session.dialogue) return;
   const scene = sceneOf(session);
   const party = session.state.companions;
   for (const id of [...session.followers.keys()]) {
@@ -1266,6 +1324,7 @@ window.__pcc = () =>
         dialogue: session.dialogue ? { id: session.dialogue.id, node: session.dialogue.node } : null,
         sequence: session.sequence !== null,
         speech: currentSpeech()?.text ?? null,
+        followers: [...session.followers.keys()],
         finished: session.finished,
       }
     : null;
@@ -1275,6 +1334,12 @@ window.__pcc = () =>
 // Re-measure cached text once the pixel font finishes loading (early frames
 // fall back to system monospace with different metrics).
 document.fonts?.ready.then(resetTextCache);
+
+// Reflect the persisted mute state on the button.
+if (audio.isMuted()) {
+  el.btnMute.textContent = '♪̸';
+  el.btnMute.classList.add('secondary');
+}
 
 const bootQuery = new URLSearchParams(location.search);
 const bootStory = bootQuery.get('story');

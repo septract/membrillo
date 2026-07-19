@@ -14,8 +14,6 @@ design note, it lands here; when it ships, delete it. Dated design notes in
 
 - Sequence `walkTo`/movement for characters and companions (actor-only
   today) — needed for staging richer scripted moments.
-- Fuzzer check: every sequence `who` is present (in scene or party) whenever
-  the sequence can trigger — currently a silent fall-back-to-actor.
 - Authored `defaultVerb` override per target, for when the kind default is
   wrong (a sleeping guard you'd examine, not wake).
 - Multi-frame costumes: richer walk cycles beyond leg-scissor, distinct
@@ -24,10 +22,6 @@ design note, it lands here; when it ships, delete it. Dated design notes in
   public release.
 
 ## Next (content/presentation)
-
-- Hide the event log by default (Mike, 2026-07-18) — it's a transcript, not
-  primary UI; keep it in the DOM (the browser driver asserts against its
-  textContent) behind a small "history" toggle.
 
 - Pixelization tool: `tools/pixelize.mjs` — box-downscale + palette
   quantization + ordered dither over PNGs (we already have a zero-dep PNG

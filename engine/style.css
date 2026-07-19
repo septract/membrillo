@@ -140,6 +140,15 @@ button.secondary { color: var(--dim); }
 }
 #log p { margin: 0 0 4px; }
 
+.log-toggle {
+  align-self: flex-start;
+  padding: 2px 8px;
+  font-size: 13px;
+  border: none;
+  background: none;
+}
+#log[hidden] { display: none; }
+
 #btn-skip {
   position: absolute;
   top: 8px;

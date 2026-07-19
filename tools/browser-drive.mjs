@@ -277,11 +277,27 @@ if (!briefed.state.inventory.includes('sniffer')) throw new Error('no sniffer af
 console.log('  final line dismissed by its click ✓');
 await shot('50-bridge');
 
+// The event log hides by default; the history toggle reveals it.
+const logHidden = await page.evaluate(() => document.getElementById('log')?.hidden);
+if (!logHidden) throw new Error('log should be hidden by default');
+await page.getByRole('button', { name: /history/ }).click();
+const logShown = await page.evaluate(() => !document.getElementById('log')?.hidden);
+if (!logShown) throw new Error('history toggle did not reveal the log');
+console.log('  log hidden by default + toggle ✓');
+
 await verb('Talk');
 await worldClick(62, 130); // Lt. Cog at his console
 await page.getByRole('button', { name: 'Tell me the joke now.' }).click();
 await page.getByRole('button', { name: 'Join the away team, Lieutenant.' }).click();
+// Recruiting mid-dialogue must NOT spawn the follower until the dialog ends
+// (the lurch felt like a mis-click); the speaker stays pinned on screen.
+const midDialog = await hook();
+if (midDialog.followers.length !== 0) throw new Error('follower spawned mid-dialogue');
 await page.getByRole('button', { name: 'Of course you have.' }).click();
+await page.waitForTimeout(300);
+const closed = await hook();
+if (!closed.followers.includes('cog')) throw new Error('follower missing after dialogue closed');
+console.log('  recruit joins on dialog close, not mid-lurch ✓');
 await worldClick(242, 135); // Counselor Solace
 await page.getByRole('button', { name: 'Join the away team, Counselor.' }).click();
 await page.getByRole('button', { name: "Then let's bring both." }).click();

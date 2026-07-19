@@ -11,7 +11,8 @@ import type { AudioTheme } from '../core/types.ts';
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
 let themeGain: GainNode | null = null;
-let muted = false;
+// Mute persists across visits.
+let muted = typeof localStorage !== 'undefined' && localStorage.getItem('pcc:muted') === '1';
 
 let theme: AudioTheme | null = null;
 let schedulerId: ReturnType<typeof setInterval> | null = null;
@@ -37,6 +38,7 @@ export function init(): void {
 
 export function toggleMute(): boolean {
   muted = !muted;
+  localStorage.setItem('pcc:muted', muted ? '1' : '0');
   if (ctx && master) master.gain.linearRampToValueAtTime(muted ? 0 : 1, ctx.currentTime + 0.1);
   return muted;
 }
