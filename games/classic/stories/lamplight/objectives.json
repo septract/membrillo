@@ -1,0 +1,13 @@
+[
+  {
+    "id": "relight",
+    "text": "Relight the lamp before dark",
+    "done": ["flag:lamp_lit"]
+  },
+  {
+    "id": "lens",
+    "text": "Recover the keeper's lens from the harbour",
+    "active": ["flag:knows_crate", "!flag:crate_raised"],
+    "done": ["flag:crate_raised"]
+  }
+]

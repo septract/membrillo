@@ -7,7 +7,12 @@
     "look": [{ "text": "Lt. Cog, cataloguing the station's tidiness with visible professional respect." }],
     "talk": [
       {
-        "requires": ["flag:link_ready", "!flag:knows_lonely"],
+        "requires": ["flag:link_ready", "!flag:heard_song"],
+        "speaker": "target",
+        "text": "\"The hardware is solved, Ensign, yet the beacon still sings. You have repaired a thing you have not yet listened to. Go and HEAR the caretaker before we file this closed.\""
+      },
+      {
+        "requires": ["flag:link_ready", "flag:heard_song", "!flag:knows_lonely"],
         "speaker": "target",
         "text": "\"The link is live, yet the song persists. The hardware is solved, Ensign; the WHY is not. Solace reads deeper than my spectrometers — ask her.\""
       },
