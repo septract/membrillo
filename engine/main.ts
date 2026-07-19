@@ -486,7 +486,16 @@ function followerTargetAt(p: Point): TargetRef | undefined {
     const region = bodyBox({ x: pose.x, y: pose.y }, depthScale(scene, pose.y));
     if (p.x >= region.x && p.x < region.x + region.w && p.y >= region.y && p.y < region.y + region.h) {
       const c = session.loaded.story.companions[id];
-      return { kind: 'companion', id, name: c?.name ?? id, region, walkTo: { x: pose.x - 16, y: pose.y } };
+      // The party keeps formation around the actor, so acting on a companion
+      // needs no approach: its walkTo is the actor's own position, and the
+      // normal walk-then-act pipeline degenerates to acting in place.
+      return {
+        kind: 'companion',
+        id,
+        name: c?.name ?? id,
+        region,
+        walkTo: { x: session.actor.x, y: session.actor.y },
+      };
     }
   }
   return undefined;
@@ -613,6 +622,11 @@ function runPending(): void {
   const { target, action } = session.pending;
   session.pending = null;
   faceTarget(target);
+  // An addressed companion turns to face the actor.
+  if (target.kind === 'companion') {
+    const f = session.followers.get(target.id);
+    if (f) f.facing = facingFromDelta(session.actor.x - f.x, session.actor.y - f.y);
+  }
   if (target.kind === 'exit') {
     const scene = sceneOf(session);
     const exit = (scene.exits ?? []).find((e) => e.id === target.id);
