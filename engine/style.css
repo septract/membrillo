@@ -115,6 +115,9 @@ button.secondary { color: var(--dim); }
 }
 #verbs u { text-decoration: underline; text-underline-offset: 2px; }
 
+header nav { display: flex; gap: 6px; align-items: stretch; }
+header nav button { height: 34px; padding: 0 12px; line-height: 1; }
+
 #verbs { display: flex; gap: 8px; }
 
 #inventory { display: flex; gap: 6px; flex-wrap: wrap; min-height: 30px; }

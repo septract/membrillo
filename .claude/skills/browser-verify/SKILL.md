@@ -34,13 +34,17 @@ node tools/browser-drive.mjs                      # full regression, all stories
 pkill -f vite
 ```
 
-`tools/browser-drive.mjs` plays every story to completion and asserts along
-the way; screenshots land in `shots-browser/` (gitignored). **Read the
-screenshots** — a green log with a broken frame is still a failure. It exits
-non-zero on any assertion or any browser console error/pageerror.
+`tools/browser-drive.mjs` orchestrates per-story modules in `tools/drive/`
+(one file per story plus `resilience` and `mobile`), sharing one Chrome
+session via `tools/drive/kit.mjs`. Pass module names to run a subset:
+`node tools/browser-drive.mjs marigold2`. Screenshots land in
+`shots-browser/` (gitignored). **Read the screenshots** — a green log with a
+broken frame is still a failure. It exits non-zero on any assertion or any
+browser console error/pageerror.
 
-When adding a story or feature, extend the driver with a section that plays
-it; when a story's coordinates change, the driver's clicks must follow.
+When adding a story, add a module in `tools/drive/` and list it in the
+orchestrator; when a story's coordinates change, its module's clicks must
+follow. Modules must stay independent: boot via `kit.freshStory(id)`.
 
 ## The driving pattern
 
