@@ -116,13 +116,14 @@ const app = document.getElementById('app')!;
 app.innerHTML = `
   <header>
     <h1 id="title">Membrillo</h1>
-    <nav><button id="btn-mute" title="mute">♪</button><button id="btn-menu">Stories</button><button id="btn-restart" hidden>Restart</button></nav>
+    <nav><button id="btn-eye" title="highlight clickable things">👁</button><button id="btn-mute" title="mute">♪</button><button id="btn-menu">Stories</button><button id="btn-restart" hidden>Restart</button></nav>
   </header>
   <div id="menu"></div>
   <div id="game" hidden>
     <div class="stage">
       <canvas id="view"></canvas>
       <canvas id="overlay"></canvas>
+      <button id="btn-skip" hidden>skip ≫</button>
       <div id="dialogue" hidden></div>
     </div>
     <div class="panel">
@@ -146,6 +147,8 @@ const el = {
   inventory: document.getElementById('inventory')!,
   objectives: document.getElementById('objectives')!,
   log: document.getElementById('log')!,
+  btnEye: document.getElementById('btn-eye')!,
+  btnSkip: document.getElementById('btn-skip')!,
   btnMute: document.getElementById('btn-mute')!,
   btnMenu: document.getElementById('btn-menu')!,
   btnRestart: document.getElementById('btn-restart')!,
@@ -178,7 +181,9 @@ let session: Session | null = null;
 let armed: ArmedVerb = 'interact';
 let armedItem: string | null = null;
 let hover: TargetRef | undefined;
-let highlight = false;
+// Highlight = held Space (desktop, momentary) OR the 👁 toggle (touch, latched).
+let spaceHeld = false;
+let eyeLock = false;
 /** Transient one-shot speech; the floating dialogue line derives live from session.dialogue. */
 let speech: (Speech & { expires: number; speakerId: string }) | null = null;
 let fade: { t0: number; apply: () => void; fired: boolean } | null = null;
@@ -924,29 +929,36 @@ function advanceBeat(scene: Scene): void {
   }
 }
 
+/** Skip whatever is skippable: speech, the running sequence, or the cutscene.
+ *  Shared by the Esc key and the on-canvas skip button (touch). */
+function skipCurrent(): void {
+  if (!session) return;
+  if (speech) speech = null;
+  if (session.sequence) {
+    skipSequence();
+    return;
+  }
+  if (session.beat !== null && !session.finished) {
+    // Skip the whole cutscene by advancing through every beat, so any
+    // future per-beat effects still run exactly as if clicked through.
+    const scene = sceneOf(session);
+    let prev = -1;
+    while (session.beat !== null && session.beat !== prev && !session.finished) {
+      prev = session.beat;
+      advanceBeat(scene);
+    }
+  }
+}
+
 window.addEventListener('keydown', (ev) => {
   if (ev.code === 'Space') {
-    highlight = true;
+    spaceHeld = true;
     if (ev.target === document.body) ev.preventDefault();
     return;
   }
   if (!session) return;
   if (ev.key === 'Escape') {
-    if (speech) speech = null;
-    if (session.sequence) {
-      skipSequence();
-      return;
-    }
-    if (session.beat !== null && !session.finished) {
-      // Skip the whole cutscene by advancing through every beat, so any
-      // future per-beat effects still run exactly as if clicked through.
-      const scene = sceneOf(session);
-      let prev = -1;
-      while (session.beat !== null && session.beat !== prev && !session.finished) {
-        prev = session.beat;
-        advanceBeat(scene);
-      }
-    }
+    skipCurrent();
     return;
   }
   if (session.dialogue) return;
@@ -954,9 +966,14 @@ window.addEventListener('keydown', (ev) => {
   if (verb && !ev.metaKey && !ev.ctrlKey && !ev.altKey) armVerb(verb.id);
 });
 window.addEventListener('keyup', (ev) => {
-  if (ev.code === 'Space') highlight = false;
+  if (ev.code === 'Space') spaceHeld = false;
 });
 
+el.btnSkip.addEventListener('click', skipCurrent);
+el.btnEye.addEventListener('click', () => {
+  eyeLock = !eyeLock;
+  el.btnEye.classList.toggle('armed', eyeLock);
+});
 el.btnMute.addEventListener('click', () => {
   audio.ensureRunning();
   el.btnMute.textContent = audio.toggleMute() ? '♪̸' : '♪';
@@ -1027,6 +1044,9 @@ function tick(now: number): void {
   if (speech && now > speech.expires) speech = null;
   const alpha = fadeAlpha(now);
   if (session) {
+    // On-canvas skip appears whenever something is skippable (touch's Esc).
+    const skippable = !session.finished && (session.beat !== null || session.sequence !== null);
+    if (el.btnSkip.hidden === skippable) el.btnSkip.hidden = !skippable;
     syncOverlay();
     octx.clearRect(0, 0, el.overlay.width, el.overlay.height);
     octx.globalAlpha = Math.max(0, 1 - alpha); // overlay text fades with the scene
@@ -1053,7 +1073,7 @@ function tick(now: number): void {
         camera: session.camera,
         view: session.view,
         hover,
-        highlight,
+        highlight: spaceHeld || eyeLock,
         speakingId: sp?.speakerId ?? null,
         followers: followerViews(),
         facingOverrides: session.facingOverrides,

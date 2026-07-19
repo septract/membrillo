@@ -70,5 +70,7 @@ design note, it lands here; when it ships, delete it. Dated design notes in
 - Bounded counters (`counter:x:0..3`) if a story ever needs them — the only
   approved logic-model extension (see scumm-parity note, Bucket 3).
 - Camera: vertical scroll is untested (no tall scene exists); parallax.
+- Mobile, further: PWA manifest + home-screen icon, rotate-to-landscape
+  hint, iOS media-channel audio routing (the kit's recipes).
 - Cold playtests with think-aloud protocol before anything ships (research
   rec #9) — this session's playtesting keeps finding what the fuzzer can't.

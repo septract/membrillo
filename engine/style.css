@@ -20,7 +20,12 @@
   --accent: #fce8a0;
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button, canvas { touch-action: manipulation; }
 
 body {
   margin: 0;
@@ -134,3 +139,24 @@ button.secondary { color: var(--dim); }
   line-height: 1.45;
 }
 #log p { margin: 0 0 4px; }
+
+#btn-skip {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(20, 18, 26, 0.85);
+  color: var(--accent);
+}
+
+/* Small screens: spend the pixels on the scene. */
+@media (max-width: 700px) {
+  #app { padding: 6px; }
+  header { margin-bottom: 6px; }
+  h1 { font-size: 16px; }
+  .panel { margin-top: 6px; gap: 6px; }
+  #verbs { flex-wrap: wrap; }
+  button { padding: 8px 12px; } /* larger touch targets */
+  .chip { padding: 6px 12px; }
+  #log { height: 76px; }
+  #objectives { padding: 4px 10px; }
+}
