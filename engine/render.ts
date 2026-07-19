@@ -145,40 +145,72 @@ export function wrapWords(text: string, fits: (candidate: string) => boolean): s
 
 // A speech line is constant while displayed — wrap and measure it once, not
 // per frame (sticky dialogue lines can be on screen indefinitely).
-let speechCache: { text: string; maxW: number; lines: { text: string; w: number }[] } | null = null;
+let speechCache: { text: string; maxW: number; scale: number; lines: { text: string; w: number }[] } | null = null;
 
-/** Floating outlined speech text, SCUMM-style, kept inside the camera window. */
+/**
+ * Floating outlined speech text, SCUMM-style, kept inside the camera window.
+ * Drawn on the display-resolution OVERLAY canvas (not the pixel-art buffer),
+ * so the text stays crisp on top of the chunky scene. `scale` maps world
+ * units to overlay pixels; speech coordinates are WORLD-space.
+ */
 export function drawSpeech(
   ctx: CanvasRenderingContext2D,
   speech: Speech,
   camera: Point,
   view: Size,
+  scale: number,
 ): void {
-  ctx.font = '8px monospace';
+  ctx.font = `${Math.round(8 * scale)}px monospace`;
   ctx.textAlign = 'left';
-  const maxW = Math.min(180, view.w - 8);
-  if (!speechCache || speechCache.text !== speech.text || speechCache.maxW !== maxW) {
+  const maxW = Math.min(180, view.w - 8) * scale;
+  if (!speechCache || speechCache.text !== speech.text || speechCache.maxW !== maxW || speechCache.scale !== scale) {
     const lines = wrapWords(speech.text, (s) => ctx.measureText(s).width <= maxW);
     speechCache = {
       text: speech.text,
       maxW,
+      scale,
       lines: lines.map((text) => ({ text, w: ctx.measureText(text).width })),
     };
   }
   const lines = speechCache.lines;
 
-  const lineH = 9;
-  const yBase = Math.max(speech.y, camera.y + lines.length * lineH + 2);
+  const sx = (speech.x - Math.round(camera.x)) * scale;
+  const syAnchor = (speech.y - Math.round(camera.y)) * scale;
+  const lineH = 9 * scale;
+  const outline = Math.max(1, Math.round(scale * 0.7));
+  const yBase = Math.max(syAnchor, lines.length * lineH + 2 * scale);
   lines.forEach(({ text, w }, i) => {
-    const x = clamp(speech.x - w / 2, camera.x + 2, Math.max(camera.x + 2, camera.x + view.w - w - 2));
+    const x = clamp(sx - w / 2, 2 * scale, Math.max(2 * scale, view.w * scale - w - 2 * scale));
     const y = yBase - (lines.length - 1 - i) * lineH;
     ctx.fillStyle = css(P.black);
     for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
-      ctx.fillText(text, x + dx, y + dy);
+      ctx.fillText(text, x + dx * outline, y + dy * outline);
     }
     ctx.fillStyle = css(speech.color);
     ctx.fillText(text, x, y);
   });
+}
+
+/** Outlined text on the display-resolution overlay — the one text style. */
+export function overlayText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  color: RGB,
+  sizePx: number,
+  align: CanvasTextAlign = 'left',
+): void {
+  ctx.font = `${Math.round(sizePx)}px monospace`;
+  ctx.textAlign = align;
+  const outline = Math.max(1, Math.round(sizePx / 11));
+  ctx.fillStyle = css(P.black);
+  for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+    ctx.fillText(text, x + dx * outline, y + dy * outline);
+  }
+  ctx.fillStyle = css(color);
+  ctx.fillText(text, x, y);
+  ctx.textAlign = 'left';
 }
 
 /** A companion follower's presentation state, owned by the controller. */
@@ -196,8 +228,7 @@ export interface RenderOpts {
   hover?: TargetRef | undefined;
   /** Space held: outline every target (the hotspot-highlight affordance). */
   highlight: boolean;
-  speech?: Speech | null;
-  /** Body the current speech belongs to: 'actor', a character id, or a companion id. */
+  /** Body currently speaking (drives mouth animation): 'actor', a character id, or a companion id. */
   speakingId?: string | null;
   followers?: FollowerView[];
   /** Scripted-sequence facing overrides for scene characters. */
@@ -237,7 +268,7 @@ export function renderScene(
     const pose: Pose = {
       ...IDLE_POSE,
       facing: opts.facingOverrides?.[c.id] ?? c.facing ?? 'left',
-      talking: opts.speakingId === c.id && !!opts.speech,
+      talking: opts.speakingId === c.id,
     };
     bodies.push({
       y: c.pos.y,
@@ -278,7 +309,7 @@ export function renderScene(
       facing: f.pose.facing,
       phase: f.pose.phase,
       walking: f.pose.walking,
-      talking: opts.speakingId === f.id && !!opts.speech,
+      talking: opts.speakingId === f.id,
     };
     const { x, y } = f.pose;
     bodies.push({
@@ -303,7 +334,7 @@ export function renderScene(
       facing: a.facing,
       phase: a.phase,
       walking: a.walking,
-      talking: opts.speakingId === 'actor' && !!opts.speech,
+      talking: opts.speakingId === 'actor',
     };
     bodies.push({
       y: a.y,
@@ -317,7 +348,6 @@ export function renderScene(
     for (const t of sceneTargets(scene, state)) outlineTarget(ctx, t, false);
   }
   if (opts.hover) outlineTarget(ctx, opts.hover, true);
-  if (opts.speech) drawSpeech(ctx, opts.speech, opts.camera, opts.view);
 
   ctx.restore();
 

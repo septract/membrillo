@@ -33,6 +33,8 @@ import * as audio from './audio/engine.ts';
 import { loadStories, type LoadedStory } from './loader.ts';
 import {
   bodyBox,
+  drawSpeech,
+  overlayText,
   renderScene,
   sceneSize,
   storyView,
@@ -118,7 +120,7 @@ app.innerHTML = `
   <div id="game" hidden>
     <div class="stage">
       <canvas id="view"></canvas>
-      <div id="hoverlabel" hidden></div>
+      <canvas id="overlay"></canvas>
       <div id="dialogue" hidden></div>
     </div>
     <div class="panel">
@@ -135,7 +137,7 @@ const el = {
   menu: document.getElementById('menu')!,
   game: document.getElementById('game')!,
   canvas: document.getElementById('view') as HTMLCanvasElement,
-  hoverlabel: document.getElementById('hoverlabel')!,
+  overlay: document.getElementById('overlay') as HTMLCanvasElement,
   dialogue: document.getElementById('dialogue')!,
   sentence: document.getElementById('sentence')!,
   verbs: document.getElementById('verbs')!,
@@ -147,6 +149,26 @@ const el = {
   btnRestart: document.getElementById('btn-restart')!,
 };
 const ctx = el.canvas.getContext('2d')!;
+// Text renders on a separate display-resolution overlay stacked above the
+// pixel-art buffer — crisp glyphs on top of chunky art, the SCUMM-remaster way.
+const octx = el.overlay.getContext('2d')!;
+
+/** Keep the overlay's backing store matched to the displayed canvas size. */
+function syncOverlay(): void {
+  const rect = el.canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  const w = Math.round(rect.width * dpr);
+  const h = Math.round(rect.height * dpr);
+  if (el.overlay.width !== w || el.overlay.height !== h) {
+    el.overlay.width = w;
+    el.overlay.height = h;
+  }
+}
+
+/** World-units → overlay-pixels scale factor. */
+function overlayScale(): number {
+  return session ? el.overlay.width / session.view.w : 1;
+}
 
 // Interact is the default verb: a plain click on a door goes through it,
 // on a pickup takes it. Look/Talk are deliberate modes.
@@ -304,7 +326,6 @@ function placeInScene(scene: Scene, entry: Point | null): void {
   renderDialogue();
   speech = null;
   hover = undefined;
-  el.hoverlabel.hidden = true;
   applyTheme(scene);
   if (isCutscene(scene)) {
     session.beat = 0;
@@ -808,21 +829,11 @@ let lastMouse: { clientX: number; clientY: number } | null = null;
 function updateHover(clientX: number, clientY: number): void {
   if (!session || session.beat !== null || session.dialogue || session.sequence) {
     hover = undefined;
-    el.hoverlabel.hidden = true;
     return;
   }
   const rect = el.canvas.getBoundingClientRect();
   const p = worldFromClient(clientX, clientY, rect);
   hover = followerTargetAt(p) ?? targetAt(sceneOf(session), session.state, p.x, p.y);
-  if (hover) {
-    el.hoverlabel.hidden = false;
-    el.hoverlabel.textContent = hover.name;
-    const stage = el.canvas.parentElement!.getBoundingClientRect();
-    el.hoverlabel.style.left = `${clientX - stage.left + 12}px`;
-    el.hoverlabel.style.top = `${clientY - rect.top - 8}px`;
-  } else {
-    el.hoverlabel.hidden = true;
-  }
   renderSentence();
 }
 
@@ -945,37 +956,35 @@ el.btnRestart.addEventListener('click', () => {
 
 // --- Render loop ------------------------------------------------------------
 
-function drawCutscene(scene: Scene): void {
+// Card backgrounds go on the pixel buffer; their TEXT goes on the crisp
+// display-resolution overlay, like all other in-scene text.
+
+function drawCutscene(scene: Scene, scale: number): void {
   if (!session || session.beat === null) return;
   const { w, h } = session.view;
   ctx.fillStyle = css(P.black);
   ctx.fillRect(0, 0, w, h);
   const beat = (scene.beats ?? [])[session.beat] ?? '';
-  ctx.fillStyle = css(P.white);
-  ctx.font = '8px monospace';
-  ctx.textAlign = 'center';
-  const max = Math.floor(w / 5.5);
-  const lines = wrapWords(beat, (s) => s.length <= max);
-  const y0 = h / 2 - (lines.length - 1) * 6;
-  lines.forEach((line, i) => ctx.fillText(line, w / 2, y0 + i * 12));
-  ctx.fillStyle = css(P.stoneLit);
-  ctx.fillText(session.finished ? '' : '· click ·', w / 2, h - 10);
-  ctx.textAlign = 'left';
+  const size = 8 * scale;
+  octx.font = `${Math.round(size)}px monospace`;
+  const maxW = w * scale * 0.86;
+  const lines = wrapWords(beat, (s) => octx.measureText(s).width <= maxW);
+  const y0 = (h / 2) * scale - (lines.length - 1) * 6 * scale;
+  lines.forEach((line, i) =>
+    overlayText(octx, line, (w / 2) * scale, y0 + i * 12 * scale, P.white, size, 'center'),
+  );
+  if (!session.finished) {
+    overlayText(octx, '· click ·', (w / 2) * scale, (h - 10) * scale, P.stoneLit, size, 'center');
+  }
 }
 
-function drawEndCard(): void {
+function drawEndCard(scale: number): void {
   if (!session) return;
   const { w, h } = session.view;
   ctx.fillStyle = css(P.black);
   ctx.fillRect(0, 0, w, h);
-  ctx.fillStyle = css(P.glow);
-  ctx.font = '12px monospace';
-  ctx.textAlign = 'center';
-  ctx.fillText('The End', w / 2, h / 2);
-  ctx.fillStyle = css(P.stoneLit);
-  ctx.font = '8px monospace';
-  ctx.fillText('Restart to play again', w / 2, h / 2 + 16);
-  ctx.textAlign = 'left';
+  overlayText(octx, 'The End', (w / 2) * scale, (h / 2) * scale, P.glow, 12 * scale, 'center');
+  overlayText(octx, 'Restart to play again', (w / 2) * scale, (h / 2 + 16) * scale, P.stoneLit, 8 * scale, 'center');
 }
 
 function fadeAlpha(now: number): number {
@@ -1002,12 +1011,16 @@ function tick(now: number): void {
   if (speech && now > speech.expires) speech = null;
   const alpha = fadeAlpha(now);
   if (session) {
+    syncOverlay();
+    octx.clearRect(0, 0, el.overlay.width, el.overlay.height);
+    octx.globalAlpha = Math.max(0, 1 - alpha); // overlay text fades with the scene
+    const scale = overlayScale();
     const scene = sceneOf(session);
     if (session.finished && !isCutscene(scene)) {
-      drawEndCard();
+      drawEndCard(scale);
     } else if (session.beat !== null) {
-      if (session.finished) drawEndCard();
-      else drawCutscene(scene);
+      if (session.finished) drawEndCard(scale);
+      else drawCutscene(scene, scale);
       if (alpha > 0) {
         ctx.fillStyle = rgba(P.black, alpha);
         ctx.fillRect(0, 0, session.view.w, session.view.h);
@@ -1025,14 +1038,28 @@ function tick(now: number): void {
         view: session.view,
         hover,
         highlight,
-        speech: sp,
         speakingId: sp?.speakerId ?? null,
         followers: followerViews(),
         facingOverrides: session.facingOverrides,
         fade: alpha,
       });
-      if (session.finished) drawEndCard();
+      if (sp) drawSpeech(octx, sp, session.camera, session.view, scale);
+      if (hover && lastMouse) {
+        // The hover name rides the cursor, same text system as everything else.
+        const rect = el.canvas.getBoundingClientRect();
+        const dpr = el.overlay.width / rect.width;
+        overlayText(
+          octx,
+          hover.name,
+          (lastMouse.clientX - rect.left) * dpr + 12 * dpr,
+          (lastMouse.clientY - rect.top) * dpr - 8 * dpr,
+          P.glow,
+          8 * scale,
+        );
+      }
+      if (session.finished) drawEndCard(scale);
     }
+    octx.globalAlpha = 1;
   }
   requestAnimationFrame(tick);
 }
