@@ -102,6 +102,12 @@ function validateStory(files: StoryFiles): Report {
     if (rule.dialogue !== undefined) {
       if (!opts.talk) r.error(`${where}: dialogue "${rule.dialogue}" outside a talk bucket`);
       else if (!dialogues[rule.dialogue]) r.error(`${where}: unknown dialogue "${rule.dialogue}"`);
+      // The engine opens the tree then immediately fades/travels, destroying it
+      // at the fade midpoint; the fuzzer models it as still open in the
+      // destination. They disagree, so forbid the combination.
+      if (rule.goto !== undefined || rule.play !== undefined) {
+        r.error(`${where}: dialogue cannot combine with goto or play on one rule`);
+      }
     }
     if (rule.play !== undefined) {
       if (opts.sequences === null || opts.sequences === undefined || opts.effectsOnly) {

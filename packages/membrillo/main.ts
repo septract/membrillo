@@ -230,9 +230,33 @@ function saveKey(id: string): string {
   return `pcc:${id}`;
 }
 
+/**
+ * State the player entered the open dialogue tree in. A tree's options are
+ * choices, not a deterministic edge, so the safe savepoint while it's open is
+ * the entry state — the talk rule re-opens it on reload. Persisting a mid-tree
+ * node would escape the fuzzer's proven graph.
+ */
+let dialogueEntry: State | null = null;
+
 function save(): void {
-  if (session && !session.finished) {
-    localStorage.setItem(saveKey(session.id), JSON.stringify(session.state));
+  if (!session || session.finished) return;
+  let state = session.state;
+  if (session.sequence) {
+    // A sequence is one atomic rule→sequence→goto edge to the fuzzer. Persist
+    // its skip-converged end state (+ afterGoto) so a reload mid-sequence lands
+    // on the proven end, never a partial state that can strand the player.
+    const seq = session.sequence;
+    state = applySequenceEffects(state, seq.steps, seq.index + 1);
+    if (seq.afterGoto !== null) state = enterScene(state, seq.afterGoto);
+  } else if (session.dialogue && dialogueEntry) {
+    state = dialogueEntry;
+  }
+  try {
+    localStorage.setItem(saveKey(session.id), JSON.stringify(state));
+  } catch (err) {
+    // Storage full / disabled (Safari private mode, quota): don't abort the
+    // action that triggered the save.
+    console.warn('membrillo: save failed (storage full or blocked):', err);
   }
 }
 
@@ -240,10 +264,23 @@ function loadSave(id: string): State | null {
   const raw = localStorage.getItem(saveKey(id));
   if (!raw) return null;
   try {
-    return JSON.parse(raw) as State;
+    const s = JSON.parse(raw) as Partial<State> | null;
+    // Shape guard: a version-skewed or hand-edited save must not crash the app
+    // on Continue. Require a scene; normalize the arrays (drop non-strings),
+    // defaulting any missing one — a save predating `companions`, say, still
+    // loads instead of throwing inside renderPanel/updateFollowers.
+    if (!s || typeof s.scene !== 'string') throw new Error('save missing scene');
+    const strs = (v: unknown): string[] =>
+      Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
+    return {
+      scene: s.scene,
+      flags: strs(s.flags),
+      inventory: strs(s.inventory),
+      companions: strs(s.companions),
+    };
   } catch {
-    // Corrupt save (interrupted write, manual edit): discard rather than
-    // crashing the menu/boot for every future visit.
+    // Corrupt or unusable save: discard rather than crashing the menu/boot for
+    // every future visit.
     localStorage.removeItem(saveKey(id));
     return null;
   }
@@ -313,6 +350,10 @@ function showMenu(): void {
   session = null;
   speech = null;
   fade = null;
+  seqPortrait = null; // never carry a beat/dialogue overlay across stories
+  dialogueEntry = null;
+  vnLeft = null;
+  vnRight = null;
   audio.setTheme(null); // the menu is quiet (Mike's nit)
   el.game.hidden = true;
   el.btnRestart.hidden = true;
@@ -374,7 +415,11 @@ function startStory(id: string, state: State | null): void {
   armedItem = null;
   speech = null;
   fade = null;
-  audio.ensureRunning(); // startStory always runs from a user gesture
+  seqPortrait = null;
+  dialogueEntry = null;
+  vnLeft = null;
+  vnRight = null;
+  audio.ensureRunning();
   session = {
     id,
     loaded,
@@ -425,7 +470,9 @@ function placeInScene(scene: Scene, entry: Point | null): void {
   session.path = null;
   session.pending = null;
   session.dialogue = null;
+  dialogueEntry = null;
   session.sequence = null;
+  seqPortrait = null;
   session.facingOverrides = {};
   session.charPoses.clear();
   session.charWalks.clear();
@@ -847,6 +894,7 @@ function openDialogue(dlgId: string, target?: TargetRef): void {
       : speakerFor(undefined);
   }
   session.dialogue = { id: dlgId, node: dlg.start, anchor: who.anchor, color: who.color, speakerId: who.id };
+  dialogueEntry = session.state; // savepoint while the tree is open (see save)
   log(dialogueNode(dlg, dlg.start).line);
   startPortraitLine(dialogueNode(dlg, dlg.start).line);
   renderDialogue();
@@ -1081,7 +1129,9 @@ function pickOption(option: DialogueOption): void {
   log(`> ${option.text}`);
   if (step.to === 'end') {
     session.dialogue = null;
-  } else {
+    dialogueEntry = null; // tree closed: save() now persists the real state
+  }
+  else {
     session.dialogue.node = step.to;
     log(dialogueNode(dlg, step.to).line);
     startPortraitLine(dialogueNode(dlg, step.to).line);
@@ -1184,14 +1234,25 @@ function renderObjectives(): void {
   }
 }
 
+/**
+ * The DOM panel (verb bar, inventory chips) is inert while a scripted moment
+ * owns input — a dialogue tree, a sequence, or a cutscene beat — mirroring the
+ * canvas gating. Without this, a mid-dialogue combine/look mutates state the
+ * fuzzer's "only options while a tree is open" model never explored.
+ */
+function panelBusy(): boolean {
+  return !!session && (session.dialogue !== null || session.sequence !== null || session.beat !== null);
+}
+
 function armVerb(id: ArmedVerb): void {
+  if (panelBusy()) return;
   armed = id;
   armedItem = null;
   renderPanel();
 }
 
 function onItemClick(itemId: string): void {
-  if (!session) return;
+  if (!session || panelBusy()) return;
   if (armed === 'interact') {
     if (armedItem === null) {
       armedItem = itemId; // arm: "Use <item> with …"
@@ -1238,6 +1299,7 @@ let lastMouse: { clientX: number; clientY: number } | null = null;
 function updateHover(clientX: number, clientY: number): void {
   if (!session || session.beat !== null || session.dialogue || session.sequence) {
     hover = undefined;
+    el.canvas.style.cursor = 'crosshair'; // don't leave a stale pointer cursor
     return;
   }
   const rect = el.canvas.getBoundingClientRect();
@@ -1378,8 +1440,24 @@ function fadeAlpha(now: number): number {
 }
 
 let lastTime = performance.now();
+let frameErrLogged = false;
 
 function tick(now: number): void {
+  // Re-arm the loop FIRST: an exception in a story painter (authored code
+  // called inside the frame) must not permanently freeze the canvas for the
+  // whole page — the next frame retries, and Stories/Restart stay usable.
+  requestAnimationFrame(tick);
+  try {
+    frame(now);
+  } catch (err) {
+    if (!frameErrLogged) {
+      console.error('membrillo: render frame error (loop continues):', err);
+      frameErrLogged = true;
+    }
+  }
+}
+
+function frame(now: number): void {
   const dt = Math.min((now - lastTime) / 1000, 0.1);
   lastTime = now;
   if (speech && now > speech.expires) speech = null;
@@ -1473,7 +1551,6 @@ function tick(now: number): void {
     }
     octx.globalAlpha = 1;
   }
-  requestAnimationFrame(tick);
 }
 
 /** Advance the running scripted sequence when its current step completes. */
@@ -1725,7 +1802,9 @@ function wireInput(): void {
   });
 
   el.canvas.addEventListener('dblclick', () => {
-    if (!session || session.finished || session.dialogue || session.sequence || fade || session.beat !== null) return;
+    // Only the pre-switch half of a fade swallows canvas input (matches the
+    // single-click rule); a hurry-snap just after arrival must still work.
+    if (!session || session.finished || session.dialogue || session.sequence || (fade && !fade.fired) || session.beat !== null) return;
     const end = session.path?.[session.path.length - 1];
     if (!end) return;
     session.actor.x = end.x;

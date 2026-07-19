@@ -12,7 +12,11 @@ const [, , command, ...rest] = process.argv;
 
 const rootIdx = rest.indexOf('--root');
 const root = rootIdx >= 0 ? rest[rootIdx + 1] : './stories';
-const ids = rest.filter((a, i) => !a.startsWith('-') && i !== rootIdx + 1);
+// Story ids are the positionals — every flag, plus the value after --root.
+// (Guard rootIdx >= 0: with no --root, rootIdx is -1 and rootIdx+1 is 0,
+// which must NOT exclude the first id — the bug that returned a false green
+// for `membrillo check <misspelled-id>`.)
+const ids = rest.filter((a, i) => !a.startsWith('-') && !(rootIdx >= 0 && i === rootIdx + 1));
 
 if (!['validate', 'fuzz', 'check'].includes(command ?? '')) {
   console.error('usage: membrillo <validate|fuzz|check> [ids...] [--root ./stories]');

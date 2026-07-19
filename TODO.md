@@ -8,6 +8,18 @@ design note, it lands here; when it ships, delete it. Dated design notes in
 
 - (none open.)
 
+## Toward first release (Mike, 2026-07-19)
+
+- **QoL audit for "first release" quality** — IN PROGRESS: multi-agent audit
+  (engine correctness, click-coverage, docs/onboarding, UX/mobile) then fix
+  the findings. Do this BEFORE the independent AI test below.
+- **Independent AI build test** — have a different AI, in a SEPARATE
+  directory (not this repo), build a new game from `games/_template` with no
+  hand-holding, to test whether the template + GUIDE are self-sufficient.
+  Present it as an independent test, not "built here". Needs a written
+  standalone-setup handout for Mike to give the other AI (draft:
+  docs/2026-07-19-independent-build-test.md once the audit lands).
+
 ## Next (engine)
 
 - Sequence speaker presence, safe by construction (Mike, 2026-07-19). The
