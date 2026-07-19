@@ -22,7 +22,8 @@ conditions the fuzzer can't see).
 
 ```
 stories/<id>/
-  manifest.json      id, title, start scene, optional view + actor + audio
+  manifest.json      id, title, description, category, start scene,
+                     optional view + actor + audio
   items.json         inventory items (array)
   scenes/*.json      one scene per file, filename = scene id
   dialogue/*.json    dialogue trees (optional)
@@ -35,6 +36,12 @@ stories/<id>/
 Everything optional is genuinely optional: omitting a file changes nothing
 else. `games/classic/stories/meadow/` is the minimal reference (no
 painters); `games/classic/stories/lamplight/` is the full-featured one.
+
+The manifest carries the menu presentation too: `description` is a one-line,
+**spoiler-free** blurb (tease the tone, never the reveal), and `category`
+is `"story"` (default, a real game) or `"demo"` (an engine fixture, shown
+under a collapsed section). The consumer's `boot({ ..., repoUrl })` adds a
+"source on GitHub" footer to the menu.
 
 ## The player's verbs
 

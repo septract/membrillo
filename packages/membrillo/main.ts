@@ -117,6 +117,9 @@ const FADE_MS = 440;
 const CAMERA_LERP = 5; // 1/s
 let stories!: Map<string, LoadedStory>;
 
+/** Framework attribution shown on the menu — a link back to Membrillo. */
+const MEMBRILLO_URL = 'https://github.com/septract/membrillo';
+
 // --- DOM skeleton -----------------------------------------------------------
 
 let el!: {
@@ -261,6 +264,51 @@ function debugState(loaded: LoadedStory): State | null {
 
 // --- Menu -------------------------------------------------------------------
 
+/** One story card: title, spoiler-free blurb, Play (and Continue if saved). */
+function storyCard(id: string, loaded: LoadedStory): HTMLElement {
+  const card = document.createElement('div');
+  card.className = 'story-card';
+  const done = localStorage.getItem(`pcc:done:${id}`) === '1';
+
+  const text = document.createElement('div');
+  text.className = 'story-text';
+  const h = document.createElement('h3');
+  h.textContent = loaded.story.manifest.title;
+  if (done) {
+    const tick = document.createElement('span');
+    tick.className = 'done-tick';
+    tick.textContent = '✓';
+    tick.title = 'completed';
+    h.append(' ', tick);
+  }
+  text.append(h);
+  const desc = loaded.story.manifest.description;
+  if (desc) {
+    const p = document.createElement('p');
+    p.textContent = desc;
+    text.append(p);
+  }
+  card.append(text);
+
+  const actions = document.createElement('div');
+  actions.className = 'story-actions';
+  const saved = loadSave(id);
+  const play = document.createElement('button');
+  play.textContent = saved ? 'Restart' : 'Play';
+  play.addEventListener('click', () => startStory(id, null));
+  if (saved) {
+    const cont = document.createElement('button');
+    cont.textContent = 'Continue';
+    cont.className = 'primary';
+    cont.addEventListener('click', () => startStory(id, saved));
+    actions.append(cont);
+    play.className = 'secondary';
+  }
+  actions.append(play);
+  card.append(actions);
+  return card;
+}
+
 function showMenu(): void {
   session = null;
   speech = null;
@@ -268,26 +316,37 @@ function showMenu(): void {
   audio.setTheme(null); // the menu is quiet (Mike's nit)
   el.game.hidden = true;
   el.btnRestart.hidden = true;
+  el.btnMenu.hidden = true; // no "Stories" button while the menu IS the stories
   el.menu.hidden = false;
   el.title.textContent = 'Membrillo';
   el.menu.innerHTML = '';
-  for (const [id, loaded] of stories) {
-    const row = document.createElement('div');
-    row.className = 'story-row';
-    const play = document.createElement('button');
-    const done = localStorage.getItem(`pcc:done:${id}`) === '1';
-    play.textContent = loaded.story.manifest.title + (done ? ' ✓' : '');
-    play.addEventListener('click', () => startStory(id, null));
-    row.append(play);
-    if (loadSave(id)) {
-      const cont = document.createElement('button');
-      cont.textContent = 'Continue';
-      cont.className = 'secondary';
-      cont.addEventListener('click', () => startStory(id, loadSave(id)));
-      row.append(cont);
-    }
-    el.menu.append(row);
+
+  const games = [...stories].filter(([, l]) => (l.story.manifest.category ?? 'story') !== 'demo');
+  const demos = [...stories].filter(([, l]) => l.story.manifest.category === 'demo');
+
+  for (const [id, loaded] of games) el.menu.append(storyCard(id, loaded));
+
+  // Engine-honesty fixtures live under a collapsed section — present for
+  // developers, out of the way of players.
+  if (demos.length > 0) {
+    const details = document.createElement('details');
+    details.className = 'demo-section';
+    const summary = document.createElement('summary');
+    summary.textContent = `Engine demos (${demos.length})`;
+    details.append(summary);
+    for (const [id, loaded] of demos) details.append(storyCard(id, loaded));
+    el.menu.append(details);
   }
+
+  const footer = document.createElement('p');
+  footer.className = 'menu-footer';
+  const link = document.createElement('a');
+  link.href = MEMBRILLO_URL;
+  link.target = '_blank';
+  link.rel = 'noopener';
+  link.textContent = 'made with Membrillo';
+  footer.append(link);
+  el.menu.append(footer);
 }
 
 function startStory(id: string, state: State | null): void {
@@ -304,6 +363,7 @@ function startStory(id: string, state: State | null): void {
   el.menu.hidden = true;
   el.game.hidden = false;
   el.btnRestart.hidden = false;
+  el.btnMenu.hidden = false; // Stories button returns while in a story
   el.title.textContent = loaded.story.manifest.title;
   el.log.innerHTML = '';
   el.canvas.width = view.w;
@@ -856,14 +916,22 @@ function drawVnPortraits(t: number): void {
   const w = Math.round(h * (PORTRAIT.w / PORTRAIT.h));
   const prevSmooth = octx.imageSmoothingEnabled;
   octx.imageSmoothingEnabled = false;
+
+  // Each portrait stands on its own darker backing panel — so chroma-keyed
+  // art reads as an opaque figure on a stage flat, not a translucent ghost
+  // with the room showing through (Mike's note). The listener's panel is a
+  // touch darker so the speaker still reads as the one talking.
+  const panel = (x: number, dim: boolean): void => {
+    octx.fillStyle = dim ? 'rgba(12, 11, 16, 0.72)' : 'rgba(20, 18, 26, 0.55)';
+    octx.fillRect(x, 0, w, h);
+  };
+
   if (vnLeft) {
-    // the hero listens, slightly dimmed, flush to the left edge
     const lctx = vnBuf.l.getContext('2d')!;
     lctx.clearRect(0, 0, PORTRAIT.w, PORTRAIT.h); // image portraits may be transparent
     vnLeft(lctx, session.state, t, false);
-    octx.globalAlpha = 0.62;
+    panel(0, true); // hero listens: opaque on a slightly darker panel
     octx.drawImage(vnBuf.l, 0, 0, w, h);
-    octx.globalAlpha = 1;
   }
   // the interlocutor speaks, stage right, mirrored to face the hero
   const talking = performance.now() < portraitTalkUntil;
@@ -871,6 +939,7 @@ function drawVnPortraits(t: number): void {
   rctx.clearRect(0, 0, PORTRAIT.w, PORTRAIT.h);
   vnRight(rctx, session.state, t, talking);
   const rx = el.overlay.width - w;
+  panel(rx, false);
   octx.save();
   octx.translate(rx + w, 0);
   octx.scale(-1, 1);

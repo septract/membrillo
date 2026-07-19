@@ -4,8 +4,16 @@ import { SHOTS } from 'membrillo/verify-kit';
 export async function run(kit) {
   const { page, browser, errors, BASE, hook, worldClick, waitLog, shot, verb, chip, walkTo, freshStory } = kit;
   // --- Lamplight on the wide dock ----------------------------------------------
+  // Start from the stories menu (also covers the card layout: find the card by
+  // its title, click its Play button).
   await page.goto(BASE);
-  await page.getByRole('button', { name: 'Lamplight' }).click();
+  await page.waitForSelector('.story-card', { timeout: 15000 });
+  await page.evaluate(() => {
+    const card = [...document.querySelectorAll('.story-card')].find(
+      (c) => c.querySelector('h3')?.textContent?.trim().startsWith('Lamplight'),
+    );
+    card?.querySelector('button')?.click();
+  });
   await page.waitForTimeout(300);
   await page.keyboard.press('Escape'); // Esc skips the intro cutscene
   await page.waitForTimeout(900);

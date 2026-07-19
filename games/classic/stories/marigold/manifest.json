@@ -1,6 +1,8 @@
 {
   "id": "marigold",
   "title": "The Marigold",
+  "description": "A gentle science-fiction away mission. Beam down, win over the locals, and don't leave anyone behind.",
+  "category": "story",
   "start": "briefing",
   "audio": {
     "themes": {

@@ -1,6 +1,8 @@
 {
   "id": "steep",
   "title": "Operation Steep",
+  "description": "A secret agent in an excellent dinner jacket, a cliff-top casino, and a plot to ruin absolutely everyone's afternoon.",
+  "category": "story",
   "start": "brief",
   "actor": "earlGrey",
   "actorPortrait": "earlGreyPortrait",

@@ -1,6 +1,8 @@
 {
   "id": "lamplight",
   "title": "Lamplight",
+  "description": "A dead lighthouse, a lens lost to the harbour, and a keeper who needs both back before dark.",
+  "category": "story",
   "start": "intro",
   "audio": {
     "themes": {

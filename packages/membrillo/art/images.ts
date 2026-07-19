@@ -68,19 +68,38 @@ function hasChromaBorder(d: Uint8ClampedArray, w: number, h: number): boolean {
   return green / total >= 0.35;
 }
 
+export interface PortraitFraming {
+  /**
+   * Crop zoom: 1 cover-fits the whole image; >1 crops in (larger head), <1
+   * pulls back. Use it to normalize head size across differently-framed
+   * source images.
+   */
+  zoom?: number;
+  /** Vertical crop centre, 0 (top) … 1 (bottom); default 0.5. Lower keeps the head. */
+  anchorY?: number;
+  /** Horizontal crop centre, 0 … 1; default 0.5. */
+  anchorX?: number;
+}
+
 /**
  * A dialogue portrait from an image: cover-fits the image into the logical
  * 9:16 portrait canvas (any resolution in; the down-scale onto the small
  * canvas plus the overlay's pixelated upscale gives the chunky look for
  * free). Generated or painted art drops straight in.
  *
- * Chroma key, automatically: if at least three corners of the image are
- * flat chroma green, the green is knocked out to transparency (with a
- * despill pass on fringe pixels), so the bust floats over the dimmed scene
- * instead of carrying a rectangle. Generate on a flat green background to
- * opt in; ordinary art is untouched.
+ * `framing` tunes the crop per image (zoom / anchor) so heads line up across
+ * a differently-framed cast — generated portraits vary in how close they sit.
+ *
+ * Chroma key, automatically: if enough of the image border is flat chroma
+ * green, the green is knocked out to transparency (with a despill pass on
+ * fringe pixels), so the bust floats over the dimmed scene instead of
+ * carrying a rectangle. Generate on a flat green background to opt in;
+ * ordinary art is untouched.
  */
-export function portraitImage(url: string): PortraitPainter {
+export function portraitImage(url: string, framing: PortraitFraming = {}): PortraitPainter {
+  const zoom = framing.zoom ?? 1;
+  const anchorY = framing.anchorY ?? 0.5;
+  const anchorX = framing.anchorX ?? 0.5;
   const img = loadImage(url);
   let processed: HTMLCanvasElement | null = null;
   const prepare = (): HTMLCanvasElement => {
@@ -109,12 +128,12 @@ export function portraitImage(url: string): PortraitPainter {
     ctx.clearRect(0, 0, PORTRAIT.w, PORTRAIT.h);
     if (!img.complete || img.naturalWidth === 0) return; // invisible until loaded
     const src = prepare();
-    // cover-fit: fill the frame, cropping the longer axis symmetrically
-    const scale = Math.max(PORTRAIT.w / src.width, PORTRAIT.h / src.height);
-    const sw = PORTRAIT.w / scale;
-    const sh = PORTRAIT.h / scale;
-    const sx = (src.width - sw) / 2;
-    const sy = (src.height - sh) / 2;
+    // cover-fit, then apply the crop zoom; anchors place the source window.
+    const scale = Math.max(PORTRAIT.w / src.width, PORTRAIT.h / src.height) * zoom;
+    const sw = Math.min(src.width, PORTRAIT.w / scale);
+    const sh = Math.min(src.height, PORTRAIT.h / scale);
+    const sx = (src.width - sw) * anchorX;
+    const sy = (src.height - sh) * anchorY;
     ctx.drawImage(src, sx, sy, sw, sh, 0, 0, PORTRAIT.w, PORTRAIT.h);
   };
 }

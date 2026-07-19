@@ -1,6 +1,8 @@
 {
   "id": "marigold2",
   "title": "The Marigold: Gale Reach",
+  "description": "A return to duty down a windswept mining shaft, where something isn't working the way it should.",
+  "category": "story",
   "start": "brief2",
   "audio": {
     "themes": {

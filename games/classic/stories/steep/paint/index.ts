@@ -5,7 +5,7 @@
 // actor) and the shared walkFrame gait — every walking body steps to it.
 
 import type { State } from 'membrillo/core/types';
-import { portraitImage } from 'membrillo/art/images';
+import { portraitImage, type PortraitFraming } from 'membrillo/art/images';
 import { P, css, mix, rgba, type RGB } from 'membrillo/art/palette';
 import { rampRect } from 'membrillo/art/dither';
 import {
@@ -666,14 +666,20 @@ const localArt = import.meta.glob('./assets-local/*', {
   query: '?url',
   import: 'default',
 }) as Record<string, string>;
-const localPortrait = (file: string, fallback: PortraitPainter): PortraitPainter => {
+// `framing` normalizes head size across the differently-framed generated
+// images (some sit closer than others) — tuned per file so heads line up.
+const localPortrait = (
+  file: string,
+  fallback: PortraitPainter,
+  framing?: PortraitFraming,
+): PortraitPainter => {
   const url = localArt[`./assets-local/${file}`];
-  return url !== undefined ? portraitImage(url) : fallback;
+  return url !== undefined ? portraitImage(url, framing) : fallback;
 };
 
 export const portraits = {
-  earlGreyPortrait: localPortrait('earlgrey.jpg', earlGreyPortrait),
-  pennyPortrait: localPortrait('penny.jpg', pennyPortraitDrawn),
-  marzipanPortrait: localPortrait('marzipan.jpg', marzipanPortrait),
-  barmanPortrait: localPortrait('barman.jpg', barmanPortrait),
+  earlGreyPortrait: localPortrait('earlgrey.jpg', earlGreyPortrait, { zoom: 1.0, anchorY: 0.32 }),
+  pennyPortrait: localPortrait('penny.jpg', pennyPortraitDrawn, { zoom: 1.28, anchorY: 0.3 }),
+  marzipanPortrait: localPortrait('marzipan.jpg', marzipanPortrait, { zoom: 1.0, anchorY: 0.34 }),
+  barmanPortrait: localPortrait('barman.jpg', barmanPortrait, { zoom: 1.18, anchorY: 0.28 }),
 };

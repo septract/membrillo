@@ -1,6 +1,8 @@
 {
   "id": "quince",
   "title": "The Quince Tree",
+  "description": "A walled orchard, a gardener's toll, and one perfect quince just out of reach.",
+  "category": "story",
   "start": "orchard",
   "audio": {
     "themes": {

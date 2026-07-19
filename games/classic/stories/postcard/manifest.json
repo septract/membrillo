@@ -1,5 +1,7 @@
 {
   "id": "postcard",
-  "title": "Postcard (image fixture)",
+  "title": "Postcard",
+  "description": "Engine fixture for image assets: PNG background, spritesheet walk cycle, and a chroma-keyed portrait.",
+  "category": "demo",
   "start": "yard"
 }

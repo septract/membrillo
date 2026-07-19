@@ -10,13 +10,28 @@ design note, it lands here; when it ships, delete it. Dated design notes in
 
 ## Next (engine)
 
+- Sequence speaker presence, safe by construction (Mike, 2026-07-19). The
+  reported repro turned out to be a red herring: the "gap" in the terrace
+  loom is Mr. Fondant's intentional "..." (verified — all three lines play),
+  not a dropped Penny line. BUT the latent risk is real: the lair capture
+  sequence names `who: "penny"`, safe only because the puzzle chain happens
+  to guarantee she's recruited (shortbread gate). Make it enforced: extend
+  the fuzzer/validator to check that every state able to trigger a sequence
+  has each companion the sequence names, with a regression test. Consider
+  whether a near-silent "..." line should read more clearly as deliberate
+  (it currently looks like a dropped line to a first-time player).
+
 - Save slots (single autosave today); save-format versioning before any
   public release.
 
 ## Next (content/presentation)
 
-- Add a link to the GitHub repo on the running game page (bottom line?) —
-  Mike, 2026-07-19.
+- Add a link to the GitHub repo on the running IN-GAME page (bottom line?) —
+  Mike, 2026-07-19. (The stories MENU now has a "source on GitHub" footer;
+  this is about the in-story screen.)
+- Investigate the LucasArts-like fonts at https://scummbar.com/fonts/
+  (Mike, 2026-07-19) — seem free; check licences before vendoring. Could
+  replace/augment Pixel Operator for stronger SCUMM flavour.
 - Swap the code-drawn test portraits for generated art (Mike has a
   generator; prompts ready in docs/2026-07-19-portrait-prompts.md).
 - Portrait extensions if wanted: per-node moods (dialogue schema extension),

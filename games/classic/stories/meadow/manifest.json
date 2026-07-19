@@ -1,6 +1,8 @@
 {
   "id": "meadow",
-  "title": "Meadow (engine fixture)",
+  "title": "Meadow",
+  "description": "Engine-honesty fixture: ships no art at all, so the labelled-placeholder rendering path must always work.",
+  "category": "demo",
   "start": "field",
   "view": { "w": 256, "h": 144 }
 }

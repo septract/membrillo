@@ -32,6 +32,13 @@ one authoring rule, and the pair face each other.
 
 ## Operation Steep
 
+- **Agent Earl Grey** (the player) — a composed man in his forties, dark
+  neatly-barbered hair with a hint of grey at the temples, clean-shaven with
+  a strong jaw, black dinner jacket with satin lapels, crisp white dress
+  shirt and a black bow tie, a white pocket square, one eyebrow fractionally
+  raised — unflappable, faintly amused, impeccably dressed. (File:
+  `earlgrey.jpg` — wired to `manifest.actorPortrait`, so he stands stage
+  left in every conversation.)
 - **Penny Farthing** — a woman in her late twenties, short auburn crop with
   brass welding goggles pushed up into her hair, croupier's dark teal
   waistcoat over rolled-up white shirtsleeves, a few freckles, wry

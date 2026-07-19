@@ -284,6 +284,13 @@ export interface AudioConfig {
 export interface Manifest {
   id: string;
   title: string;
+  /** One-line blurb for the story menu (what the game is, spoiler-free). */
+  description?: string;
+  /**
+   * Menu grouping: 'story' is a real game (default), 'demo' is an
+   * engine-honesty fixture shown under a separate, collapsed section.
+   */
+  category?: 'story' | 'demo';
   /** Scene the story opens on. */
   start: string;
   /**
