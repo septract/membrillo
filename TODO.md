@@ -6,9 +6,6 @@ design note, it lands here; when it ships, delete it. Dated design notes in
 
 ## Decisions needed (Mike)
 
-- **Choose a license** before pushing anywhere public (README exists; repo
-  has none). The vendored font is CC0; playwright-core is `--no-save`
-  dev-only — no constraints either way.
 - **Audio verdict** — the synth themes (ship drone, hollow pluck, dusk/lamp)
   need human ears; tune or rethink `engine/audio` voicing accordingly.
 - **Where the demo goes next**: grow the Marigold (second mission), polish

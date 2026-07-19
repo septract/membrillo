@@ -63,3 +63,8 @@ docs/          dated design notes (the reasoning lives here)
 ```
 
 Node ≥ 23 (native TS stripping), TypeScript + Vite, nothing at runtime.
+
+## License
+
+[Apache 2.0](LICENSE). The bundled Pixel Operator font is CC0
+(`engine/assets/fonts/LICENSE.txt`).
