@@ -143,6 +143,7 @@ let el!: {
   btnEye: HTMLElement;
   btnSkip: HTMLElement;
   btnMute: HTMLElement;
+  btnFull: HTMLElement;
   btnMenu: HTMLElement;
   btnRestart: HTMLElement;
   live: HTMLElement;
@@ -158,6 +159,7 @@ function initDom(): void {
       <nav>
         <button id="btn-eye" aria-label="Outline clickable things" aria-pressed="false" title="highlight clickable things">👁</button>
         <button id="btn-mute" aria-label="Mute sound" aria-pressed="false" title="mute">♪</button>
+        <button id="btn-full" aria-label="Fullscreen" title="fullscreen" hidden>⛶</button>
         <button id="btn-menu">Stories</button>
         <button id="btn-restart" hidden>Restart</button>
       </nav>
@@ -197,6 +199,7 @@ function initDom(): void {
     btnEye: document.getElementById('btn-eye')!,
     btnSkip: document.getElementById('btn-skip')!,
     btnMute: document.getElementById('btn-mute')!,
+    btnFull: document.getElementById('btn-full')!,
     btnMenu: document.getElementById('btn-menu')!,
     btnRestart: document.getElementById('btn-restart')!,
     live: document.getElementById('live')!,
@@ -1782,10 +1785,46 @@ window.__pcc = () =>
 
 // --- Boot -------------------------------------------------------------------
 
+// Touch long-press: peek a target's name (touch has no hover) without acting.
+let longPressTimer: number | null = null;
+let pointerDownAt: { x: number; y: number } | null = null;
+let peeked = false;
+const clearLongPress = (): void => {
+  if (longPressTimer !== null) {
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+  }
+};
+
 function wireInput(): void {
   el.canvas.addEventListener('pointerdown', (ev) => {
     touchInput = ev.pointerType === 'touch';
+    if (!touchInput) return;
+    pointerDownAt = { x: ev.clientX, y: ev.clientY };
+    clearLongPress();
+    longPressTimer = window.setTimeout(() => {
+      // Hold to peek: show the name in the sentence line, don't act.
+      if (!session || session.beat !== null || session.dialogue || session.sequence || session.finished) return;
+      if (!pointerDownAt) return;
+      const rect = el.canvas.getBoundingClientRect();
+      const p = worldFromClient(pointerDownAt.x, pointerDownAt.y, rect);
+      const target = followerTargetAt(p) ?? targetAt(sceneOf(session), session.state, p.x, p.y);
+      if (target) {
+        hover = target;
+        peeked = true; // the click that ends the hold must not act (or clear)
+        renderSentence();
+      }
+    }, 350);
   });
+
+  el.canvas.addEventListener('pointermove', (ev) => {
+    if (longPressTimer !== null && pointerDownAt) {
+      // A drag (walk gesture), not a hold — cancel the peek.
+      if (Math.hypot(ev.clientX - pointerDownAt.x, ev.clientY - pointerDownAt.y) > 12) clearLongPress();
+    }
+  });
+  el.canvas.addEventListener('pointerup', clearLongPress);
+  el.canvas.addEventListener('pointercancel', clearLongPress);
 
   el.canvas.addEventListener('mousemove', (ev) => {
     lastMouse = { clientX: ev.clientX, clientY: ev.clientY };
@@ -1794,6 +1833,7 @@ function wireInput(): void {
 
   el.canvas.addEventListener('click', (ev) => {
     if (!session) return;
+    if (peeked) return; // this click just ended a long-press peek — don't act
     if (session.finished) {
       showMenu(); // the end card's click-anywhere response
       return;
@@ -1843,6 +1883,10 @@ function wireInput(): void {
   });
 
   el.canvas.addEventListener('click', () => {
+    if (peeked) {
+      peeked = false; // keep the peeked name on screen; just consume the flag
+      return;
+    }
     if (touchInput) {
       hover = undefined;
       lastMouse = null;
@@ -1930,6 +1974,27 @@ function wireInput(): void {
     const muted = audio.toggleMute();
     applyMuteState(muted);
   });
+
+  // Fullscreen (mainly for phones): the whole page goes fullscreen, and where
+  // supported we ask for landscape. Shown only where the API exists.
+  if (document.fullscreenEnabled) {
+    el.btnFull.hidden = false;
+    el.btnFull.addEventListener('click', () => {
+      if (document.fullscreenElement) {
+        void document.exitFullscreen();
+      } else {
+        void document.documentElement.requestFullscreen().then(() => {
+          const orient = screen.orientation as (ScreenOrientation & { lock?: (o: string) => Promise<void> }) | undefined;
+          void orient?.lock?.('landscape').catch(() => {}); // rejects on desktop; fine
+        });
+      }
+    });
+    document.addEventListener('fullscreenchange', () => {
+      const on = !!document.fullscreenElement;
+      el.btnFull.classList.toggle('armed', on);
+      el.btnFull.setAttribute('aria-label', on ? 'Exit fullscreen' : 'Fullscreen');
+    });
+  }
 
   el.btnMenu.addEventListener('click', () => showMenu());
   el.btnRestart.addEventListener('click', () => {

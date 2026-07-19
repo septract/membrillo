@@ -41,12 +41,25 @@ export async function run(kit) {
   await mp.waitForTimeout(200);
   await mp.screenshot({ path: `${SHOTS}70-mobile-highlight.png` });
   console.log('  shot 70-mobile-highlight');
-  // Tap the rope: default Interact picks it up.
   const g3 = await mp.evaluate(() => window.__pcc?.());
-  await mp.touchscreen.tap(
-    mbox.x + ((70 - g3.camera.x + 0.5) / g3.view.w) * mbox.width,
-    mbox.y + ((144 - g3.camera.y + 0.5) / g3.view.h) * mbox.height,
-  );
+  const ropeX = mbox.x + ((70 - g3.camera.x + 0.5) / g3.view.w) * mbox.width;
+  const ropeY = mbox.y + ((144 - g3.camera.y + 0.5) / g3.view.h) * mbox.height;
+
+  // Long-press to PEEK the rope's name (touch has no hover): shows the sentence
+  // line without acting.
+  const cdp = await mctx.newCDPSession(mp);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: ropeX, y: ropeY }] });
+  await mp.waitForTimeout(500);
+  const peekSentence = await mp.evaluate(() => document.getElementById('sentence')?.textContent);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await mp.waitForTimeout(200);
+  const afterPeek = await mp.evaluate(() => window.__pcc?.());
+  if (!/coil of line/i.test(peekSentence ?? '')) throw new Error(`long-press did not peek the name: ${peekSentence}`);
+  if (afterPeek.state.inventory.includes('rope')) throw new Error('long-press acted instead of only peeking');
+  console.log('  long-press peeks name without acting ✓');
+
+  // Quick tap the rope: default Interact picks it up.
+  await mp.touchscreen.tap(ropeX, ropeY);
   await mp.waitForFunction(
     () => document.getElementById('log')?.textContent?.includes('You shoulder the coil of line.'),
     null,
