@@ -33,6 +33,15 @@ design note, it lands here; when it ships, delete it. Dated design notes in
 
 ## Next (content/presentation)
 
+- Pixelization tool: `tools/pixelize.mjs` — box-downscale + palette
+  quantization + ordered dither over PNGs (we already have a zero-dep PNG
+  encoder; needs the decoder half). Gets full-scale art ~70% of the way to
+  pixel art; the rest is hand-cleanup by design.
+- Spritesheet talk support: a `talk` row (or a head-overlay layer, SCUMM-
+  costume style) in `sheetSprite` — image sprites currently don't mouth-flap.
+- Story-supplied player actor sprite (the actor is engine-drawn today; an
+  image-based story will want its own hero).
+
 - Hollow + bridge art polish; the placeholder-quality props (skiff reads as
   a table).
 - Palette effects: colour cycling (water, the relay coil), day/night tint.

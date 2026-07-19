@@ -334,6 +334,41 @@ await page.keyboard.press('Escape');
 await waitLog('— The End —');
 console.log('  MARIGOLD WINNABLE ✓');
 
+// --- Postcard: the image-asset fixture (PNG background + spritesheet) --------
+console.log('postcard:');
+await page.goto(`${BASE}/?story=postcard`);
+await page.waitForTimeout(400);
+await page.evaluate(() => localStorage.clear());
+await page.goto(`${BASE}/?story=postcard`);
+await waitLog('Right behind you.');
+await page.keyboard.press('Escape');
+await page.waitForTimeout(400);
+await shot('60-postcard');
+await worldClick(230, 150); // walk right: sheet walk frames + facing rows
+await page.waitForTimeout(500);
+await shot('61-postcard-walking');
+await page.waitForFunction(
+  () => {
+    const g = window.__pcc?.();
+    return g && Math.abs(g.actor.x - 230) < 3;
+  },
+  null,
+  { timeout: 15000 },
+);
+await verb('Talk');
+const pc = await hook();
+await worldClick(Math.round(pc.actor.x) - 24, Math.round(pc.actor.y) - 15); // Buddy trails left
+await waitLog('Still here. Still behind you.');
+const pcAfter = await hook();
+if (Math.abs(pcAfter.actor.x - pc.actor.x) > 1) throw new Error('actor moved to talk to companion');
+console.log('  image sprite companion + in-place talk ✓');
+await verb('Interact');
+await worldClick(292, 115); // the gate
+await page.waitForFunction(() => window.__pcc?.()?.scene === 'sent', null, { timeout: 15000 });
+await page.keyboard.press('Escape');
+await waitLog('— The End —');
+console.log('  IMAGE FIXTURE WINNABLE ✓');
+
 // --- Resilience: corrupt save + stale-scene save must not crash --------------
 await page.evaluate(() => {
   localStorage.setItem('pcc:meadow', '{corrupt json!!');

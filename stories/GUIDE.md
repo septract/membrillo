@@ -248,6 +248,29 @@ pixel shapes, `talkMouth`/`blinking` for faces. Recipes:
 - Characters ~40px tall keep speech anchors honest; wildly taller/shorter
   sprites will misplace their floating lines.
 
+**Image assets** work through the same seam — a painter is draw code, and
+`engine/art/images.ts` wraps PNGs into painters (`stories/postcard/` is the
+worked fixture):
+
+```ts
+import { imageScene, sheetSprite } from '../../../engine/art/images.ts';
+const bg = new URL('./assets/yard-bg.png', import.meta.url).href; // Vite bundles it
+export const scenes = { yard: imageScene(bg) };
+export const sprites = {
+  buddy: sheetSprite(sheetUrl, {
+    frameW: 20, frameH: 40,
+    rows: { down: 0, right: 1, up: 2 },  // 'left' mirrors 'right'
+    walkFrames: 2,                        // col 0 idle, cols 1..N walk cycle
+  }),
+};
+```
+
+Author art at world scale (1 image pixel = 1 scene pixel; backgrounds at the
+scene's `size`, sprite frames feet-anchored at bottom-centre). Don't mix
+image-painted backdrops with code-drawn sprites in one scene without
+restyling the cast to match — they clash. `tools/make-test-art.mjs` generates
+placeholder PNGs to rough out scenes before real art exists.
+
 ## Design rules (enforced or strongly conventional)
 
 1. **No deaths, no dead ends, no unwinnable states.** The fuzzer proves it;

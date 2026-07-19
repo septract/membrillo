@@ -1,0 +1,36 @@
+{
+  "id": "yard",
+  "name": "The Yard",
+  "paint": "yard",
+  "walk": { "x": 8, "y": 122, "w": 304, "h": 50 },
+  "start": { "x": 40, "y": 152 },
+  "sequences": {
+    "meet": [
+      { "addCompanion": "buddy" },
+      { "who": "buddy", "say": "Right behind you. As per the arrangement." }
+    ]
+  },
+  "enter": [{ "requires": ["!companion:buddy"], "play": "meet" }],
+  "hotspots": [
+    {
+      "id": "signpost",
+      "name": "signpost",
+      "region": { "x": 48, "y": 104, "w": 28, "h": 36 },
+      "walkTo": { "x": 62, "y": 144 },
+      "look": [{ "text": "The sign reads: GATE, THAT WAY. The arrow is optimistic about which way." }],
+      "use": [{ "text": "It wobbles, but holds its opinion." }]
+    }
+  ],
+  "characters": [],
+  "exits": [
+    {
+      "id": "gate",
+      "name": "the gate",
+      "region": { "x": 280, "y": 102, "w": 30, "h": 36 },
+      "walkTo": { "x": 290, "y": 140 },
+      "look": "An open gate in a fence that guards nothing in particular.",
+      "to": "sent",
+      "effects": { "text": "Through the gate, buddy in tow." }
+    }
+  ]
+}

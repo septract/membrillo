@@ -1,0 +1,10 @@
+[
+  {
+    "id": "buddy",
+    "name": "Buddy",
+    "paint": "buddy",
+    "color": [240, 170, 90],
+    "look": [{ "text": "Buddy. Twenty pixels wide and every one of them loyal." }],
+    "talk": [{ "speaker": "target", "text": "Still here. Still behind you." }]
+  }
+]
