@@ -1,0 +1,5 @@
+node_modules/
+dist/
+shots-browser/
+# Generated (AI) art stays a local overlay, never committed.
+assets-local/

@@ -3,6 +3,7 @@
 // change it. All game logic lives in the scene JSON.
 
 import type { State } from 'membrillo/core/types';
+import { portraitImage } from 'membrillo/art/images';
 import { P, mix } from 'membrillo/art/palette';
 import { rampRect } from 'membrillo/art/dither';
 import {
@@ -208,4 +209,21 @@ const gardenerPortrait: PortraitPainter = (ctx, _state, t, talking) => {
 
 export const scenes = { orchard };
 export const sprites = { gardener };
-export const portraits = { gardenerPortrait };
+
+// Local-art overlay: drop a portrait (gardener.jpg) into the gitignored
+// paint/assets-local/ and it replaces the code-drawn one on this machine
+// only — generated art never ships in the repo. portraitImage auto-keys a
+// flat green screen and `framing` normalizes head size. Delete this block to
+// go back to pure code-drawn portraits.
+const localArt = import.meta.glob('./assets-local/*', {
+  eager: true,
+  query: '?url',
+  import: 'default',
+}) as Record<string, string>;
+const gardenerUrl = localArt['./assets-local/gardener.jpg'];
+
+export const portraits = {
+  gardenerPortrait: gardenerUrl
+    ? portraitImage(gardenerUrl, { zoom: 1.05, anchorY: 0.3 })
+    : gardenerPortrait,
+};

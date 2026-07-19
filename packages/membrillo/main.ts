@@ -459,6 +459,7 @@ function placeInScene(scene: Scene, entry: Point | null): void {
 
 function changeSceneNow(sceneId: string, entry: Point | null, withState?: State): void {
   if (!session) return;
+  seqPortrait = null; // a beat never survives the room change
   session.state = withState ?? enterScene(session.state, sceneId);
   const scene = sceneOf(session);
   if (scene.ending && !isCutscene(scene)) {
@@ -611,6 +612,8 @@ function followerTargetAt(p: Point): TargetRef | undefined {
 
 /** The speech to show this frame: the open dialogue's line, else the transient bark. */
 function currentSpeech(): (Speech & { speakerId: string }) | null {
+  // A scripted portrait beat captions its line under the close-up.
+  if (seqPortrait) return null;
   if (session?.dialogue) {
     // Under VN staging the line lives in the dialogue box, not over a head.
     if (vnRight) return null;
@@ -644,6 +647,28 @@ function seqSpeaker(who: string | undefined): Speaker {
   return speakerFor(undefined);
 }
 
+/** A scripted-say portrait beat, active while a `portrait: true` say plays. */
+let seqPortrait: { paint: PortraitPainter; name: string; color: RGB; text: string; talking: boolean } | null =
+  null;
+
+/** Resolve the portrait painter + name/colour for a sequence speaker. */
+function seqPortraitOf(who: string | undefined): { paint: PortraitPainter; name: string; color: RGB } | null {
+  if (!session) return null;
+  const id = who ?? 'actor';
+  if (id === 'actor') {
+    const p = actorPortrait();
+    return p ? { paint: p, name: '', color: P.glow } : null;
+  }
+  const scene = sceneOf(session);
+  const def =
+    (scene.characters ?? []).find((c) => c.id === id) ?? session.loaded.story.companions[id];
+  if (def?.portrait !== undefined) {
+    const p = session.loaded.paint.portraits?.[def.portrait];
+    if (p) return { paint: p, name: def.name, color: (def.color as RGB | undefined) ?? P.white };
+  }
+  return null;
+}
+
 function startSequence(seqId: string, afterGoto: string | null): void {
   if (!session) return;
   const steps = sceneOf(session).sequences?.[seqId];
@@ -659,6 +684,7 @@ function advanceSequence(): void {
   if (!session || !session.sequence) return;
   const seq = session.sequence;
   seq.index++;
+  seqPortrait = null; // each step starts fresh; a portrait say re-arms it below
   if (seq.index >= seq.steps.length) {
     session.sequence = null;
     // The click (or timer) that ends a sequence dismisses its final line too —
@@ -678,6 +704,12 @@ function advanceSequence(): void {
     const who = seqSpeaker(step.who);
     say(step.say, who.anchor, who.color, who.id);
     seq.until = speech?.expires ?? 0;
+    // A portrait beat: show the speaker's close-up and caption the line
+    // instead of floating it. A letter-free line ("...") keeps the mouth shut.
+    if (step.portrait) {
+      const p = seqPortraitOf(step.who);
+      if (p) seqPortrait = { ...p, text: step.say, talking: /[a-z]/i.test(step.say) };
+    }
   } else if (step.walkTo !== undefined) {
     const who = step.who ?? 'actor';
     if (who === 'actor') {
@@ -712,6 +744,7 @@ function skipSequence(): void {
   session.state = applySequenceEffects(session.state, seq.steps, seq.index + 1);
   session.sequence = null;
   session.path = null;
+  seqPortrait = null;
   for (const id of [...session.charWalks.keys()]) snapCharWalk(id);
   speech = null;
   if (seq.afterGoto !== null) changeScene(seq.afterGoto, null);
@@ -897,21 +930,67 @@ function syncVnInsets(): void {
   }
 }
 
+function ensureVnBuf(): void {
+  if (vnBuf) return;
+  const make = (): HTMLCanvasElement => {
+    const c = document.createElement('canvas');
+    c.width = PORTRAIT.w;
+    c.height = PORTRAIT.h;
+    return c;
+  };
+  vnBuf = { l: make(), r: make() };
+}
+
+/**
+ * A scripted portrait beat: dim the scene, stand the speaker's close-up stage
+ * right (mirrored to face the room), and caption the line under a name tag —
+ * a wordless "..." reads as deliberate, not a dropped line.
+ */
+function drawSeqPortrait(t: number): void {
+  if (!session || !seqPortrait) return;
+  const W = el.overlay.width;
+  const H = el.overlay.height;
+  octx.fillStyle = 'rgba(10, 9, 14, 0.5)';
+  octx.fillRect(0, 0, W, H);
+  ensureVnBuf();
+  const w = Math.round(H * (PORTRAIT.w / PORTRAIT.h));
+  const rx = W - w;
+  const rctx = vnBuf!.r.getContext('2d')!;
+  rctx.clearRect(0, 0, PORTRAIT.w, PORTRAIT.h);
+  seqPortrait.paint(rctx, session.state, t, seqPortrait.talking);
+  const prevSmooth = octx.imageSmoothingEnabled;
+  octx.imageSmoothingEnabled = false;
+  octx.fillStyle = 'rgba(20, 18, 26, 0.55)';
+  octx.fillRect(rx, 0, w, H);
+  octx.save();
+  octx.translate(rx + w, 0);
+  octx.scale(-1, 1);
+  octx.drawImage(vnBuf!.r, 0, 0, w, H);
+  octx.restore();
+  octx.imageSmoothingEnabled = prevSmooth;
+
+  // Caption centred in the open area left of the portrait.
+  const scale = overlayScale();
+  const cx = rx / 2;
+  const size = 8 * scale;
+  const midY = H / 2;
+  if (seqPortrait.name) {
+    overlayText(octx, seqPortrait.name, cx, midY - 9 * scale, seqPortrait.color, size, 'center');
+  }
+  octx.font = `${Math.round(size)}px ${FONT}`;
+  const lines = wrapWords(seqPortrait.text, (s) => octx.measureText(s).width <= rx - 12 * scale);
+  lines.forEach((line, i) =>
+    overlayText(octx, line, cx, midY + 6 * scale + i * 11 * scale, P.white, size, 'center'),
+  );
+}
+
 /** Draw the VN layer on the overlay: scrim, then both standing portraits. */
 function drawVnPortraits(t: number): void {
   syncVnInsets();
   if (!session?.dialogue || !vnRight) return;
   octx.fillStyle = 'rgba(10, 9, 14, 0.45)'; // dim the room; the scene waits
   octx.fillRect(0, 0, el.overlay.width, el.overlay.height);
-  if (!vnBuf) {
-    const make = (): HTMLCanvasElement => {
-      const c = document.createElement('canvas');
-      c.width = PORTRAIT.w;
-      c.height = PORTRAIT.h;
-      return c;
-    };
-    vnBuf = { l: make(), r: make() };
-  }
+  ensureVnBuf();
   const h = el.overlay.height;
   const w = Math.round(h * (PORTRAIT.w / PORTRAIT.h));
   const prevSmooth = octx.imageSmoothingEnabled;
@@ -927,15 +1006,15 @@ function drawVnPortraits(t: number): void {
   };
 
   if (vnLeft) {
-    const lctx = vnBuf.l.getContext('2d')!;
+    const lctx = vnBuf!.l.getContext('2d')!;
     lctx.clearRect(0, 0, PORTRAIT.w, PORTRAIT.h); // image portraits may be transparent
     vnLeft(lctx, session.state, t, false);
     panel(0, true); // hero listens: opaque on a slightly darker panel
-    octx.drawImage(vnBuf.l, 0, 0, w, h);
+    octx.drawImage(vnBuf!.l, 0, 0, w, h);
   }
   // the interlocutor speaks, stage right, mirrored to face the hero
   const talking = performance.now() < portraitTalkUntil;
-  const rctx = vnBuf.r.getContext('2d')!;
+  const rctx = vnBuf!.r.getContext('2d')!;
   rctx.clearRect(0, 0, PORTRAIT.w, PORTRAIT.h);
   vnRight(rctx, session.state, t, talking);
   const rx = el.overlay.width - w;
@@ -943,7 +1022,7 @@ function drawVnPortraits(t: number): void {
   octx.save();
   octx.translate(rx + w, 0);
   octx.scale(-1, 1);
-  octx.drawImage(vnBuf.r, 0, 0, w, h);
+  octx.drawImage(vnBuf!.r, 0, 0, w, h);
   octx.restore();
   octx.imageSmoothingEnabled = prevSmooth;
 }
@@ -1389,6 +1468,7 @@ function tick(now: number): void {
         overlayText(octx, hover.name, x, y, P.glow, size);
       }
       drawVnPortraits(now / 1000); // over speech + hover; the scrim owns the frame
+      drawSeqPortrait(now / 1000);
       if (session.finished) drawEndCard(scale);
     }
     octx.globalAlpha = 1;
@@ -1567,6 +1647,7 @@ window.__pcc = () =>
         dialogue: session.dialogue ? { id: session.dialogue.id, node: session.dialogue.node } : null,
         sequence: session.sequence !== null,
         speech: currentSpeech()?.text ?? null,
+        portraitBeat: seqPortrait ? { name: seqPortrait.name, text: seqPortrait.text } : null,
         followers: [...session.followers.entries()].map(([id, p]) => ({ id, x: p.x, y: p.y })),
         vnPortraits: (vnLeft ? 1 : 0) + (vnRight ? 1 : 0),
         finished: session.finished,

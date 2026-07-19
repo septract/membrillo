@@ -148,6 +148,14 @@ export interface SeqStep {
   /** Speaker/mover: "actor" (default), a scene character id, or a companion id. */
   who?: string;
   say?: string;
+  /**
+   * Show the speaker's dialogue portrait (if they have one) as a VN-style
+   * close-up for this line, dimming the scene — a scripted character beat.
+   * Use for wordless moments a floating "..." would hide (a henchman's
+   * silence). The line captions under a name tag; a letter-free line
+   * (e.g. "...") leaves the mouth closed.
+   */
+  portrait?: boolean;
   /** Actor only: walk to this point before continuing. */
   walkTo?: Point;
   face?: Direction;

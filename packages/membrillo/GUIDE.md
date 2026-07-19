@@ -222,7 +222,11 @@ trying to do.
 Steps: `who` (`"actor"` default, a scene character id, or a companion id),
 `say`, `walkTo` (actor: walkbox-pathed; scene characters: straight line —
 author-controlled ground; not companions), `face`, `wait`, plus any rule
-effect fields. **The character-swap pattern**: to move a character
+effect fields. A say step may add `"portrait": true`: if the speaker has a
+`portrait`, the scene dims and their close-up stands stage right with the
+line captioned under a name tag — a scripted character beat (a wordless
+`"..."` reads as deliberate silence, mouth shut, not a dropped line). **The
+character-swap pattern**: to move a character
 permanently, walk them in a sequence, then `setFlags` a flag that hides
 their old definition and reveals a second definition positioned at the walk's
 endpoint — the handoff is seamless and survives scene re-entry.

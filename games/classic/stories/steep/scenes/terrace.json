@@ -16,7 +16,7 @@
       { "setFlags": ["met_fondant"] },
       { "wait": 0.4 },
       { "say": "Ah. The funicular. And in front of it... that is a substantial gentleman." },
-      { "who": "fondant", "say": "..." },
+      { "who": "fondant", "say": "...", "portrait": true },
       { "say": "Quite. Well said." }
     ],
     "fondant_moves": [
@@ -71,6 +71,7 @@
       "pos": { "x": 176, "y": 134 },
       "walkTo": { "x": 176, "y": 148 },
       "paint": "fondant",
+      "portrait": "fondantPortrait",
       "color": [140, 132, 138],
       "facing": "down",
       "requires": ["!flag:fondant_moved"],
@@ -103,6 +104,7 @@
       "pos": { "x": 252, "y": 140 },
       "walkTo": { "x": 236, "y": 152 },
       "paint": "fondant",
+      "portrait": "fondantPortrait",
       "color": [140, 132, 138],
       "facing": "left",
       "requires": ["flag:fondant_moved"],

@@ -627,6 +627,39 @@ const marzipanPortrait: PortraitPainter = (ctx, _state, t, talking) => {
   portraitMouth(ctx, 45, y + 38, talking, t);
 };
 
+const fondantPortrait: PortraitPainter = (ctx, _state, t, talking) => {
+  portraitBg(ctx, mix(P.night, P.black, 0.55), mix(P.night, P.black, 0.2));
+  const bob = Math.round(Math.sin(t * 0.9)); // slow, weighty
+  const y = 60 + bob;
+  // an enormous dark suit filling the frame, shoulder to shoulder
+  blk(ctx, 2, 118 + bob, 86, 42, P.night);
+  px(ctx, 34, 118 + bob, 22, 42, P.white); // shirt
+  px(ctx, 40, 120 + bob, 10, 30, P.wood); // the novelty biscuit tie
+  px(ctx, 42, 124 + bob, 6, 3, P.woodLit);
+  px(ctx, 42, 132 + bob, 6, 3, P.woodLit);
+  // a broad, heavy head; tiny gentle eyes
+  blk(ctx, 30, 104 + bob, 30, 16, P.skinShade);
+  blk(ctx, 18, y - 2, 56, 54, P.skin);
+  px(ctx, 18, y + 34, 56, 20, P.skinShade); // heavy jaw
+  if (!blinking(t + 1.3)) {
+    px(ctx, 32, y + 16, 6, 4, P.white);
+    px(ctx, 56, y + 16, 6, 4, P.white);
+    px(ctx, 34, y + 17, 3, 3, P.black);
+    px(ctx, 58, y + 17, 3, 3, P.black);
+  } else {
+    px(ctx, 32, y + 18, 6, 2, P.skinShade);
+    px(ctx, 56, y + 18, 6, 2, P.skinShade);
+  }
+  px(ctx, 31, y + 12, 8, 2, mix(P.skinShade, P.black, 0.4)); // brows, faintly sad
+  px(ctx, 55, y + 12, 8, 2, mix(P.skinShade, P.black, 0.4));
+  // the mouth: pressed shut for "...", a small line even when "talking"
+  px(ctx, 40, y + 34, 12, 2, P.skinShade);
+  if (talking && Math.sin(t * 9) > 0.3) px(ctx, 42, y + 34, 8, 2, mix(P.black, P.wood, 0.3));
+  // the bowler hat, low and immovable
+  px(ctx, 20, y - 8, 52, 6, P.black);
+  px(ctx, 30, y - 16, 32, 10, P.black);
+};
+
 const barmanPortrait: PortraitPainter = (ctx, _state, t, talking) => {
   portraitBg(ctx, mix(WINE, P.black, 0.4), WINE);
   const bob = Math.round(Math.sin(t * 1.2));
@@ -682,4 +715,5 @@ export const portraits = {
   pennyPortrait: localPortrait('penny.jpg', pennyPortraitDrawn, { zoom: 1.28, anchorY: 0.3 }),
   marzipanPortrait: localPortrait('marzipan.jpg', marzipanPortrait, { zoom: 1.0, anchorY: 0.34 }),
   barmanPortrait: localPortrait('barman.jpg', barmanPortrait, { zoom: 1.18, anchorY: 0.28 }),
+  fondantPortrait: localPortrait('fondant.jpg', fondantPortrait, { zoom: 1.1, anchorY: 0.3 }),
 };

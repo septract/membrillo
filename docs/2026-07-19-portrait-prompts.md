@@ -51,9 +51,11 @@ one authoring rule, and the pair face each other.
 - **The barman** — a discreet man in his fifties, immaculate white bar
   jacket, black tie, silver hair with a perfect parting, the expression of
   someone who has seen everything and billed for none of it.
-- **Mr. Fondant** (if he ever gets lines) — an enormous silent henchman
-  nearly filling the frame, black bowler hat, tiny gentle eyes, a novelty
-  necktie printed with little biscuits, faint melancholy.
+- **Mr. Fondant** (`fondant.jpg` — wired to a portrait BEAT: on the terrace
+  his silent "..." dims the scene and shows his close-up) — an enormous
+  silent henchman nearly filling the frame, black bowler hat, tiny gentle
+  eyes, a novelty necktie printed with little biscuits, faint melancholy.
+  Should read as intimidating but secretly soft.
 
 ## The Quince Tree (template)
 
