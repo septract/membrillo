@@ -16,8 +16,8 @@ NOT mean adopting SCUMM's scripting model (see "what we refuse").*
 | Occlusion (z-planes) | masking planes; actors walk behind scenery | characters painter-sorted, scenery never occludes | **adopt now** — scene `props` with baseline `y`, sorted into the body pass |
 | Speech over heads | dialogue floats above the speaker, per-character colour, timed by length | DOM text log + dialogue overlay | **adopt now** — floating text primary, log demoted to transcript |
 | Room transitions | dissolves/wipes/fades | hard cut | **adopt now** — fade-out/in |
-| Multi-frame costumes | 4-direction walk cycles, talk mouths, idles, scripted actor moves | 2-pose sin bob, left/right only | later — matters once scaling makes toward/away visible |
-| Camera scroll | rooms wider than screen, camera follows | single-screen rooms | later — when a story wants a wide room |
+| Multi-frame costumes | 4-direction walk cycles, talk mouths, idles, scripted actor moves | 2-pose sin bob, left/right only | **adopted** — Pose {facing×4, distance-driven phase, talking} through sprite painters; scripted moves still later |
+| Camera scroll | rooms wider than screen, camera follows | single-screen rooms | **adopted** — `manifest.view` (per-story resolution) + `scene.size` (world size) + following camera |
 | Concurrent room scripts | flames, clocks, wandering NPCs via co-routines | painter `t`-effects only | later, and only as declarative ambient tracks |
 | Palette tricks | colour cycling, day/night | none | later, cheap, painter-level |
 | Adaptive audio | iMUSE: musical-boundary transitions | none | separate work item (kit's "iMUSE-lite" is the template) |
@@ -79,6 +79,17 @@ Painters are unchanged; props reference painter names like scenes/sprites do
 (`props` record in the paint module). Walk geometry, depth, and props are
 presentation — the fuzzer ignores them; the validator checks their sanity
 (boxes connected, start/walkTo/entry inside some box, prop paint refs).
+
+## Addendum (2026-07-18, later)
+
+Adopted in the same push, per Mike's priority on flexibility of resolution and
+scene size: `manifest.view` / `scene.size` / following camera (dock is 480×180
+behind a 320×180 view; meadow runs a 256×144 view); 4-way animated costumes;
+the sentence line; click/Esc speech-and-cutscene skipping; double-click exit
+travel; verb hotkeys (L/T/I/C); water shimmer + ambient gulls. A read-only
+`window.__pcc()` debug hook exposes scene/state/camera/view for headless
+verification. Off-screen targets are unclickable by construction (clicks are
+view-relative) — staging toward a target first is intended behaviour.
 
 ## Priority order (agreed 2026-07-18)
 

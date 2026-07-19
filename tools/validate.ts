@@ -10,8 +10,7 @@ import type { Box, Point, Rule, Scene, Target } from '../engine/core/types.ts';
 import { boxesConnected, boxIndexAt, walkBoxes } from '../engine/walk.ts';
 import { loadStoryFiles, storyIdsFromArgv, type StoryFiles } from './load-story.ts';
 
-const VIEW_W = 320;
-const VIEW_H = 180;
+const DEFAULT_VIEW = { w: 320, h: 180 };
 
 class Report {
   errors: string[] = [];
@@ -47,6 +46,8 @@ function validateStory(files: StoryFiles): Report {
   if (manifest.id !== id) r.error(`manifest.json: id "${manifest.id}" != directory "${id}"`);
   if (!manifest.title) r.error('manifest.json: missing title');
   if (!scenes[manifest.start]) r.error(`manifest.json: start scene "${manifest.start}" not found`);
+  const view = manifest.view ?? DEFAULT_VIEW;
+  if (view.w <= 0 || view.h <= 0) r.error('manifest.json: view dimensions must be positive');
 
   const usage: ItemUsage = { sources: new Set(), sinks: new Set() };
 
@@ -134,6 +135,10 @@ function validateStory(files: StoryFiles): Report {
       continue;
     }
 
+    const size = scene.size ?? view;
+    if (scene.size && (scene.size.w < view.w || scene.size.h < view.h)) {
+      r.error(`${where}: scene size ${scene.size.w}x${scene.size.h} smaller than the ${view.w}x${view.h} view`);
+    }
     const boxes = walkBoxes(scene);
     if (boxes.length === 0 || !scene.start) {
       r.error(`${where}: room scene needs walk and start`);
@@ -141,8 +146,8 @@ function validateStory(files: StoryFiles): Report {
     }
     if (boxIndexAt(scene.start, boxes) === -1) r.error(`${where}: start is outside every walk box`);
     for (const b of boxes) {
-      if (b.x < 0 || b.y < 0 || b.x + b.w > VIEW_W || b.y + b.h > VIEW_H) {
-        r.error(`${where}: a walk box leaves the ${VIEW_W}x${VIEW_H} view`);
+      if (b.x < 0 || b.y < 0 || b.x + b.w > size.w || b.y + b.h > size.h) {
+        r.error(`${where}: a walk box leaves the ${size.w}x${size.h} scene`);
       }
     }
     if (!boxesConnected(boxes)) {
@@ -154,7 +159,7 @@ function validateStory(files: StoryFiles): Report {
       if (depth.far.y === depth.near.y) r.error(`${where}: depth far.y and near.y must differ`);
     }
     for (const prop of scene.props ?? []) {
-      if (prop.y < 0 || prop.y > VIEW_H) r.error(`${where}#${prop.id}: prop y off-view`);
+      if (prop.y < 0 || prop.y > size.h) r.error(`${where}#${prop.id}: prop y outside the scene`);
       checkPaintRef(r, files, `${where}#${prop.id}`, prop.paint);
     }
 
@@ -165,8 +170,8 @@ function validateStory(files: StoryFiles): Report {
     ]);
 
     const checkRegion = (w: string, b: Box): void => {
-      if (b.x < 0 || b.y < 0 || b.x + b.w > VIEW_W || b.y + b.h > VIEW_H) {
-        r.error(`${w}: region leaves the ${VIEW_W}x${VIEW_H} view`);
+      if (b.x < 0 || b.y < 0 || b.x + b.w > size.w || b.y + b.h > size.h) {
+        r.error(`${w}: region leaves the ${size.w}x${size.h} scene`);
       }
     };
     const checkWalkTo = (w: string, p: Point | undefined): void => {
@@ -183,7 +188,7 @@ function validateStory(files: StoryFiles): Report {
       const w = `${where}#${c.id}`;
       checkTarget(w, c);
       checkWalkTo(w, c.walkTo);
-      if (!inBox(c.pos, { x: 0, y: 0, w: VIEW_W, h: VIEW_H })) r.error(`${w}: pos off-view`);
+      if (!inBox(c.pos, { x: 0, y: 0, w: size.w, h: size.h })) r.error(`${w}: pos outside the scene`);
       if (c.paint !== undefined) checkPaintRef(r, files, w, c.paint);
     }
     for (const e of scene.exits ?? []) {

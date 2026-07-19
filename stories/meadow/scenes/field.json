@@ -1,14 +1,14 @@
 {
   "id": "field",
   "name": "The Field",
-  "walk": { "x": 16, "y": 120, "w": 288, "h": 50 },
-  "start": { "x": 40, "y": 150 },
+  "walk": { "x": 12, "y": 96, "w": 232, "h": 40 },
+  "start": { "x": 32, "y": 120 },
   "hotspots": [
     {
       "id": "crank",
       "name": "something in the grass",
-      "region": { "x": 40, "y": 130, "w": 18, "h": 10 },
-      "walkTo": { "x": 52, "y": 145 },
+      "region": { "x": 32, "y": 104, "w": 16, "h": 8 },
+      "walkTo": { "x": 42, "y": 116 },
       "requires": ["!flag:took_crank"],
       "look": [{ "text": "A glint of iron in the long grass." }],
       "take": [
@@ -22,8 +22,8 @@
     {
       "id": "sluice",
       "name": "sluice gate",
-      "region": { "x": 140, "y": 96, "w": 32, "h": 32 },
-      "walkTo": { "x": 156, "y": 130 },
+      "region": { "x": 112, "y": 76, "w": 26, "h": 26 },
+      "walkTo": { "x": 125, "y": 104 },
       "look": [
         {
           "requires": ["flag:gate_open"],
@@ -46,8 +46,8 @@
     {
       "id": "hermit",
       "name": "the hermit",
-      "pos": { "x": 250, "y": 152 },
-      "walkTo": { "x": 228, "y": 154 },
+      "pos": { "x": 200, "y": 122 },
+      "walkTo": { "x": 182, "y": 124 },
       "look": [{ "text": "A patient figure in a patched coat." }],
       "talk": [{ "dialogue": "hermit" }]
     }
@@ -56,8 +56,8 @@
     {
       "id": "bridge",
       "name": "old bridge",
-      "region": { "x": 288, "y": 104, "w": 32, "h": 56 },
-      "walkTo": { "x": 298, "y": 145 },
+      "region": { "x": 230, "y": 84, "w": 26, "h": 44 },
+      "walkTo": { "x": 238, "y": 116 },
       "to": "glade",
       "requires": ["flag:gate_open"]
     }

@@ -3,10 +3,11 @@
 // core/ — this file only sequences outcomes the core produces.
 //
 // SCUMM-style presentation: speech floats over the speaker's head (the DOM log
-// is a secondary transcript), sprites scale with depth, the actor paths
-// through walkboxes and behind props, and room changes fade.
+// is a secondary transcript), sprites scale with depth and animate by pose,
+// the actor paths through walkboxes and behind props, room changes fade, and
+// a following camera lets scenes be larger than the story's view resolution.
 
-import type { Character, Point, Scene, State } from './core/types.ts';
+import type { Character, Point, Scene, Size, State } from './core/types.ts';
 import { initialState } from './core/rules.ts';
 import {
   act,
@@ -26,15 +27,15 @@ import {
 import { loadStories, type LoadedStory } from './loader.ts';
 import {
   renderScene,
+  sceneSize,
+  storyView,
   targetAt,
-  VIEW_H,
-  VIEW_W,
   type ActorPose,
   type Speech,
   type TargetRef,
 } from './render.ts';
 import { clampToWalkable, depthScale, findPath, walkBoxes } from './walk.ts';
-import { P, type RGB } from './art/palette.ts';
+import { P, css, type RGB } from './art/palette.ts';
 import type { Outcome } from './core/rules.ts';
 
 type ArmedVerb = PlayerVerb | 'combine';
@@ -49,22 +50,26 @@ interface Pending {
 interface Session {
   id: string;
   loaded: LoadedStory;
+  view: Size;
   state: State;
   actor: ActorPose;
+  camera: Point;
   /** Remaining walk waypoints. */
   path: Point[] | null;
   pending: Pending | null;
   /** Open dialogue, if any; speaker anchors the floating line. */
-  dialogue: { id: string; node: string; anchor: Point; color: RGB } | null;
+  dialogue: { id: string; node: string; anchor: Point; color: RGB; speakerId: string } | null;
   /** Cutscene beat index, if the current scene is a cutscene. */
   beat: number | null;
   finished: boolean;
 }
 
 const WALK_SPEED = 80; // px/s at scale 1
+const STEP_PHASE = 0.45; // walk-cycle radians per px covered
 const SPEECH_MS_MIN = 1600;
 const SPEECH_MS_PER_CHAR = 55;
 const FADE_MS = 440;
+const CAMERA_LERP = 5; // 1/s
 const stories = loadStories();
 
 // --- DOM skeleton -----------------------------------------------------------
@@ -78,11 +83,12 @@ app.innerHTML = `
   <div id="menu"></div>
   <div id="game" hidden>
     <div class="stage">
-      <canvas id="view" width="${VIEW_W}" height="${VIEW_H}"></canvas>
+      <canvas id="view"></canvas>
       <div id="hoverlabel" hidden></div>
       <div id="dialogue" hidden></div>
     </div>
     <div class="panel">
+      <div id="sentence">&nbsp;</div>
       <div id="verbs"></div>
       <div id="inventory"></div>
       <div id="log"></div>
@@ -96,6 +102,7 @@ const el = {
   canvas: document.getElementById('view') as HTMLCanvasElement,
   hoverlabel: document.getElementById('hoverlabel')!,
   dialogue: document.getElementById('dialogue')!,
+  sentence: document.getElementById('sentence')!,
   verbs: document.getElementById('verbs')!,
   inventory: document.getElementById('inventory')!,
   log: document.getElementById('log')!,
@@ -103,7 +110,6 @@ const el = {
   btnRestart: document.getElementById('btn-restart')!,
 };
 const ctx = el.canvas.getContext('2d')!;
-ctx.imageSmoothingEnabled = false;
 
 let session: Session | null = null;
 let armed: ArmedVerb = 'look';
@@ -111,7 +117,7 @@ let armedItem: string | null = null;
 let combineSel: string[] = [];
 let hover: TargetRef | undefined;
 let highlight = false;
-let speech: (Speech & { expires: number | null }) | null = null;
+let speech: (Speech & { expires: number | null; speakerId: string }) | null = null;
 let fade: { t0: number; apply: () => void; fired: boolean } | null = null;
 
 // --- Saves & debug params ---------------------------------------------------
@@ -176,11 +182,16 @@ function showMenu(): void {
 function startStory(id: string, state: State | null): void {
   const loaded = stories.get(id);
   if (!loaded) return;
+  const view = storyView(loaded);
   el.menu.hidden = true;
   el.game.hidden = false;
   el.btnRestart.hidden = false;
   el.title.textContent = loaded.story.manifest.title;
   el.log.innerHTML = '';
+  el.canvas.width = view.w;
+  el.canvas.height = view.h;
+  el.canvas.style.aspectRatio = `${view.w} / ${view.h}`;
+  ctx.imageSmoothingEnabled = false;
   armed = 'look';
   armedItem = null;
   combineSel = [];
@@ -189,8 +200,10 @@ function startStory(id: string, state: State | null): void {
   session = {
     id,
     loaded,
+    view,
     state: state ?? initialState(loaded.story.manifest.start),
-    actor: { x: 0, y: 0, facing: 'right', walking: false },
+    actor: { x: 0, y: 0, facing: 'right', phase: 0, walking: false },
+    camera: { x: 0, y: 0 },
     path: null,
     pending: null,
     dialogue: null,
@@ -208,6 +221,14 @@ function sceneOf(s: Session): Scene {
   return currentScene(s.loaded.story, s.state);
 }
 
+function cameraTargetFor(s: Session): Point {
+  const size = sceneSize(sceneOf(s), s.view);
+  return {
+    x: Math.min(Math.max(s.actor.x - s.view.w / 2, 0), Math.max(size.w - s.view.w, 0)),
+    y: Math.min(Math.max(s.actor.y - s.view.h / 2, 0), Math.max(size.h - s.view.h, 0)),
+  };
+}
+
 function placeInScene(scene: Scene, entry: Point | null): void {
   if (!session) return;
   session.path = null;
@@ -219,8 +240,9 @@ function placeInScene(scene: Scene, entry: Point | null): void {
     session.beat = 0;
   } else {
     session.beat = null;
-    const at = entry ?? scene.start ?? { x: VIEW_W / 2, y: VIEW_H - 20 };
+    const at = entry ?? scene.start ?? { x: session.view.w / 2, y: session.view.h - 20 };
     session.actor = { ...session.actor, x: at.x, y: at.y, walking: false };
+    session.camera = cameraTargetFor(session); // snap, don't pan, on entry
   }
   save();
 }
@@ -263,19 +285,20 @@ function log(text: string): void {
 
 // --- Speech -----------------------------------------------------------------
 
-function say(text: string, anchor: Point, color: RGB, sticky = false): void {
+function say(text: string, anchor: Point, color: RGB, speakerId: string, sticky = false): void {
   speech = {
     text,
     color,
     x: anchor.x,
     y: anchor.y,
+    speakerId,
     expires: sticky ? null : performance.now() + Math.min(SPEECH_MS_MIN + text.length * SPEECH_MS_PER_CHAR, 7000),
   };
   log(text);
 }
 
 function actorHead(): Point {
-  if (!session) return { x: VIEW_W / 2, y: VIEW_H / 2 };
+  if (!session) return { x: 0, y: 0 };
   const scale = depthScale(sceneOf(session), session.actor.y);
   return { x: session.actor.x, y: session.actor.y - 44 * scale };
 }
@@ -286,26 +309,36 @@ function characterHead(scene: Scene, c: Character): Point {
 
 // --- Outcome handling -------------------------------------------------------
 
-function handleOutcome(outcome: Outcome, speaker: Point): void {
+function handleOutcome(outcome: Outcome): void {
   if (!session) return;
   session.state = outcome.state;
-  if (outcome.text !== undefined) say(outcome.text, speaker, P.glow);
+  if (outcome.text !== undefined) say(outcome.text, actorHead(), P.glow, 'actor');
   if (outcome.dialogue !== undefined) openDialogue(outcome.dialogue);
   if (outcome.goto !== undefined) changeScene(outcome.goto, null);
   save();
   renderPanel();
 }
 
+function faceTarget(target: TargetRef): void {
+  if (!session) return;
+  const c = { x: target.region.x + target.region.w / 2, y: target.region.y + target.region.h / 2 };
+  const dx = c.x - session.actor.x;
+  const dy = c.y - session.actor.y;
+  session.actor.facing =
+    Math.abs(dx) >= Math.abs(dy) ? (dx < 0 ? 'left' : 'right') : dy < 0 ? 'up' : 'down';
+}
+
 function runPending(): void {
   if (!session || !session.pending) return;
   const { target, action } = session.pending;
   session.pending = null;
+  faceTarget(target);
   if (target.kind === 'exit') {
     const scene = sceneOf(session);
     const exit = (scene.exits ?? []).find((e) => e.id === target.id);
-    const next = useExit(session.loaded.story, session.state, target.id);
-    if (next && exit) {
-      session.state = next;
+    // useExit validates the gate; the actual switch happens at fade midpoint,
+    // so the state (and the render) stay in this scene until then.
+    if (exit && useExit(session.loaded.story, session.state, target.id)) {
       changeScene(exit.to, exit.entry ?? null);
     }
     return;
@@ -315,7 +348,7 @@ function runPending(): void {
       ? applyItem(session.loaded.story, session.state, target.id, action.itemId)
       : act(session.loaded.story, session.state, target.id, action.verb);
   if (action.kind === 'apply') armedItem = null;
-  if (outcome) handleOutcome(outcome, actorHead());
+  if (outcome) handleOutcome(outcome);
 }
 
 // --- Dialogue ---------------------------------------------------------------
@@ -331,7 +364,7 @@ function openDialogue(dlgId: string): void {
   );
   const anchor = speaker ? characterHead(scene, speaker) : actorHead();
   const color: RGB = speaker?.color ?? P.white;
-  session.dialogue = { id: dlgId, node: dlg.start, anchor, color };
+  session.dialogue = { id: dlgId, node: dlg.start, anchor, color, speakerId: speaker?.id ?? 'actor' };
   renderDialogue();
 }
 
@@ -344,7 +377,7 @@ function renderDialogue(): void {
   const d = session.dialogue;
   const dlg = session.loaded.story.dialogues[d.id]!;
   const node = dialogueNode(dlg, d.node);
-  say(node.line, d.anchor, d.color, true);
+  say(node.line, d.anchor, d.color, d.speakerId, true);
   el.dialogue.hidden = false;
   el.dialogue.innerHTML = '';
   for (const option of visibleOptions(session.state, node)) {
@@ -368,40 +401,67 @@ function renderDialogue(): void {
   }
 }
 
-// --- Panel (verbs + inventory) ----------------------------------------------
+// --- Panel (sentence line, verbs, inventory) --------------------------------
 
-const VERBS: { id: ArmedVerb; label: string }[] = [
-  { id: 'look', label: 'Look' },
-  { id: 'talk', label: 'Talk' },
-  { id: 'interact', label: 'Interact' },
-  { id: 'combine', label: 'Combine' },
+const VERBS: { id: ArmedVerb; label: string; key: string }[] = [
+  { id: 'look', label: 'Look', key: 'l' },
+  { id: 'talk', label: 'Talk', key: 't' },
+  { id: 'interact', label: 'Interact', key: 'i' },
+  { id: 'combine', label: 'Combine', key: 'c' },
 ];
+
+function sentenceText(): string {
+  if (!session) return ' ';
+  const itemName = (id: string | null) =>
+    id === null ? null : (session!.loaded.story.items[id]?.name ?? id);
+  const targetName = hover?.name;
+  if (armed === 'combine') {
+    const parts = combineSel.map((i) => itemName(i));
+    return `Combine ${parts[0] ?? '…'} with ${parts[1] ?? '…'}`;
+  }
+  const held = itemName(armedItem);
+  if (held !== null) {
+    return `Use ${held} on ${targetName ?? '…'}`;
+  }
+  const verbPhrase =
+    armed === 'look' ? 'Look at' : armed === 'talk' ? 'Talk to' : 'Interact with';
+  if (targetName) return hover!.kind === 'exit' ? `Go to ${targetName}` : `${verbPhrase} ${targetName}`;
+  return `${verbPhrase} …`;
+}
+
+function renderSentence(): void {
+  el.sentence.textContent = sentenceText();
+}
 
 function renderPanel(): void {
   el.verbs.innerHTML = '';
   for (const v of VERBS) {
     const btn = document.createElement('button');
-    btn.textContent = v.label;
+    btn.innerHTML = `<u>${v.label.slice(0, 1)}</u>${v.label.slice(1)}`;
     btn.className = armed === v.id ? 'armed' : '';
-    btn.addEventListener('click', () => {
-      armed = v.id;
-      armedItem = null;
-      combineSel = [];
-      renderPanel();
-    });
+    btn.addEventListener('click', () => armVerb(v.id));
     el.verbs.append(btn);
   }
   el.inventory.innerHTML = '';
-  if (!session) return;
-  for (const itemId of session.state.inventory) {
-    const item = session.loaded.story.items[itemId];
-    const selected = itemId === armedItem || combineSel.includes(itemId);
-    const chip = document.createElement('button');
-    chip.className = 'chip' + (selected ? ' armed' : '');
-    chip.textContent = item?.name ?? itemId;
-    chip.addEventListener('click', () => onItemClick(itemId));
-    el.inventory.append(chip);
+  if (session) {
+    for (const itemId of session.state.inventory) {
+      const item = session.loaded.story.items[itemId];
+      const selected = itemId === armedItem || combineSel.includes(itemId);
+      const chip = document.createElement('button');
+      chip.className = 'chip' + (selected ? ' armed' : '');
+      chip.textContent = item?.name ?? itemId;
+      chip.addEventListener('click', () => onItemClick(itemId));
+      el.inventory.append(chip);
+    }
   }
+  renderSentence();
+}
+
+function armVerb(id: ArmedVerb): void {
+  armed = id;
+  armedItem = null;
+  combineSel = [];
+  renderPanel();
 }
 
 function onItemClick(itemId: string): void {
@@ -413,7 +473,7 @@ function onItemClick(itemId: string): void {
     if (combineSel.length === 2) {
       const outcome = combine(session.loaded.story, session.state, combineSel[0]!, combineSel[1]!);
       combineSel = [];
-      handleOutcome(outcome, actorHead());
+      handleOutcome(outcome);
       return;
     }
   } else if (armed === 'interact') {
@@ -421,7 +481,7 @@ function onItemClick(itemId: string): void {
     armedItem = armedItem === itemId ? null : itemId;
   } else {
     const outcome = lookAtItem(session.loaded.story, session.state, itemId);
-    handleOutcome(outcome, actorHead());
+    handleOutcome(outcome);
     return;
   }
   renderPanel();
@@ -429,11 +489,14 @@ function onItemClick(itemId: string): void {
 
 // --- Canvas input -----------------------------------------------------------
 
-function canvasPoint(ev: MouseEvent): Point {
+/** Mouse event → WORLD coordinates (view scaling + camera). */
+function worldPoint(ev: MouseEvent): Point {
   const rect = el.canvas.getBoundingClientRect();
+  const view = session?.view ?? { w: 320, h: 180 };
+  const cam = session?.camera ?? { x: 0, y: 0 };
   return {
-    x: Math.floor(((ev.clientX - rect.left) / rect.width) * VIEW_W),
-    y: Math.floor(((ev.clientY - rect.top) / rect.height) * VIEW_H),
+    x: Math.floor(((ev.clientX - rect.left) / rect.width) * view.w + cam.x),
+    y: Math.floor(((ev.clientY - rect.top) / rect.height) * view.h + cam.y),
   };
 }
 
@@ -443,12 +506,11 @@ el.canvas.addEventListener('mousemove', (ev) => {
     el.hoverlabel.hidden = true;
     return;
   }
-  const p = canvasPoint(ev);
+  const p = worldPoint(ev);
   hover = targetAt(sceneOf(session), session.state, p.x, p.y);
   if (hover) {
-    const item = armedItem !== null ? session.loaded.story.items[armedItem] : null;
     el.hoverlabel.hidden = false;
-    el.hoverlabel.textContent = item ? `use ${item.name} on ${hover.name}` : hover.name;
+    el.hoverlabel.textContent = hover.name;
     const rect = el.canvas.getBoundingClientRect();
     const stage = el.canvas.parentElement!.getBoundingClientRect();
     el.hoverlabel.style.left = `${ev.clientX - stage.left + 12}px`;
@@ -456,16 +518,18 @@ el.canvas.addEventListener('mousemove', (ev) => {
   } else {
     el.hoverlabel.hidden = true;
   }
+  renderSentence();
 });
 
 el.canvas.addEventListener('click', (ev) => {
   if (!session || session.finished || session.dialogue || fade) return;
+  if (speech && speech.expires !== null) speech = null; // click skips the line
   const scene = sceneOf(session);
   if (session.beat !== null) {
     advanceBeat(scene);
     return;
   }
-  const p = canvasPoint(ev);
+  const p = worldPoint(ev);
   const boxes = walkBoxes(scene);
   const target = targetAt(scene, session.state, p.x, p.y);
   if (!target) {
@@ -474,7 +538,7 @@ el.canvas.addEventListener('click', (ev) => {
     return;
   }
   if (armed === 'combine') {
-    say('Combine works on two inventory items — pick them below.', actorHead(), P.glow);
+    say('Combine works on two inventory items — pick them below.', actorHead(), P.glow, 'actor');
     return;
   }
   const action: PendingAction =
@@ -485,6 +549,19 @@ el.canvas.addEventListener('click', (ev) => {
         : { kind: 'verb', verb: armed };
   session.path = findPath({ x: session.actor.x, y: session.actor.y }, target.walkTo, boxes);
   session.pending = { target, action };
+});
+
+// Double-click an exit: skip the walk, travel now.
+el.canvas.addEventListener('dblclick', () => {
+  if (!session || session.finished || session.dialogue || fade || session.beat !== null) return;
+  const pending = session.pending;
+  if (pending && pending.target.kind === 'exit') {
+    session.actor.x = pending.target.walkTo.x;
+    session.actor.y = pending.target.walkTo.y;
+    session.path = null;
+    session.actor.walking = false;
+    runPending();
+  }
 });
 
 function advanceBeat(scene: Scene): void {
@@ -505,7 +582,22 @@ window.addEventListener('keydown', (ev) => {
   if (ev.code === 'Space') {
     highlight = true;
     if (ev.target === document.body) ev.preventDefault();
+    return;
   }
+  if (!session) return;
+  if (ev.key === 'Escape') {
+    if (speech && speech.expires !== null) speech = null;
+    if (session.beat !== null && !session.finished) {
+      // Skip the whole cutscene: jump to its consequence.
+      const scene = sceneOf(session);
+      session.beat = (scene.beats ?? []).length - 1;
+      advanceBeat(scene);
+    }
+    return;
+  }
+  if (session.dialogue) return;
+  const verb = VERBS.find((v) => v.key === ev.key.toLowerCase());
+  if (verb && !ev.metaKey && !ev.ctrlKey && !ev.altKey) armVerb(verb.id);
 });
 window.addEventListener('keyup', (ev) => {
   if (ev.code === 'Space') highlight = false;
@@ -540,30 +632,33 @@ function wrapLines(text: string, max: number): string[] {
 
 function drawCutscene(scene: Scene): void {
   if (!session || session.beat === null) return;
-  ctx.fillStyle = `rgb(${P.black[0]},${P.black[1]},${P.black[2]})`;
-  ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+  const { w, h } = session.view;
+  ctx.fillStyle = css(P.black);
+  ctx.fillRect(0, 0, w, h);
   const beat = (scene.beats ?? [])[session.beat] ?? '';
-  ctx.fillStyle = `rgb(${P.white[0]},${P.white[1]},${P.white[2]})`;
+  ctx.fillStyle = css(P.white);
   ctx.font = '8px monospace';
   ctx.textAlign = 'center';
-  const lines = wrapLines(beat, 60);
-  const y0 = VIEW_H / 2 - (lines.length - 1) * 6;
-  lines.forEach((line, i) => ctx.fillText(line, VIEW_W / 2, y0 + i * 12));
-  ctx.fillStyle = `rgb(${P.stoneLit[0]},${P.stoneLit[1]},${P.stoneLit[2]})`;
-  ctx.fillText(session.finished ? '' : '· click ·', VIEW_W / 2, VIEW_H - 10);
+  const lines = wrapLines(beat, Math.floor(w / 5.5));
+  const y0 = h / 2 - (lines.length - 1) * 6;
+  lines.forEach((line, i) => ctx.fillText(line, w / 2, y0 + i * 12));
+  ctx.fillStyle = css(P.stoneLit);
+  ctx.fillText(session.finished ? '' : '· click ·', w / 2, h - 10);
   ctx.textAlign = 'left';
 }
 
 function drawEndCard(): void {
-  ctx.fillStyle = `rgb(${P.black[0]},${P.black[1]},${P.black[2]})`;
-  ctx.fillRect(0, 0, VIEW_W, VIEW_H);
-  ctx.fillStyle = `rgb(${P.glow[0]},${P.glow[1]},${P.glow[2]})`;
+  if (!session) return;
+  const { w, h } = session.view;
+  ctx.fillStyle = css(P.black);
+  ctx.fillRect(0, 0, w, h);
+  ctx.fillStyle = css(P.glow);
   ctx.font = '12px monospace';
   ctx.textAlign = 'center';
-  ctx.fillText('The End', VIEW_W / 2, VIEW_H / 2);
-  ctx.fillStyle = `rgb(${P.stoneLit[0]},${P.stoneLit[1]},${P.stoneLit[2]})`;
+  ctx.fillText('The End', w / 2, h / 2);
+  ctx.fillStyle = css(P.stoneLit);
   ctx.font = '8px monospace';
-  ctx.fillText('Restart to play again', VIEW_W / 2, VIEW_H / 2 + 16);
+  ctx.fillText('Restart to play again', w / 2, h / 2 + 16);
   ctx.textAlign = 'left';
 }
 
@@ -599,22 +694,34 @@ function tick(now: number): void {
       else drawCutscene(scene);
       if (alpha > 0) {
         ctx.fillStyle = `rgba(16,14,20,${alpha})`;
-        ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+        ctx.fillRect(0, 0, session.view.w, session.view.h);
       }
     } else {
       updateWalk(dt);
+      updateCamera(dt);
       renderScene(ctx, session.loaded, session.state, {
         t: now / 1000,
         actor: session.actor,
+        camera: session.camera,
+        view: session.view,
         hover,
         highlight,
         speech,
+        speakingId: speech?.speakerId ?? null,
         fade: alpha,
       });
       if (session.finished) drawEndCard();
     }
   }
   requestAnimationFrame(tick);
+}
+
+function updateCamera(dt: number): void {
+  if (!session) return;
+  const target = cameraTargetFor(session);
+  const k = Math.min(CAMERA_LERP * dt, 1);
+  session.camera.x += (target.x - session.camera.x) * k;
+  session.camera.y += (target.y - session.camera.y) * k;
 }
 
 function updateWalk(dt: number): void {
@@ -641,9 +748,31 @@ function updateWalk(dt: number): void {
   }
   a.x += (dx / dist) * step;
   a.y += (dy / dist) * step;
+  a.phase += step * STEP_PHASE;
   a.walking = true;
-  if (Math.abs(dx) > 1) a.facing = dx < 0 ? 'left' : 'right';
+  a.facing = Math.abs(dx) >= Math.abs(dy) ? (dx < 0 ? 'left' : 'right') : dy < 0 ? 'up' : 'down';
 }
+
+// --- Debug hook (read-only; used by headless verification and humans) -------
+
+declare global {
+  interface Window {
+    __pcc?: () => object | null;
+  }
+}
+window.__pcc = () =>
+  session
+    ? {
+        scene: session.state.scene,
+        state: session.state,
+        actor: { x: session.actor.x, y: session.actor.y, facing: session.actor.facing },
+        camera: { ...session.camera },
+        view: { ...session.view },
+        beat: session.beat,
+        dialogue: session.dialogue ? { id: session.dialogue.id, node: session.dialogue.node } : null,
+        finished: session.finished,
+      }
+    : null;
 
 // --- Boot -------------------------------------------------------------------
 

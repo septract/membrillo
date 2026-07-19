@@ -18,7 +18,9 @@ npm run fuzz       # exhaustively plays every reachable state; proves no dead en
 npm run check      # all four of the above
 ```
 
-Run `npm run check` after any engine change, and `validate` + `fuzz` after any story change, before considering work done (all sub-second). `?story=<id>` picks a story directly; `?story=<id>&start=<scene>&flags=a,b&items=x,y` is a debug jump that bypasses saves. In-game, holding Space outlines all clickable targets.
+Run `npm run check` after any engine change, and `validate` + `fuzz` after any story change, before considering work done (all sub-second). `?story=<id>` picks a story directly; `?story=<id>&start=<scene>&flags=a,b&items=x,y` is a debug jump that bypasses saves. In-game: Space outlines clickable targets, L/T/I/C arm verbs, Esc skips cutscenes/speech, double-click an exit to travel instantly. `window.__pcc()` is a read-only debug hook (scene/state/actor/camera/view) used by headless browser verification — drive the game with playwright-core + system Chrome, clicking in world coordinates minus `camera`; off-screen targets can't be clicked, so walk the actor toward them first.
+
+Stories may set `manifest.view` (render resolution, default 320×180) and per-scene `size` (world size ≥ view; larger scenes scroll under the following camera).
 
 ## The six design points (non-negotiable)
 

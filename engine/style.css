@@ -88,6 +88,14 @@ button.secondary { color: var(--dim); }
 
 .panel { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
 
+#sentence {
+  color: var(--accent);
+  font-size: 14px;
+  min-height: 18px;
+  padding-left: 2px;
+}
+#verbs u { text-decoration: underline; text-underline-offset: 2px; }
+
 #verbs { display: flex; gap: 8px; }
 
 #inventory { display: flex; gap: 6px; flex-wrap: wrap; min-height: 30px; }

@@ -4,6 +4,7 @@
 
 export interface Point { x: number; y: number }
 export interface Box { x: number; y: number; w: number; h: number }
+export interface Size { w: number; h: number }
 
 /** "flag:torch_lit" | "item:rope" | "companion:ada", optionally "!"-negated. */
 export type Condition = string;
@@ -111,6 +112,8 @@ export interface Scene {
   name: string;
   /** Scene painter name from the story's paint module; flat placeholder if absent. */
   paint?: string;
+  /** World size of this scene; defaults to the story's view. May exceed it. */
+  size?: Size;
   /**
    * Walkable ground: one rect or several. Overlapping/touching rects are
    * connected; the actor paths through their shared edges (engine/walk.ts).
@@ -170,6 +173,12 @@ export interface Manifest {
   title: string;
   /** Scene the story opens on. */
   start: string;
+  /**
+   * Render resolution — the window the player sees through, and the default
+   * scene size. Engine default: 320×180. Scenes larger than the view scroll
+   * under a following camera.
+   */
+  view?: Size;
 }
 
 export interface Story {

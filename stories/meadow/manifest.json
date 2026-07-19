@@ -1,5 +1,6 @@
 {
   "id": "meadow",
   "title": "Meadow (engine fixture)",
-  "start": "field"
+  "start": "field",
+  "view": { "w": 256, "h": 144 }
 }
