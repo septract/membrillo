@@ -51,6 +51,7 @@ function validateStory(files: StoryFiles): Report {
   if (!scenes[manifest.start]) r.error(`manifest.json: start scene "${manifest.start}" not found`);
   const view = manifest.view ?? DEFAULT_VIEW;
   if (view.w <= 0 || view.h <= 0) r.error('manifest.json: view dimensions must be positive');
+  if (manifest.actor !== undefined) checkPaintRef(r, files, 'manifest.json actor', manifest.actor);
 
   const usage: ItemUsage = { sources: new Set(), sinks: new Set() };
 

@@ -10,7 +10,10 @@ import {
   faceCtx,
   talkMouth,
   blinking,
+  walkFrame,
+  type Pose,
   type SpritePainter,
+  type WalkFrame,
 } from 'membrillo/art/sprites';
 
 const H = 180;
@@ -186,19 +189,23 @@ function crewBody(
   y: number,
   tunic: RGB,
   slacks: RGB,
+  pose: Pose,
 ): void {
-  blk(ctx, fx - 5, y - 12, 4, 12, slacks);
-  blk(ctx, fx + 1, y - 12, 4, 12, slacks);
+  // The whole crew steps through the engine's shared 4-frame gait.
+  const f: WalkFrame = walkFrame(pose);
+  const profile = pose.facing === 'left' || pose.facing === 'right';
+  blk(ctx, fx - 5 + (profile ? f.aDx : 0), y - 12, 4, 12 - f.aUp, slacks);
+  blk(ctx, fx + 1 + (profile ? f.bDx : 0), y - 12, 4, 12 - f.bUp, slacks);
   blk(ctx, fx - 6, y - 26, 12, 15, tunic);
   px(ctx, fx - 6, y - 26, 12, 3, mix(tunic, P.white, 0.25));
-  blk(ctx, fx - 9, y - 25, 3, 11, tunic);
-  blk(ctx, fx + 6, y - 25, 3, 11, tunic);
+  blk(ctx, fx - 9, y - 25, 3, 11 - f.swing, tunic);
+  blk(ctx, fx + 6, y - 25, 3, 11 + f.swing, tunic);
 }
 
 const bramble: SpritePainter = (ctx, fx, fy, pose, t) => {
   faceCtx(ctx, fx, pose.facing);
-  const y = fy + Math.round(Math.sin(t * 1.2));
-  crewBody(ctx, fx, y, teal, P.night);
+  const y = fy + (pose.walking ? -walkFrame(pose).rise : Math.round(Math.sin(t * 1.2)));
+  crewBody(ctx, fx, y, teal, P.night, pose);
   blk(ctx, fx - 4, y - 36, 9, 10, P.skin);
   px(ctx, fx - 4, y - 37, 9, 3, chrome); // silver crop
   if (!blinking(t)) px(ctx, fx + 2, y - 32, 1, 2, P.black);
@@ -211,14 +218,8 @@ const bramble: SpritePainter = (ctx, fx, fy, pose, t) => {
 
 const cog: SpritePainter = (ctx, fx, fy, pose, t) => {
   faceCtx(ctx, fx, pose.facing);
-  const step = pose.walking ? Math.round(Math.sin(pose.phase) * 2) : 0;
-  const y = fy + (pose.walking ? 0 : 0); // androids do not bob
-  blk(ctx, fx - 5, y - 12, 4, 12 + step, P.night);
-  blk(ctx, fx + 1, y - 12, 4, 12 - step, P.night);
-  blk(ctx, fx - 6, y - 26, 12, 15, rust);
-  px(ctx, fx - 6, y - 26, 12, 3, mix(rust, P.white, 0.25));
-  blk(ctx, fx - 9, y - 25, 3, 11 - step, rust);
-  blk(ctx, fx + 6, y - 25, 3, 11 + step, rust);
+  const y = fy - walkFrame(pose).rise; // androids do not (idle-)bob
+  crewBody(ctx, fx, y, rust, P.night, pose);
   blk(ctx, fx - 4, y - 36, 9, 10, chrome); // chrome skin
   px(ctx, fx - 4, y - 36, 9, 2, mix(chrome, P.black, 0.35)); // precise hairline
   if (!blinking(t + 1.7)) px(ctx, fx + 2, y - 32, 1, 2, teal); // teal eye
@@ -228,16 +229,17 @@ const cog: SpritePainter = (ctx, fx, fy, pose, t) => {
 
 const solace: SpritePainter = (ctx, fx, fy, pose, t) => {
   faceCtx(ctx, fx, pose.facing);
-  const step = pose.walking ? Math.round(Math.sin(pose.phase) * 2) : 0;
-  const y = fy + (pose.walking ? 0 : Math.round(Math.sin(t * 1.6)));
-  blk(ctx, fx - 5, y - 12, 4, 12 + step, mix(lavender, P.black, 0.4));
-  blk(ctx, fx + 1, y - 12, 4, 12 - step, mix(lavender, P.black, 0.4));
+  const f = walkFrame(pose);
+  const profile = pose.facing === 'left' || pose.facing === 'right';
+  const y = fy + (pose.walking ? -f.rise : Math.round(Math.sin(t * 1.6)));
+  blk(ctx, fx - 5 + (profile ? f.aDx : 0), y - 12, 4, 12 - f.aUp, mix(lavender, P.black, 0.4));
+  blk(ctx, fx + 1 + (profile ? f.bDx : 0), y - 12, 4, 12 - f.bUp, mix(lavender, P.black, 0.4));
   // wrap: a longer, softer tunic
   blk(ctx, fx - 7, y - 26, 14, 17, lavender);
   px(ctx, fx - 7, y - 26, 14, 3, mix(lavender, P.white, 0.35));
   px(ctx, fx - 1, y - 23, 1, 12, mix(lavender, P.black, 0.25));
-  blk(ctx, fx - 9, y - 24, 3, 10 - step, lavender);
-  blk(ctx, fx + 6, y - 24, 3, 10 + step, lavender);
+  blk(ctx, fx - 9, y - 24, 3, 10 - f.swing, lavender);
+  blk(ctx, fx + 6, y - 24, 3, 10 + f.swing, lavender);
   blk(ctx, fx - 4, y - 36, 9, 10, P.skin);
   px(ctx, fx - 5, y - 37, 11, 4, P.woodDark); // dark waves
   px(ctx, fx - 5, y - 33, 2, 5, P.woodDark);
@@ -248,8 +250,8 @@ const solace: SpritePainter = (ctx, fx, fy, pose, t) => {
 
 const wren: SpritePainter = (ctx, fx, fy, pose, t) => {
   faceCtx(ctx, fx, pose.facing);
-  const y = fy + Math.round(Math.sin(t * 2.1)); // fidgety
-  crewBody(ctx, fx, y, cream, P.wood);
+  const y = fy + (pose.walking ? -walkFrame(pose).rise : Math.round(Math.sin(t * 2.1))); // fidgety
+  crewBody(ctx, fx, y, cream, P.wood, pose);
   px(ctx, fx - 4, y - 20, 8, 8, leaf); // gardening apron
   px(ctx, fx - 3, y - 14, 2, 2, P.woodDark); // soil smudge
   blk(ctx, fx - 4, y - 36, 9, 10, P.skin);

@@ -1,0 +1,29 @@
+[
+  {
+    "id": "olive",
+    "name": "cocktail olive",
+    "look": [
+      {
+        "text": "A single olive of diplomatic rank, speared on a silver pick. Briny. Sub-atomically so, one hopes."
+      }
+    ]
+  },
+  {
+    "id": "swizzle",
+    "name": "swizzle stick",
+    "look": [
+      {
+        "text": "A glass swizzle stick from the Hôtel Bombe. Excellent conductor of stirring; conductor of other things, who can say."
+      }
+    ]
+  },
+  {
+    "id": "shortbread",
+    "name": "proper shortbread",
+    "look": [
+      {
+        "text": "Penny's patented pocket shortbread. Butter content well above anything the Geneva Convention anticipated."
+      }
+    ]
+  }
+]

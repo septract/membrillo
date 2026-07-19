@@ -683,10 +683,25 @@ function faceTarget(target: TargetRef): void {
   session.actor.facing = facingFromDelta(c.x - session.actor.x, c.y - session.actor.y);
 }
 
+/**
+ * Armed verbs are one-shot: once an interaction resolves against a target,
+ * the mode snaps back to the default, so the next plain click gets the
+ * target's own default verb instead of repeating a stale Look/Talk. (Armed
+ * items already clear on completion; this is the verb-bar equivalent.)
+ * Clicks on empty ground just walk and do NOT disarm — the player is
+ * approaching, not interacting.
+ */
+function disarmVerb(): void {
+  if (armed === 'interact') return;
+  armed = 'interact';
+  renderPanel();
+}
+
 function runPending(): void {
   if (!session || !session.pending) return;
   const { target, action } = session.pending;
   session.pending = null;
+  disarmVerb();
   faceTarget(target);
   // An addressed companion turns to face the actor.
   if (target.kind === 'companion') {
@@ -1337,7 +1352,7 @@ window.__pcc = () =>
         dialogue: session.dialogue ? { id: session.dialogue.id, node: session.dialogue.node } : null,
         sequence: session.sequence !== null,
         speech: currentSpeech()?.text ?? null,
-        followers: [...session.followers.keys()],
+        followers: [...session.followers.entries()].map(([id, p]) => ({ id, x: p.x, y: p.y })),
         finished: session.finished,
       }
     : null;
@@ -1391,6 +1406,7 @@ function wireInput(): void {
     if (target.kind === 'exit' && armed === 'look') {
       const exit = (scene.exits ?? []).find((e) => e.id === target.id);
       say(exit?.look ?? `That way: ${target.name}.`, actorHead(), P.glow, 'actor');
+      disarmVerb(); // this resolved an interaction too — one-shot like the rest
       return;
     }
     const action: PendingAction =

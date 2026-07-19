@@ -1,0 +1,45 @@
+[
+  {
+    "id": "penny",
+    "name": "Penny Farthing",
+    "paint": "penny",
+    "color": [94, 130, 142],
+    "look": [
+      {
+        "text": "Penny Farthing: croupier's waistcoat, welding goggles pushed up into her hair, the expression of someone doing sums you couldn't follow."
+      }
+    ],
+    "talk": [
+      {
+        "requires": ["flag:knows_fondant", "!flag:got_shortbread"],
+        "speaker": "target",
+        "text": "Fondant? Oh, that's easy — here, patented pocket shortbread. Real butter. Do NOT eat it yourself, it's mission-critical.",
+        "giveItem": "shortbread",
+        "setFlags": ["got_shortbread"]
+      },
+      {
+        "requires": ["!flag:knows_fondant"],
+        "speaker": "target",
+        "text": "Reconnaissance, Grey. Ask around. Barmen know everything worth knowing."
+      },
+      {
+        "requires": ["flag:device_stopped"],
+        "speaker": "target",
+        "text": "Medals later. Tea first."
+      },
+      { "speaker": "target", "text": "Focus, Grey. Doomsday at four o'clock. Well — one minute past." }
+    ],
+    "itemUse": [
+      {
+        "withItem": "olive",
+        "speaker": "target",
+        "text": "It's not even lunchtime. Keep it — I have a feeling about that olive."
+      },
+      {
+        "withItem": "shortbread",
+        "speaker": "target",
+        "text": "I KNOW it's good. It's not FOR us."
+      }
+    ]
+  }
+]

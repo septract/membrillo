@@ -1,0 +1,146 @@
+{
+  "id": "lair",
+  "name": "The Tea Room of Doom",
+  "paint": "lair",
+  "size": { "w": 480, "h": 180 },
+  "walk": { "x": 12, "y": 130, "w": 456, "h": 42 },
+  "depth": { "far": { "y": 130, "scale": 0.88 }, "near": { "y": 172, "scale": 1.05 } },
+  "start": { "x": 50, "y": 150 },
+  "enter": [{ "requires": ["!flag:knows_plan"], "play": "capture" }],
+  "sequences": {
+    "capture": [
+      { "wait": 0.4 },
+      { "who": "marzipan", "say": "Mr. Grey! And the clever Miss Farthing. Do come in — you're just in time to be far too late." },
+      { "walkTo": { "x": 120, "y": 150 } },
+      { "who": "marzipan", "say": "Behold the Four O'Clock Device. At the top of the hour, every clock on Earth stops at 4:01. One minute PAST teatime. In perpetuity." },
+      { "who": "penny", "say": "That's monstrous. That's actually monstrous." },
+      { "who": "marzipan", "say": "Thank you. The escapement is Swiss — nothing short of a sub-atomic jiffy of brine could trouble it. So do enjoy the lasers, and later, the not-tea." },
+      { "setFlags": ["knows_plan"] },
+      { "say": "Brine, you say. Baron, you really must stop monologuing. It's how they got Goldwhisk." }
+    ],
+    "penny_grid": [
+      { "who": "penny", "say": "Swizzle stick, cross-phase the emitter, bish bosh. Hold my clipboard." },
+      { "wait": 0.6 },
+      { "setFlags": ["grid_off"] },
+      { "who": "penny", "say": "Lasers off. You may now menace the clock, Agent Tuxedo." }
+    ],
+    "three59": [
+      { "say": "One olive. Sub-atomically briny. With my compliments to the chef." },
+      { "wait": 0.6 },
+      { "who": "marzipan", "say": "NO! Not a SAVOURY! It's a TEA, you PHILISTINE—" },
+      { "setFlags": ["device_stopped"] },
+      { "who": "penny", "say": "Escapement's jammed! It's stopping — it's stopping at... 3:59. Grey, it's ALWAYS almost teatime." }
+    ]
+  },
+  "hotspots": [
+    {
+      "id": "grid",
+      "name": "laser grid",
+      "region": { "x": 368, "y": 52, "w": 14, "h": 104 },
+      "walkTo": { "x": 352, "y": 150 },
+      "look": [
+        { "requires": ["flag:grid_off"], "text": "The emitter pylon sulks, cross-phased into a very expensive coat rack." },
+        { "text": "Rose-pink lasers, fanned out in front of the Device like a decorative and lethal doily." }
+      ],
+      "use": [
+        { "requires": ["flag:grid_off"], "text": "It's off. Prodding it further would be gloating." },
+        { "text": "You reach out and reconsider at the last elegant moment. The lasers hum a warning in E flat." }
+      ],
+      "itemUse": [
+        {
+          "withItem": "swizzle",
+          "requires": ["companion:penny"],
+          "text": "You hand Penny the swizzle stick and adopt a supervisory stance.",
+          "removeItem": "swizzle",
+          "play": "penny_grid"
+        },
+        {
+          "withItem": "olive",
+          "text": "The olive is destined for greater things than laser trials. You feel this strongly."
+        }
+      ]
+    },
+    {
+      "id": "device",
+      "name": "the Four O'Clock Device",
+      "region": { "x": 390, "y": 34, "w": 78, "h": 122 },
+      "walkTo": { "x": 386, "y": 152 },
+      "look": [
+        { "requires": ["flag:device_stopped"], "text": "Stopped at 3:59. The most beautiful minute-to in horological history." },
+        {
+          "text": "A clock the size of a cathedral rose window, wired into a samovar the size of a small submarine. The hands crawl towards four."
+        }
+      ],
+      "use": [
+        {
+          "requires": ["flag:grid_off"],
+          "text": "The casing is Swiss, and smug about it. Brute force is not on the menu. Something briny is."
+        },
+        { "text": "Between you and the Device: a fan of rose-pink lasers. Penny has opinions about lasers; perhaps consult her toolkit." }
+      ],
+      "itemUse": [
+        {
+          "withItem": "olive",
+          "requires": ["flag:grid_off"],
+          "text": "You slot the silver pick into the escapement and post the olive through, brine-first.",
+          "removeItem": "olive",
+          "play": "three59",
+          "goto": "victory"
+        },
+        {
+          "withItem": "olive",
+          "text": "You'd have to reach it first, and the lasers are between you and horological sabotage."
+        }
+      ]
+    },
+    {
+      "id": "samovar",
+      "name": "doomsday samovar",
+      "region": { "x": 288, "y": 84, "w": 52, "h": 60 },
+      "walkTo": { "x": 314, "y": 150 },
+      "look": [
+        {
+          "text": "It steeps, ominously. The tea inside has been brewing since '61 and can probably be weaponised on its own."
+        }
+      ],
+      "use": [
+        { "text": "You are not drinking sixty-five-year-old revenge tea. Even shaken." }
+      ]
+    }
+  ],
+  "characters": [
+    {
+      "id": "marzipan",
+      "name": "Baron Marzipan",
+      "pos": { "x": 180, "y": 136 },
+      "walkTo": { "x": 158, "y": 148 },
+      "paint": "marzipan",
+      "color": [252, 232, 160],
+      "facing": "left",
+      "look": [
+        {
+          "text": "Baron Marzipan: a cream suit with a man somewhere inside it, and a lapel rose made of actual marzipan."
+        }
+      ],
+      "talk": [{ "dialogue": "marzipan" }],
+      "itemUse": [
+        {
+          "withItem": "olive",
+          "speaker": "target",
+          "text": "Point that SAVOURY somewhere else, Mr. Grey."
+        }
+      ]
+    }
+  ],
+  "exits": [
+    {
+      "id": "funicular_down",
+      "name": "funicular",
+      "region": { "x": 8, "y": 78, "w": 40, "h": 72 },
+      "walkTo": { "x": 40, "y": 150 },
+      "to": "terrace",
+      "entry": { "x": 176, "y": 148 },
+      "look": "The funicular waits, doors open. The Baron is a gracious host; it's the not-leaving-later you'd want to worry about."
+    }
+  ]
+}

@@ -362,9 +362,14 @@ export function renderScene(
       walking: a.walking,
       talking: opts.speakingId === 'actor',
     };
+    // The story may dress its own hero (manifest.actor names a sprite
+    // painter); the engine's default actor is the fallback.
+    const actorName = loaded.story.manifest.actor;
+    const heroSprite = actorName !== undefined ? loaded.paint.sprites?.[actorName] : undefined;
+    const drawHero = heroSprite ?? drawActor;
     bodies.push({
       y: a.y,
-      draw: () => scaled(ctx, a.x, a.y, scale, () => drawActor(ctx, a.x, a.y, pose, opts.t)),
+      draw: () => scaled(ctx, a.x, a.y, scale, () => drawHero(ctx, a.x, a.y, pose, opts.t)),
     });
   }
   bodies.sort((a, b) => a.y - b.y);

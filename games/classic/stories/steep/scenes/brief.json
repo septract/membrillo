@@ -1,0 +1,12 @@
+{
+  "id": "brief",
+  "name": "S.C.O.N.E. Headquarters",
+  "paint": "briefCard",
+  "beats": [
+    "S.C.O.N.E. HEADQUARTERS. A desk lamp, a dossier, and Auntie, who is nobody's aunt.",
+    "\"Baron Marzipan has built something in his cliff-top tea room, Grey. Our analysts say it stops every clock on Earth at 4:01pm.\"",
+    "\"One minute PAST teatime. Forever. We do not use the word 'monster' lightly in this building.\"",
+    "\"Get to the Hôtel Bombe. Our croupier will find you — she's the competent one, so do try to keep up. And Grey... straighten your tie.\""
+  ],
+  "next": "salon"
+}

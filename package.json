@@ -9,7 +9,7 @@
     "build": "npm run build -w games/classic",
     "preview": "npm run preview -w games/classic",
     "typecheck": "tsc --noEmit",
-    "test": "node --test packages/membrillo/tools/core.test.ts packages/membrillo/tools/walk.test.ts packages/membrillo/tools/followers.test.ts",
+    "test": "node --test packages/membrillo/tools/core.test.ts packages/membrillo/tools/walk.test.ts packages/membrillo/tools/followers.test.ts packages/membrillo/tools/sprites.test.ts",
     "validate": "STORIES_ROOT=games/classic/stories node packages/membrillo/tools/validate.ts",
     "fuzz": "STORIES_ROOT=games/classic/stories node packages/membrillo/tools/fuzz.ts",
     "check": "npm run typecheck && npm test && npm run validate && npm run fuzz && npm run check -w games/_template",

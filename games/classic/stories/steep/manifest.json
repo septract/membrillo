@@ -1,0 +1,32 @@
+{
+  "id": "steep",
+  "title": "Operation Steep",
+  "start": "brief",
+  "actor": "earlGrey",
+  "audio": {
+    "themes": {
+      "lounge": {
+        "bpm": 96,
+        "prog": ["Am", "D", "G", "E"],
+        "scale": [57, 59, 60, 62, 64, 66, 69, 71],
+        "style": "pluck",
+        "gain": 0.55
+      },
+      "wind": {
+        "bpm": 52,
+        "prog": ["Em", "C"],
+        "scale": [52, 55, 59, 62],
+        "style": "drone",
+        "gain": 0.5
+      },
+      "menace": {
+        "bpm": 40,
+        "prog": ["Dm", "Em"],
+        "scale": [50, 53, 57],
+        "style": "drone",
+        "gain": 0.55
+      }
+    },
+    "sceneTheme": { "salon": "lounge", "terrace": "wind", "lair": "menace" }
+  }
+}

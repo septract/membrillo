@@ -1,0 +1,132 @@
+{
+  "id": "salon",
+  "name": "The Grand Salon, Hôtel Bombe",
+  "paint": "salon",
+  "size": { "w": 480, "h": 180 },
+  "walk": { "x": 12, "y": 126, "w": 456, "h": 46 },
+  "depth": { "far": { "y": 126, "scale": 0.85 }, "near": { "y": 172, "scale": 1.05 } },
+  "props": [{ "id": "bar", "paint": "barCounter", "x": 90, "y": 126 }],
+  "start": { "x": 40, "y": 150 },
+  "enter": [{ "requires": ["!flag:arrived"], "play": "arrival" }],
+  "sequences": {
+    "arrival": [
+      { "setFlags": ["arrived"] },
+      { "walkTo": { "x": 70, "y": 150 } },
+      { "who": "barman", "say": "Good evening, sir. Welcome to the Hôtel Bombe." },
+      { "say": "Grey. Earl Grey. I believe I'm expected — by someone." },
+      { "wait": 0.3 }
+    ]
+  },
+  "hotspots": [
+    {
+      "id": "bowl",
+      "name": "silver snack bowl",
+      "region": { "x": 108, "y": 102, "w": 18, "h": 12 },
+      "walkTo": { "x": 116, "y": 132 },
+      "requires": ["!flag:took_olive"],
+      "look": [
+        { "text": "A silver bowl of cocktail olives. One of them has clear leadership qualities." }
+      ],
+      "take": [
+        {
+          "text": "You palm the ranking olive, pick and all. For later. Espionage is mostly confiscating snacks.",
+          "giveItem": "olive",
+          "setFlags": ["took_olive"]
+        }
+      ]
+    },
+    {
+      "id": "tray",
+      "name": "drinks tray",
+      "region": { "x": 196, "y": 104, "w": 24, "h": 12 },
+      "walkTo": { "x": 206, "y": 134 },
+      "requires": ["!flag:took_swizzle"],
+      "look": [
+        { "text": "Abandoned aperitifs. Among the wreckage: one immaculate glass swizzle stick." }
+      ],
+      "take": [
+        {
+          "text": "You liberate the swizzle stick and dry it on a napkin, like a professional.",
+          "giveItem": "swizzle",
+          "setFlags": ["took_swizzle"]
+        }
+      ]
+    },
+    {
+      "id": "chandelier",
+      "name": "chandelier",
+      "region": { "x": 236, "y": 12, "w": 44, "h": 30 },
+      "walkTo": { "x": 258, "y": 140 },
+      "look": [
+        {
+          "text": "A chandelier the size of a modest yacht. You resist the professional urge to swing from it. For now."
+        }
+      ]
+    },
+    {
+      "id": "cardtable",
+      "name": "card table",
+      "region": { "x": 300, "y": 106, "w": 64, "h": 20 },
+      "walkTo": { "x": 330, "y": 140 },
+      "look": [
+        {
+          "requires": ["companion:penny"],
+          "text": "The table stands abandoned. The house, for once, is not winning."
+        },
+        { "text": "Green baize, ivory chips, and odds curated personally by the croupier." }
+      ],
+      "use": [
+        { "text": "You are on duty. Also, you have seen the croupier count. You would lose the tuxedo." }
+      ]
+    }
+  ],
+  "characters": [
+    {
+      "id": "barman",
+      "name": "the barman",
+      "pos": { "x": 84, "y": 122 },
+      "walkTo": { "x": 92, "y": 134 },
+      "paint": "barman",
+      "color": [236, 232, 224],
+      "facing": "down",
+      "look": [
+        { "text": "White jacket, perfect posture, eyes that have seen everything and billed for none of it." }
+      ],
+      "talk": [{ "dialogue": "barman" }],
+      "itemUse": [
+        {
+          "withItem": "olive",
+          "speaker": "target",
+          "text": "Sir wishes to RETURN an olive? Sir is bold. Keep it, sir. I insist."
+        }
+      ]
+    },
+    {
+      "id": "penny_croupier",
+      "name": "Penny Farthing",
+      "pos": { "x": 344, "y": 138 },
+      "walkTo": { "x": 322, "y": 146 },
+      "paint": "penny",
+      "color": [94, 130, 142],
+      "facing": "left",
+      "requires": ["!companion:penny"],
+      "look": [
+        {
+          "text": "The croupier. Waistcoat, welding goggles pushed into her hair — an unusual combination for card games."
+        }
+      ],
+      "talk": [{ "dialogue": "penny" }]
+    }
+  ],
+  "exits": [
+    {
+      "id": "doors",
+      "name": "terrace doors",
+      "region": { "x": 438, "y": 84, "w": 34, "h": 62 },
+      "walkTo": { "x": 448, "y": 148 },
+      "to": "terrace",
+      "entry": { "x": 40, "y": 210 },
+      "look": "Tall glass doors onto the cliff terrace. Sea air and, faintly, funicular grease."
+    }
+  ]
+}

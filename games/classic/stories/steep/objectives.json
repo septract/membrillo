@@ -1,0 +1,19 @@
+[
+  {
+    "id": "lair",
+    "text": "Get into Baron Marzipan's lair",
+    "done": ["flag:fondant_moved"]
+  },
+  {
+    "id": "fondant",
+    "text": "Find a way past Mr. Fondant",
+    "active": ["flag:met_fondant"],
+    "done": ["flag:fondant_moved"]
+  },
+  {
+    "id": "device",
+    "text": "Stop the Four O'Clock Device",
+    "active": ["flag:knows_plan"],
+    "done": ["flag:device_stopped"]
+  }
+]

@@ -19,6 +19,7 @@ await runDrive(import.meta.url, [
   'marigold',
   'postcard',
   'marigold2',
+  'steep',
   'resilience',
   'mobile',
 ]);

@@ -6,17 +6,24 @@ design note, it lands here; when it ships, delete it. Dated design notes in
 
 ## Decisions needed (Mike)
 
-- (none open — Gale Reach shipped as the second mission; next direction TBD
-  after playing it.)
+- VN-style dialogue portraits (Mike, 2026-07-19): show a large character
+  image during dialogue trees, so talking art and walking art are separate
+  modes (much easier to produce than expression at 40px). Sketch: a fourth
+  optional painter surface (`portraits`), a `portrait` ref on characters/
+  companions, shown in the dialogue overlay only — floating speech in the
+  room stays SCUMM. Precedent says this is period-authentic (Fate of
+  Atlantis did dialogue portraits). Open: dialogue-only vs all speech;
+  placement/size; whether nodes can pick moods (schema extension — defer).
 
 ## Next (engine)
 
-- Multi-frame costumes: richer walk cycles beyond leg-scissor, distinct
-  toward/away frames.
 - Save slots (single autosave today); save-format versioning before any
   public release.
 
 ## Next (content/presentation)
+
+- Add a link to the GitHub repo on the running game page (bottom line?) —
+  Mike, 2026-07-19.
 
 - Pixelization tool: `tools/pixelize.mjs` — box-downscale + palette
   quantization + ordered dither over PNGs (we already have a zero-dep PNG
@@ -24,16 +31,10 @@ design note, it lands here; when it ships, delete it. Dated design notes in
   pixel art; the rest is hand-cleanup by design.
 - Spritesheet talk support: a `talk` row (or a head-overlay layer, SCUMM-
   costume style) in `sheetSprite` — image sprites currently don't mouth-flap.
-- Story-supplied player actor sprite (the actor is engine-drawn today; an
-  image-based story will want its own hero).
 
 - Hollow + bridge art polish; the placeholder-quality props (skiff reads as
   a table).
 - Palette effects: day/night tint (colour cycling shipped with Gale Reach).
-- Mission 3 (Mike, 2026-07-18): a James Bond-inspired standalone mission with
-  a spunky sidekick heroine — everything renamed absurd/funny/charming, never
-  copyright-infringing (the Marigold treatment for spy fiction). Gadget items
-  are a natural fit for "Use X with Y".
 
 ## Later
 

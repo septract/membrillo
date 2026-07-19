@@ -1,0 +1,138 @@
+{
+  "id": "terrace",
+  "name": "The Cliff Terrace",
+  "paint": "terrace",
+  "size": { "w": 320, "h": 240 },
+  "walk": [
+    { "x": 12, "y": 186, "w": 296, "h": 46 },
+    { "x": 216, "y": 148, "w": 64, "h": 44 },
+    { "x": 116, "y": 122, "w": 164, "h": 30 }
+  ],
+  "depth": { "far": { "y": 122, "scale": 0.85 }, "near": { "y": 228, "scale": 1.05 } },
+  "start": { "x": 40, "y": 210 },
+  "enter": [{ "requires": ["!flag:met_fondant"], "play": "loom" }],
+  "sequences": {
+    "loom": [
+      { "setFlags": ["met_fondant"] },
+      { "wait": 0.4 },
+      { "say": "Ah. The funicular. And in front of it... that is a substantial gentleman." },
+      { "who": "fondant", "say": "..." },
+      { "say": "Quite. Well said." }
+    ],
+    "fondant_moves": [
+      { "who": "fondant", "say": "..." },
+      { "wait": 0.5 },
+      { "who": "fondant", "walkTo": { "x": 252, "y": 140 } },
+      { "who": "fondant", "face": "left" },
+      { "setFlags": ["fondant_moved"] },
+      { "say": "There now. A man who appreciates butter is never truly a henchman." }
+    ]
+  },
+  "hotspots": [
+    {
+      "id": "palm",
+      "name": "potted palm",
+      "region": { "x": 24, "y": 148, "w": 26, "h": 42 },
+      "walkTo": { "x": 52, "y": 200 },
+      "look": [
+        { "text": "A potted palm, leaning hard into the sea wind. It has chosen a difficult career." }
+      ]
+    },
+    {
+      "id": "balustrade",
+      "name": "balustrade",
+      "region": { "x": 68, "y": 168, "w": 130, "h": 14 },
+      "walkTo": { "x": 130, "y": 200 },
+      "look": [
+        {
+          "text": "Far below, the sea files its complaint against the cliff. The cliff declines to settle."
+        }
+      ],
+      "use": [
+        { "text": "You lean on it rakishly. Nobody sees. The ambience notes it, at least." }
+      ]
+    },
+    {
+      "id": "cables",
+      "name": "funicular cables",
+      "region": { "x": 150, "y": 24, "w": 40, "h": 60 },
+      "walkTo": { "x": 176, "y": 132 },
+      "look": [
+        {
+          "text": "Twin cables climbing the dark towards the Baron's tea room. Taut as the small talk up there."
+        }
+      ]
+    }
+  ],
+  "characters": [
+    {
+      "id": "fondant",
+      "name": "Mr. Fondant",
+      "pos": { "x": 176, "y": 134 },
+      "walkTo": { "x": 176, "y": 148 },
+      "paint": "fondant",
+      "color": [140, 132, 138],
+      "facing": "down",
+      "requires": ["!flag:fondant_moved"],
+      "look": [
+        { "text": "A load-bearing wall in a bowler hat. His tie is a novelty print of tiny biscuits — the single known clue to the man within." }
+      ],
+      "talk": [
+        { "speaker": "target", "text": "..." }
+      ],
+      "use": [
+        { "text": "You consider moving him bodily. Physics files an objection." }
+      ],
+      "itemUse": [
+        {
+          "withItem": "shortbread",
+          "text": "You present the shortbread with both hands, as protocol surely demands.",
+          "removeItem": "shortbread",
+          "play": "fondant_moves"
+        },
+        {
+          "withItem": "olive",
+          "speaker": "target",
+          "text": "..."
+        }
+      ]
+    },
+    {
+      "id": "fondant_aside",
+      "name": "Mr. Fondant",
+      "pos": { "x": 252, "y": 140 },
+      "walkTo": { "x": 236, "y": 152 },
+      "paint": "fondant",
+      "color": [140, 132, 138],
+      "facing": "left",
+      "requires": ["flag:fondant_moved"],
+      "look": [
+        {
+          "text": "Mr. Fondant stands aside, dabbing one eye with a handkerchief the size of a pillowcase. The shortbread is nowhere to be seen. The wrapper is folded, with reverence, into his breast pocket."
+        }
+      ],
+      "talk": [{ "speaker": "target", "text": "... ...!" }]
+    }
+  ],
+  "exits": [
+    {
+      "id": "salon_doors",
+      "name": "salon doors",
+      "region": { "x": 4, "y": 176, "w": 22, "h": 52 },
+      "walkTo": { "x": 30, "y": 208 },
+      "to": "salon",
+      "entry": { "x": 440, "y": 150 },
+      "look": "Back into the warm hum of the salon."
+    },
+    {
+      "id": "funicular",
+      "name": "funicular",
+      "region": { "x": 152, "y": 84, "w": 48, "h": 48 },
+      "walkTo": { "x": 176, "y": 132 },
+      "to": "lair",
+      "entry": { "x": 50, "y": 150 },
+      "requires": ["flag:fondant_moved"],
+      "look": "The Baron's private funicular. Brass, velvet, and a grade no sensible railway would attempt."
+    }
+  ]
+}

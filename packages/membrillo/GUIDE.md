@@ -22,7 +22,7 @@ conditions the fuzzer can't see).
 
 ```
 stories/<id>/
-  manifest.json      id, title, start scene, optional view + audio
+  manifest.json      id, title, start scene, optional view + actor + audio
   items.json         inventory items (array)
   scenes/*.json      one scene per file, filename = scene id
   dialogue/*.json    dialogue trees (optional)
@@ -41,6 +41,9 @@ painters); `games/classic/stories/lamplight/` is the full-featured one.
 Three verbs — **Interact** (default), **Look**, **Talk** — plus item arming:
 
 - A plain click Interacts: doors travel, pickups pick up, machines operate.
+- Armed verbs are one-shot: after Look/Talk resolves against a target, the
+  mode snaps back to the default (clicks on empty ground walk and keep the
+  arm). Don't design puzzles that assume a verb stays armed across clicks.
 - With Interact armed, clicking an inventory item arms it ("Use X with …");
   the next click — another item OR a scene target — completes the sentence.
   Combining and applying items are deliberately the same gesture.
@@ -261,6 +264,15 @@ pixel shapes, `talkMouth`/`blinking` for faces. Recipes:
   Respect `pose`: `walking`+`phase` swing limbs, `talking` runs the mouth,
   4-way `facing` (draw the back of the head for `up`). The engine scales
   sprites by depth — draw at scale 1.
+- **Walk cycles**: call `walkFrame(pose)` for the engine's quantized 4-frame
+  gait (contact/passing: foot x-offsets `aDx`/`bDx`, leg lifts `aUp`/`bUp`,
+  body `rise`, arm `swing`) instead of rolling your own from `phase` — every
+  body in the scene then steps to the same beat. Frame-stepped, deliberately
+  not smoothed; `index` is there if you'd rather switch whole drawings.
+- **The player's costume**: `"actor": "<sprite name>"` in the manifest draws
+  the hero with your sprite painter instead of the engine default (validator
+  checks the name) — same contract as any character sprite, ~40px tall so
+  the speech anchor stays honest.
 - Characters ~40px tall keep speech anchors honest; wildly taller/shorter
   sprites will misplace their floating lines.
 

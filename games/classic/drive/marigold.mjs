@@ -46,7 +46,7 @@ export async function run(kit) {
   await page.getByRole('button', { name: 'Of course you have.' }).click();
   await page.waitForTimeout(300);
   const closed = await hook();
-  if (!closed.followers.includes('cog')) throw new Error('follower missing after dialogue closed');
+  if (!closed.followers.some((f) => f.id === 'cog')) throw new Error('follower missing after dialogue closed');
   console.log('  recruit joins on dialog close, not mid-lurch ✓');
   await worldClick(242, 135); // Counselor Solace
   await page.getByRole('button', { name: 'Join the away team, Counselor.' }).click();

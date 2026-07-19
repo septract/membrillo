@@ -1,0 +1,41 @@
+{
+  "id": "penny",
+  "start": "start",
+  "nodes": {
+    "start": {
+      "line": "Place your bets— oh. You're what London sent. The tuxedo model.",
+      "options": [
+        { "text": "Grey. EARL Grey.", "to": "name" },
+        { "text": "You must be Farthing. Auntie speaks highly.", "to": "auntie" },
+        { "text": "Perhaps later.", "to": "end" }
+      ]
+    },
+    "name": {
+      "line": "I know. It's on your luggage, your cufflinks, and apparently your soul. Penny Farthing — gadgets, logistics, and getting agents like you home alive.",
+      "options": [
+        { "text": "Then we'd better team up.", "to": "join" },
+        { "text": "I work alone.", "to": "alone" }
+      ]
+    },
+    "auntie": {
+      "line": "She speaks accurately. I've counted the Baron's cards AND his henchmen. One of each is unbeatable.",
+      "options": [
+        { "text": "Then we'd better team up.", "to": "join" },
+        { "text": "I work alone.", "to": "alone" }
+      ]
+    },
+    "alone": {
+      "line": "Mm. The last agent who worked alone is now decorative gravel on the Baron's driveway. I'll be here when the maths sinks in.",
+      "options": [
+        { "text": "...The maths has sunk in. Team up?", "to": "join" },
+        { "text": "Duly noted.", "to": "end" }
+      ]
+    },
+    "join": {
+      "line": "Was that so hard? Right — I'm off shift. Try to look like you're winning at something.",
+      "options": [
+        { "text": "After you, Miss Farthing.", "to": "end", "addCompanion": "penny" }
+      ]
+    }
+  }
+}

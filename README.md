@@ -36,9 +36,11 @@ npm run dev        # play at http://localhost:5173
 npm run check      # typecheck + unit tests + validate + fuzz (sub-second)
 ```
 
-Four stories are included: **Lamplight** (a lighthouse, a sunken lens),
-**The Marigold** (a fond fake-TNG away mission), and two engine-honesty
-fixtures (`meadow`: no art at all; `postcard`: image assets).
+Six stories are included: **Lamplight** (a lighthouse, a sunken lens),
+**The Marigold** and **Gale Reach** (fond fake-TNG away missions),
+**Operation Steep** (a tuxedoed spy, a spunky gadgeteer, a doomsday teatime),
+and two engine-honesty fixtures (`meadow`: no art at all; `postcard`: image
+assets).
 
 ## Writing a story
 

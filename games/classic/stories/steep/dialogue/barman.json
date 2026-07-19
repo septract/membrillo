@@ -1,0 +1,50 @@
+{
+  "id": "barman",
+  "start": "start",
+  "nodes": {
+    "start": {
+      "line": "Good evening, sir. The house pour is a martini. The house policy is discretion.",
+      "options": [
+        { "text": "Martini. Shaken, obviously.", "to": "shaken" },
+        { "text": "Tell me about the Baron's funicular.", "to": "funicular" },
+        {
+          "text": "The large gentleman by the cliff — what moves him?",
+          "to": "fondant",
+          "requires": ["flag:met_fondant"]
+        },
+        { "text": "Just the ambience, thank you.", "to": "end" }
+      ]
+    },
+    "shaken": {
+      "line": "Sir, this is the Hôtel Bombe. Everything here is shaken. Mostly by the Baron's funicular.",
+      "options": [
+        { "text": "About that funicular.", "to": "funicular" },
+        { "text": "Very good. Carry on.", "to": "end" }
+      ]
+    },
+    "funicular": {
+      "line": "Private line, up to the Baron's... tea room. Guests by invitation. The invitation is Mr. Fondant, and he never extends it.",
+      "options": [
+        {
+          "text": "And what does Mr. Fondant care about?",
+          "to": "fondant"
+        },
+        { "text": "I'll charm him.", "to": "charm" }
+      ]
+    },
+    "charm": {
+      "line": "Many have tried, sir. The cliff below is littered with charm.",
+      "options": [{ "text": "Noted.", "to": "end" }]
+    },
+    "fondant": {
+      "line": "One thing only, sir. Proper shortbread. Real butter, mind — he weeps at the real thing, and he can taste a margarine lie through the wrapper.",
+      "options": [
+        {
+          "text": "Shortbread. Of course. Thank you.",
+          "to": "end",
+          "setFlags": ["knows_fondant"]
+        }
+      ]
+    }
+  }
+}

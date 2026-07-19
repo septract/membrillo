@@ -1,0 +1,41 @@
+{
+  "id": "marzipan",
+  "start": "start",
+  "nodes": {
+    "start": {
+      "line": "More tea, Mr. Grey? We have simply ages. Well. Until four.",
+      "options": [
+        { "text": "Why teatime, Baron? Why this?", "to": "why" },
+        { "text": "Your device has a flaw. They always do.", "to": "flaw" },
+        { "text": "You'll never get away with this.", "to": "never" },
+        { "text": "No more tea for me, thank you.", "to": "end" }
+      ]
+    },
+    "why": {
+      "line": "The Royal Garden Party, 1961. My petit-fours — CUT from the programme. For SCONES, Mr. Grey. When the world stops at 4:01, no one will ever be served before me again.",
+      "options": [
+        { "text": "That's insane. They're just cakes.", "to": "cakes" },
+        { "text": "A minute PAST teatime. Diabolical.", "to": "end" }
+      ]
+    },
+    "cakes": {
+      "line": "JUST CAKES?! Mr. Fondant, show him the— no. No. I am calm. I am glazed and calm.",
+      "options": [{ "text": "Glazed. Yes. Very calm.", "to": "end" }]
+    },
+    "flaw": {
+      "line": "Flaw! The escapement is Swiss, the casing is Swiss, the WARRANTY is Swiss. Nothing short of a sub-atomic jiffy of brine could confuse it, and I hardly keep anchovies, Mr. Grey.",
+      "options": [
+        { "text": "Brine. How reassuring for you.", "to": "end" },
+        { "text": "No olives at YOUR garden party, then.", "to": "olives" }
+      ]
+    },
+    "olives": {
+      "line": "Olives are a SAVOURY, Mr. Grey. This is a TEA. Do try to be civilised.",
+      "options": [{ "text": "My mistake entirely.", "to": "end" }]
+    },
+    "never": {
+      "line": "Get away? Dear boy, I'm not going anywhere. That is rather the POINT of stopping the clocks.",
+      "options": [{ "text": "...That's fair, actually.", "to": "end" }]
+    }
+  }
+}

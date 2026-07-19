@@ -284,6 +284,11 @@ export interface Manifest {
    * under a following camera.
    */
   view?: Size;
+  /**
+   * Sprite painter name for the player actor (the story's paint module must
+   * export it under `sprites`). Omitted: the engine's default actor.
+   */
+  actor?: string;
   /** Optional music/SFX config; stories without it are silent. */
   audio?: AudioConfig;
 }
