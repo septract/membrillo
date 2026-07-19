@@ -863,15 +863,49 @@ el.canvas.addEventListener('mousemove', (ev) => {
   updateHover(ev.clientX, ev.clientY);
 });
 
-el.canvas.addEventListener('click', (ev) => {
-  if (!session || session.finished || session.dialogue || fade) return;
-  if (session.sequence) {
-    // Mandatory dialog: a click hurries the current say/wait step to its end
-    // (walk steps play out; Esc still skips the whole sequence).
+/**
+ * Click-to-hurry during mandatory dialog: complete the current say/wait step
+ * and fast-forward through any following non-presentational steps (waits,
+ * bare effects), so the player's next click always addresses something
+ * visible — a trailing pacing `wait` must never eat an action click.
+ */
+function hurrySequence(): void {
+  if (!session || !session.sequence) return;
+  const current = session.sequence.steps[session.sequence.index];
+  if (current && current.walkTo !== undefined) {
+    // Snap the scripted walk to its destination rather than ignoring the click.
+    const end = session.path?.[session.path.length - 1];
+    if (end) {
+      session.actor.x = end.x;
+      session.actor.y = end.y;
+    }
+    session.path = null;
+    session.actor.walking = false;
+  }
+  advanceSequence();
+  while (session.sequence) {
     const step = session.sequence.steps[session.sequence.index];
-    if (step && step.walkTo === undefined) advanceSequence();
+    if (!step || step.say !== undefined || step.walkTo !== undefined) break;
+    advanceSequence();
+  }
+}
+
+el.canvas.addEventListener('click', (ev) => {
+  if (!session) return;
+  if (session.finished) {
+    showMenu(); // the end card's click-anywhere response
     return;
   }
+  if (session.dialogue) return; // the options ARE the interface
+  if (session.sequence) {
+    // Hurrying works even during the fade-in — a running sequence means the
+    // scene switch already happened, and arrival clicks must never be eaten.
+    hurrySequence();
+    return;
+  }
+  // Only the fade-OUT (pre-switch) blocks input; once the switch has fired,
+  // beats/clicks act normally so no arrival click is ever lost.
+  if (fade && !fade.fired) return;
   if (speech) speech = null; // click skips the line
   const scene = sceneOf(session);
   if (session.beat !== null) {

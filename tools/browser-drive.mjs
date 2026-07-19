@@ -284,12 +284,16 @@ await verb('Interact');
 await worldClick(280, 140); // beam pad
 await page.waitForFunction(() => window.__pcc?.()?.scene === 'hollow', null, { timeout: 15000 });
 await waitLog('Atmosphere: damp.');
-await page.keyboard.press('Escape'); // skip the rest of the arrival
-await page.waitForTimeout(400);
 await shot('51-hollow-arrival');
-
-await worldClick(60, 150); // early return attempt: authored refusal
+// Click-through must cost exactly one click per line — the trailing pacing
+// wait and the fade-in must never eat a click (Mike's playtest nit).
+await worldClick(160, 90); // dismiss Cog's line (during fade-in is fine)
+await waitLog('very worried');
+await worldClick(160, 90); // dismiss Solace's line — also ends the wait step
+await page.waitForTimeout(150);
+await worldClick(60, 150); // IMMEDIATELY act: the very next click must land
 await waitLog('Finish the job first, Ensign.');
+console.log('  no lost clicks on arrival ✓');
 
 // The A-Final-Unity alternate path: Cog diagnoses instead of the sniffer.
 await verb('Look');
@@ -368,6 +372,11 @@ await page.waitForFunction(() => window.__pcc?.()?.scene === 'sent', null, { tim
 await page.keyboard.press('Escape');
 await waitLog('— The End —');
 console.log('  IMAGE FIXTURE WINNABLE ✓');
+// Every click responds: clicking the end card returns to the story menu.
+await page.waitForTimeout(300);
+await worldClick(160, 90);
+await page.waitForFunction(() => !document.getElementById('menu')?.hidden, null, { timeout: 5000 });
+console.log('  end-card click → menu ✓');
 
 // --- Resilience: corrupt save + stale-scene save must not crash --------------
 await page.evaluate(() => {
