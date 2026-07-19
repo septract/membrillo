@@ -152,11 +152,14 @@ const skin = [214, 168, 130];
 const hair = [90, 60, 40];
 
 function drawBuddy(col, row, facing, step) {
-  const ox = col * FW + FW / 2; // feet-centre x
-  const oy = row * FH + FH; // feet y
+  // Rasterize into a frame-local buffer so nothing (outlines, leg swings)
+  // can bleed across frame boundaries on the sheet.
+  const frame = raster(FW, FH);
+  const ox = FW / 2; // feet-centre x
+  const oy = FH - 1; // feet y (inside the frame)
   const r = {
-    blk: (x, y, w, h, c) => sheet.blk(ox + x, oy + y, w, h, c),
-    fill: (x, y, w, h, c) => sheet.fill(ox + x, oy + y, w, h, c),
+    blk: (x, y, w, h, c) => frame.blk(ox + x, oy + y, w, h, c),
+    fill: (x, y, w, h, c) => frame.fill(ox + x, oy + y, w, h, c),
   };
   // legs (step swings them)
   r.blk(-5, -12, 4, 12 + step, slacks);
@@ -177,6 +180,15 @@ function drawBuddy(col, row, facing, step) {
       r.fill(2, -32, 1, 2, [16, 14, 20]);
     } else {
       r.fill(2, -32, 1, 2, [16, 14, 20]); // profile eye
+    }
+  }
+  // blit the clipped frame into its sheet cell
+  for (let y = 0; y < FH; y++) {
+    for (let x = 0; x < FW; x++) {
+      const i = (y * FW + x) * 4;
+      if (frame.buf[i + 3] > 0) {
+        sheet.set(col * FW + x, row * FH + y, [frame.buf[i], frame.buf[i + 1], frame.buf[i + 2], frame.buf[i + 3]]);
+      }
     }
   }
 }
