@@ -55,7 +55,13 @@
       "region": { "x": 16, "y": 58, "w": 26, "h": 22 },
       "walkTo": { "x": 30, "y": 138 },
       "look": [{ "text": "A comm grille, polished to a shine. Everything here is polished. Sixty years is a lot of tidying time." }],
-      "talk": [{ "dialogue": "mote" }]
+      "talk": [{ "dialogue": "mote" }],
+      "itemUse": [
+        {
+          "withItem": "sniffer",
+          "text": "The sniffer holds close and reports: not a fault, not a fire. Just... warmth, and a great deal of it, coming through the grille. It has no category for that and says so, twice."
+        }
+      ]
     },
     {
       "id": "rack",
@@ -95,6 +101,16 @@
         },
         { "requires": ["flag:took_coupler"], "text": "Nothing else in there but alphabetised washers." },
         { "text": "Sealed tight. The lock wants a drone-code, and the only drone is... napping." }
+      ],
+      "itemUse": [
+        {
+          "withItem": "sniffer",
+          "text": "The sniffer reads the lock: drone-code handshake, and nothing you can hum. You'll need the actual drone awake."
+        },
+        {
+          "withItem": "cell",
+          "text": "The cabinet doesn't want power, it wants a passphrase. Pocket the cell — the drone's the key here."
+        }
       ]
     }
   ],
@@ -147,7 +163,13 @@
       "requires": ["flag:woke_drone"],
       "color": [170, 200, 190],
       "look": [{ "text": "Awake, upright, and hovering by the stores cabinet like it's been waiting sixty years to be useful. It has." }],
-      "talk": [{ "speaker": "target", "text": "\"KRRT,\" it says, with feeling." }]
+      "talk": [{ "speaker": "target", "text": "\"KRRT,\" it says, with feeling." }],
+      "itemUse": [
+        {
+          "withItem": "sniffer",
+          "text": "The sniffer reads the drone: power nominal, task queue — TIDY, mood — also TIDY. A machine at peace with its one idea."
+        }
+      ]
     }
   ],
   "exits": [

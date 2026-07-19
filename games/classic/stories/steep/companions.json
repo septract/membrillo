@@ -40,6 +40,11 @@
         "withItem": "shortbread",
         "speaker": "target",
         "text": "I KNOW it's good. It's not FOR us."
+      },
+      {
+        "withItem": "swizzle",
+        "speaker": "target",
+        "text": "Point me at the emitter, Grey, not at me. I cross-phase lasers, I don't stir them."
       }
     ]
   }

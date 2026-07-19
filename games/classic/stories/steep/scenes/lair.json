@@ -108,6 +108,12 @@
       ],
       "use": [
         { "text": "You are not drinking sixty-five-year-old revenge tea. Even shaken." }
+      ],
+      "itemUse": [
+        {
+          "withItem": "olive",
+          "text": "Tempting — but the brine belongs in the escapement, not the brew. Dosing the tea would only improve it, and this tea deserves no improvement."
+        }
       ]
     }
   ],

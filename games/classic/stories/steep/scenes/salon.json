@@ -61,6 +61,9 @@
         {
           "text": "A chandelier the size of a modest yacht. You resist the professional urge to swing from it. For now."
         }
+      ],
+      "use": [
+        { "text": "It's twelve feet up and you are, at present, admirably dry. A grand entrance can wait for a grander exit." }
       ]
     },
     {
@@ -99,6 +102,11 @@
           "withItem": "olive",
           "speaker": "target",
           "text": "Sir wishes to RETURN an olive? Sir is bold. Keep it, sir. I insist."
+        },
+        {
+          "withItem": "shortbread",
+          "speaker": "target",
+          "text": "Real butter, sir — I can tell from here. My compliments to whichever quartermaster smuggled that in."
         }
       ]
     },

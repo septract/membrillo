@@ -91,6 +91,14 @@ export async function run(kit) {
   console.log('  terrace + vertical camera ✓');
   await shot('91-terrace');
 
+  // The mission goal on screen must respond BEFORE Fondant moves — the
+  // funicular exit is gated invisible, so a blocked hotspot answers the click
+  // (regression for the swallowed-click bug).
+  await verb('Look');
+  await worldClick(158, 100); // funicular car, left of Fondant
+  await waitLog('immovable Mr. Fondant');
+  console.log('  blocked funicular responds (no swallowed click) ✓');
+
   // Shortbread diplomacy: Fondant steps aside (scripted character walk).
   await chip('proper shortbread');
   await worldClick(176, 112);

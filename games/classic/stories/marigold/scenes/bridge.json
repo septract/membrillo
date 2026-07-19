@@ -50,6 +50,9 @@
           "goto": "hollow"
         },
         { "text": "Bramble, without looking up from her tea: \"The WHOLE team, Ensign.\"" }
+      ],
+      "itemUse": [
+        { "withItem": "sniffer", "text": "The sniffer reads the pad and emits a long, uneasy tone. Some things are not meant to be smelled mid-transport." }
       ]
     }
   ],
@@ -63,7 +66,14 @@
       "facing": "left",
       "color": [226, 204, 160],
       "look": [{ "text": "Captain Bramble. Silver hair, steel spine, nettle tea — scalding." }],
-      "talk": [{ "dialogue": "bramble" }]
+      "talk": [{ "dialogue": "bramble" }],
+      "itemUse": [
+        {
+          "withItem": "sniffer",
+          "speaker": "target",
+          "text": "\"Point that at me again, Ensign, and I'll have it analysing the brig.\""
+        }
+      ]
     },
     {
       "id": "cog",

@@ -62,6 +62,25 @@
           "text": "Twin cables climbing the dark towards the Baron's tea room. Taut as the small talk up there."
         }
       ]
+    },
+    {
+      "id": "funicular_blocked",
+      "name": "funicular",
+      "region": { "x": 152, "y": 84, "w": 48, "h": 48 },
+      "walkTo": { "x": 176, "y": 132 },
+      "requires": ["!flag:fondant_moved"],
+      "look": [
+        {
+          "text": "The Baron's private funicular, brass and velvet — and one immovable Mr. Fondant standing squarely between you and its little door."
+        }
+      ],
+      "use": [
+        {
+          "requires": ["flag:met_fondant"],
+          "text": "You'd have to get past Mr. Fondant first, and Mr. Fondant is a solved problem for exactly nobody so far."
+        },
+        { "text": "A gentleman blocks the way with the patience of geology. Best say hello first." }
+      ]
     }
   ],
   "characters": [

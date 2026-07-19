@@ -63,6 +63,9 @@
       "walkTo": { "x": 165, "y": 164 },
       "look": [
         { "text": "Empty packing crates, stacked chest-high. The lens crate isn't among them." }
+      ],
+      "use": [
+        { "text": "You shift a few. All empty, all splinters, no lens. Whatever came in these has long since gone up the tower." }
       ]
     },
     {
@@ -72,6 +75,15 @@
       "walkTo": { "x": 226, "y": 140 },
       "look": [
         { "text": "The keeper's skiff, tied off and half-bailed. It won't be rowing anywhere heavy." }
+      ],
+      "use": [
+        { "text": "It's half full of harbour already. Row out in that and you'd be dredging the bottom the hard way — from underneath." }
+      ],
+      "itemUse": [
+        {
+          "withItem": "grapple",
+          "text": "No need to put to sea — the crate's close enough to reach from the pier. Cast from solid ground, not a leaky boat."
+        }
       ]
     },
     {
@@ -132,6 +144,16 @@
           "withItem": "grapple",
           "speaker": "target",
           "text": "\"A fine rig. My dredging days are done, though — you swing it.\""
+        },
+        {
+          "withItem": "rope",
+          "speaker": "target",
+          "text": "\"Good line. But line alone won't grip a sunken crate — put some teeth on the end of it, lad.\""
+        },
+        {
+          "withItem": "hook",
+          "speaker": "target",
+          "text": "\"The old boathook! Lash it to a length of line and you'd have a proper grapple. I'll not do the knots for you, mind.\""
         }
       ]
     }

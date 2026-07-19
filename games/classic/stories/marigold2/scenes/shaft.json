@@ -42,6 +42,10 @@
         {
           "withItem": "sniffer",
           "text": "The sniffer chirps: socket live, line dormant, and — it adds, unprompted — the song is in D minor."
+        },
+        {
+          "withItem": "cell",
+          "text": "Power it has, a voice it lacks — the socket wants a coupler, not a battery. Slotting the cell here would light a lamp nobody's asking about."
         }
       ]
     },
@@ -51,7 +55,13 @@
       "region": { "x": 54, "y": 64, "w": 30, "h": 28 },
       "walkTo": { "x": 70, "y": 128 },
       "look": [{ "text": "Behind this grille, sixty years of patience and one caretaker intelligence, singing." }],
-      "talk": [{ "dialogue": "mote" }]
+      "talk": [{ "dialogue": "mote" }],
+      "itemUse": [
+        {
+          "withItem": "sniffer",
+          "text": "The sniffer presses to the grille and hesitates. Readout: emotional state — UNRECOGNISED. It files the result, uncertainly, under 'maintenance'."
+        }
+      ]
     },
     {
       "id": "window",

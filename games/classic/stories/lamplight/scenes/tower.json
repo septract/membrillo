@@ -38,6 +38,14 @@
         {
           "withItem": "rope",
           "text": "Lash the housing shut? It wants a lens, not rigging."
+        },
+        {
+          "withItem": "hook",
+          "text": "A boathook won't focus a beam. The socket's shaped for glass, not iron."
+        },
+        {
+          "withItem": "grapple",
+          "text": "The grapple's for dredging, not for lamplight. Save it for the harbour."
         }
       ]
     },

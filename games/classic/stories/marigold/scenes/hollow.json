@@ -104,6 +104,14 @@
         },
         { "requires": ["!flag:got_crystal"], "text": "Survey regulations are silent on blind spelunking. Your fingers are not." },
         { "text": "Empty now, and welcome to stay that way." }
+      ],
+      "itemUse": [
+        {
+          "withItem": "sniffer",
+          "requires": ["!flag:got_crystal"],
+          "text": "The sniffer noses into the crack and beeps, delighted: refined silica dioxide, precision-ground. There's cut crystal down there — spare, by the look of it."
+        },
+        { "withItem": "sniffer", "text": "The sniffer sniffs the empty crack and sulks." }
       ]
     },
     {
