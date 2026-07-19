@@ -1,0 +1,21 @@
+[
+  {
+    "id": "sniffer",
+    "name": "sniffer",
+    "look": [
+      { "text": "A hand sniffer: it smells electromagnetic trouble and disapproves of it quietly." }
+    ]
+  },
+  {
+    "id": "crystal",
+    "name": "focusing crystal",
+    "look": [{ "text": "A focusing crystal, cool to the touch and faintly musical." }]
+  },
+  {
+    "id": "tuner",
+    "name": "tuning fork",
+    "look": [
+      { "text": "Wren's tuning fork, stamped: PROPERTY OF THE HOLLOW — DO NOT IMPROVE." }
+    ]
+  }
+]

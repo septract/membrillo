@@ -7,7 +7,7 @@
 // the actor paths through walkboxes and behind props, room changes fade, and
 // a following camera lets scenes be larger than the story's view resolution.
 
-import type { Character, Point, Scene, SeqStep, Size, State } from './core/types.ts';
+import type { Character, Point, Scene, SeqStep, Size, State, Target } from './core/types.ts';
 import { applyRule, initialState } from './core/rules.ts';
 import {
   act,
@@ -28,7 +28,7 @@ import {
   type PlayerVerb,
 } from './core/verbs.ts';
 import { objectiveViews } from './core/objectives.ts';
-import { followGap, pushTrail, resetTrail, trailPointAt, type Trail } from './followers.ts';
+import { followGap, pushTrail, trailPointAt, type Trail } from './followers.ts';
 import * as audio from './audio/engine.ts';
 import { loadStories, type LoadedStory } from './loader.ts';
 import {
@@ -43,7 +43,7 @@ import {
   type Speech,
   type TargetRef,
 } from './render.ts';
-import { depthScale, findPath, walkBoxes } from './walk.ts';
+import { clampToWalkable, depthScale, findPath, walkBoxes } from './walk.ts';
 import { P, css, rgba, type RGB } from './art/palette.ts';
 import {
   ACTOR_SPEECH_OFFSET,
@@ -313,8 +313,17 @@ function placeInScene(scene: Scene, entry: Point | null): void {
     const at = entry ?? scene.start ?? { x: session.view.w / 2, y: session.view.h - 20 };
     session.actor = { ...session.actor, x: at.x, y: at.y, walking: false };
     session.camera = cameraTargetFor(session); // snap, don't pan, on entry
-    resetTrail(session.trail, at);
-    session.followers.clear(); // re-seeded next tick at the entry point
+    // Seed the breadcrumb trail with a tail behind the actor, so followers
+    // fan out in file on entry instead of stacking on the actor. Vertical
+    // facings seed horizontally — rooms are wide, and a vertical tail gets
+    // clamped to nothing at the walkbox edge (followers would stack).
+    const boxes = walkBoxes(scene);
+    const bx = session.actor.facing === 'left' ? 1 : -1;
+    session.trail.points = [];
+    for (let d = 78; d >= 0; d -= 6) {
+      pushTrail(session.trail, clampToWalkable({ x: at.x + bx * d, y: at.y }, boxes));
+    }
+    session.followers.clear(); // re-seeded next tick along the new trail
     const seqId = enterSequenceId(scene, session.state);
     if (seqId !== null) startSequence(seqId, null);
   }
@@ -417,6 +426,33 @@ function speakerFor(target: TargetRef | undefined): Speaker {
     };
   }
   return { anchor: actorHead(), color: P.glow, id: 'actor' };
+}
+
+/** The authored rule surface behind a clicked target, whatever its kind. */
+function targetDef(target: TargetRef): Target | undefined {
+  if (!session) return undefined;
+  const scene = sceneOf(session);
+  if (target.kind === 'character') {
+    return visibleCharacters(scene, session.state).find((c) => c.id === target.id);
+  }
+  if (target.kind === 'companion') return session.loaded.story.companions[target.id];
+  if (target.kind === 'hotspot') return (scene.hotspots ?? []).find((h) => h.id === target.id);
+  return undefined;
+}
+
+/**
+ * What a DEFAULT (Interact) click means, by target kind — the ontology of
+ * defaults: people are talked to, things are operated, and anything with
+ * nothing to operate is looked at. Explicitly armed Look/Talk always win.
+ */
+function resolveClickVerb(target: TargetRef): PlayerVerb {
+  if (armed !== 'interact') return armed;
+  const def = targetDef(target);
+  if (!def) return 'interact';
+  const person = target.kind === 'character' || target.kind === 'companion';
+  if (person && def.talk !== undefined) return 'talk';
+  if (def.use !== undefined || def.take !== undefined) return 'interact';
+  return 'look';
 }
 
 /** Hit-test the companion followers (they sit on top of scene targets). */
@@ -665,8 +701,10 @@ function sentenceText(): string {
   if (held !== null) {
     return `Use ${held} with ${targetName ?? '…'}`;
   }
+  // Mirror what a click will actually do (kind-resolved defaults).
+  const effective = hover ? resolveClickVerb(hover) : armed;
   const verbPhrase =
-    armed === 'look' ? 'Look at' : armed === 'talk' ? 'Talk to' : 'Interact with';
+    effective === 'look' ? 'Look at' : effective === 'talk' ? 'Talk to' : 'Interact with';
   if (targetName) return `${verbPhrase} ${targetName}`;
   return `${verbPhrase} …`;
 }
@@ -827,7 +865,7 @@ el.canvas.addEventListener('click', (ev) => {
       ? { kind: 'verb', verb: 'interact' }
       : armedItem !== null && armed === 'interact'
         ? { kind: 'apply', itemId: armedItem }
-        : { kind: 'verb', verb: armed };
+        : { kind: 'verb', verb: resolveClickVerb(target) };
   session.path = findPath({ x: session.actor.x, y: session.actor.y }, target.walkTo, boxes);
   session.pending = { target, action };
 });

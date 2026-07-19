@@ -1,0 +1,56 @@
+{
+  "id": "wren",
+  "start": "start",
+  "nodes": {
+    "start": {
+      "line": "Oh — officers! Thank the mists. The relay went dark and the vines are CURLING, and — can you fix it? Please say you can fix it.",
+      "options": [
+        { "text": "What happened to it?", "to": "deflect" },
+        {
+          "text": "It was detuned. By hand. A whole tone flat, exactly.",
+          "to": "pressed",
+          "requires": ["flag:knows_fault"]
+        },
+        { "text": "We'll see what we can do. (leave)", "to": "end" }
+      ]
+    },
+    "deflect": {
+      "line": "Storms! Probably storms. We get... storms?  — she says it a beat too quickly, and picks at her sleeve.",
+      "options": [
+        { "text": "...Right. Storms.", "to": "start" },
+        { "text": "(Leave it, for now.)", "to": "end" }
+      ]
+    },
+    "pressed": {
+      "line": "…Ah. Is it. How, ha. How specific of it.",
+      "options": [
+        {
+          "text": "(Let Solace speak.) \"It's all right, Wren. Embarrassment isn't a crime.\"",
+          "to": "confess",
+          "requires": ["companion:solace"]
+        },
+        { "text": "(Press harder.) Who touched it?", "to": "stonewall" },
+        { "text": "(Let it go.) We'll keep looking.", "to": "end" }
+      ]
+    },
+    "stonewall": {
+      "line": "I couldn't say! Vandals. Storm... vandals. — Her ears have gone the colour of beetroot.",
+      "options": [{ "text": "(This needs a gentler touch.)", "to": "end" }]
+    },
+    "confess": {
+      "line": "I DETUNED it! The vines prefer a lower hum, I've PROVEN it, I only meant to improve the misting rhythm — and then the crystal burnt and I couldn't put it right and I was going to tell someone, I was—",
+      "options": [
+        {
+          "text": "The tuning fork, please. We'll put it right together.",
+          "to": "fork",
+          "giveItem": "tuner",
+          "setFlags": ["wren_confessed"]
+        }
+      ]
+    },
+    "fork": {
+      "line": "Really? Oh, mists bless you. Here — it's true to A. Mostly.",
+      "options": [{ "text": "We'll have it humming by supper.", "to": "end" }]
+    }
+  }
+}

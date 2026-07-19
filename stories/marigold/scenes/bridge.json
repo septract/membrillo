@@ -1,0 +1,94 @@
+{
+  "id": "bridge",
+  "name": "Bridge of the Marigold",
+  "paint": "bridge",
+  "walk": { "x": 16, "y": 128, "w": 288, "h": 40 },
+  "depth": {
+    "far": { "y": 128, "scale": 0.8 },
+    "near": { "y": 168, "scale": 1.0 }
+  },
+  "start": { "x": 60, "y": 152 },
+  "sequences": {
+    "briefing": [
+      { "setFlags": ["briefed"] },
+      { "who": "bramble", "say": "Verdant Hollow's weather relay is dark, Ensign. Their crop won't wait on ceremony." },
+      { "giveItem": "sniffer", "who": "bramble", "say": "One sniffer, signed out to you. Bring it back un-melted." },
+      { "who": "bramble", "say": "Take Cog. Take Solace. See it done." }
+    ]
+  },
+  "enter": [{ "requires": ["!flag:briefed"], "play": "briefing" }],
+  "hotspots": [
+    {
+      "id": "viewscreen",
+      "name": "viewscreen",
+      "region": { "x": 104, "y": 34, "w": 112, "h": 48 },
+      "walkTo": { "x": 160, "y": 136 },
+      "look": [{ "text": "Verdant Hollow turns below, green as bottle glass." }],
+      "use": [{ "text": "It is not, despite appearances, a window you can open." }]
+    },
+    {
+      "id": "console",
+      "name": "science console",
+      "region": { "x": 30, "y": 96, "w": 58, "h": 22 },
+      "walkTo": { "x": 58, "y": 134 },
+      "look": [
+        { "text": "Cog's station. The readouts are alphabetised, cross-indexed, and gently humming." }
+      ],
+      "use": [{ "text": "It politely declines input from anyone below lieutenant." }]
+    },
+    {
+      "id": "pad",
+      "name": "beam pad",
+      "region": { "x": 256, "y": 118, "w": 52, "h": 44 },
+      "walkTo": { "x": 278, "y": 156 },
+      "look": [{ "text": "The beam pad. It tingles even to look at." }],
+      "use": [
+        {
+          "requires": ["companion:cog", "companion:solace"],
+          "text": "The bridge dissolves into warm gold static.",
+          "setFlags": ["on_hollow"],
+          "goto": "hollow"
+        },
+        { "text": "Bramble, without looking up from her tea: \"The WHOLE team, Ensign.\"" }
+      ]
+    }
+  ],
+  "characters": [
+    {
+      "id": "bramble",
+      "name": "Captain Bramble",
+      "pos": { "x": 160, "y": 148 },
+      "walkTo": { "x": 138, "y": 152 },
+      "paint": "bramble",
+      "facing": "left",
+      "color": [226, 204, 160],
+      "look": [{ "text": "Captain Bramble. Silver hair, steel spine, nettle tea — scalding." }],
+      "talk": [{ "dialogue": "bramble" }]
+    },
+    {
+      "id": "cog",
+      "name": "Lt. Cog",
+      "pos": { "x": 62, "y": 144 },
+      "walkTo": { "x": 86, "y": 148 },
+      "paint": "cog",
+      "facing": "right",
+      "requires": ["!companion:cog"],
+      "color": [150, 220, 210],
+      "look": [{ "text": "Lt. Cog: chrome, courteous, one joke held in reserve." }],
+      "talk": [{ "dialogue": "cog" }]
+    },
+    {
+      "id": "solace",
+      "name": "Counselor Solace",
+      "pos": { "x": 242, "y": 150 },
+      "walkTo": { "x": 220, "y": 152 },
+      "paint": "solace",
+      "facing": "left",
+      "requires": ["!companion:solace"],
+      "color": [200, 170, 220],
+      "look": [{ "text": "Counselor Solace, wrapped in lavender calm." }],
+      "talk": [{ "dialogue": "solace" }]
+    }
+  ],
+  "exits": []
+}

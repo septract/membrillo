@@ -1,0 +1,26 @@
+[
+  {
+    "id": "team",
+    "text": "Assemble the away team — Cog and Solace",
+    "active": ["!flag:on_hollow"],
+    "done": ["companion:cog", "companion:solace"]
+  },
+  {
+    "id": "fix",
+    "text": "Repair the Hollow's weather relay",
+    "active": ["flag:briefed"],
+    "done": ["flag:relay_fixed"]
+  },
+  {
+    "id": "diagnose",
+    "text": "Find out what killed the relay",
+    "active": ["flag:on_hollow", "!flag:relay_fixed"],
+    "done": ["flag:knows_fault"]
+  },
+  {
+    "id": "home",
+    "text": "Report back to the Marigold",
+    "active": ["flag:relay_fixed"],
+    "done": ["flag:went_home"]
+  }
+]

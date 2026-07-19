@@ -1,0 +1,27 @@
+{
+  "id": "marigold",
+  "title": "The Marigold",
+  "start": "briefing",
+  "audio": {
+    "themes": {
+      "ship": {
+        "bpm": 54,
+        "prog": ["C", "G"],
+        "scale": [48, 55, 60],
+        "style": "drone",
+        "gain": 0.5
+      },
+      "hollow": {
+        "bpm": 88,
+        "prog": ["F", "C", "Dm", "C"],
+        "scale": [60, 62, 65, 67, 69, 72, 74],
+        "style": "pluck",
+        "gain": 0.65
+      }
+    },
+    "sceneTheme": {
+      "bridge": "ship",
+      "hollow": "hollow"
+    }
+  }
+}

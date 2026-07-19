@@ -1,0 +1,25 @@
+{
+  "id": "solace",
+  "start": "start",
+  "nodes": {
+    "start": {
+      "line": "You're nervous, Ensign. Don't be. First missions remember themselves fondly.",
+      "options": [
+        { "text": "Join the away team, Counselor.", "to": "joins", "addCompanion": "solace" },
+        { "text": "How nervous am I, exactly?", "to": "scale" },
+        { "text": "Thank you, Counselor. (leave)", "to": "end" }
+      ]
+    },
+    "scale": {
+      "line": "Seven. Out of a friendly ten. It suits you.",
+      "options": [
+        { "text": "Join the away team, Counselor.", "to": "joins", "addCompanion": "solace" },
+        { "text": "I'll take it. (leave)", "to": "end" }
+      ]
+    },
+    "joins": {
+      "line": "Gladly. Someone down there needs a kind ear more than a toolkit — I can feel it from orbit.",
+      "options": [{ "text": "Then let's bring both.", "to": "end" }]
+    }
+  }
+}

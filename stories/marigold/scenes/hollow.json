@@ -1,0 +1,156 @@
+{
+  "id": "hollow",
+  "name": "Verdant Hollow",
+  "paint": "hollow",
+  "size": { "w": 420, "h": 180 },
+  "walk": { "x": 8, "y": 122, "w": 404, "h": 48 },
+  "depth": {
+    "far": { "y": 122, "scale": 0.72 },
+    "near": { "y": 170, "scale": 1.05 }
+  },
+  "start": { "x": 60, "y": 158 },
+  "sequences": {
+    "arrival": [
+      { "setFlags": ["hollow_arrived"] },
+      { "who": "cog", "say": "Atmosphere: damp. Morale, by the look of the vines: damper." },
+      { "who": "solace", "say": "Someone here is very worried... and very, very embarrassed." },
+      { "wait": 0.3 }
+    ]
+  },
+  "enter": [{ "requires": ["!flag:hollow_arrived"], "play": "arrival" }],
+  "hotspots": [
+    {
+      "id": "circle",
+      "name": "beam circle",
+      "region": { "x": 36, "y": 142, "w": 48, "h": 18 },
+      "walkTo": { "x": 60, "y": 162 },
+      "look": [{ "text": "A ring of scorched grass where the beam sets you down. The Hollow mows around it." }],
+      "use": [
+        {
+          "requires": ["flag:relay_fixed"],
+          "text": "Gold static, and — faintly — the smell of nettle tea.",
+          "setFlags": ["went_home"],
+          "goto": "home"
+        },
+        { "text": "The Marigold crackles down: \"Finish the job first, Ensign.\"" }
+      ]
+    },
+    {
+      "id": "relay",
+      "name": "weather relay",
+      "region": { "x": 138, "y": 34, "w": 44, "h": 96 },
+      "walkTo": { "x": 160, "y": 140 },
+      "look": [
+        {
+          "requires": ["flag:relay_fixed"],
+          "text": "The relay hums a contented fifth. Mist drifts toward the greenhouse like an apology."
+        },
+        {
+          "requires": ["flag:knows_fault"],
+          "text": "The coil head is dark. The empty crystal socket stares back; the tuning collar sits a whole tone low."
+        },
+        { "text": "The colony's weather relay: a mast, a coil head, and no light in it anywhere. It hums, very faintly, wrong." }
+      ],
+      "use": [
+        { "requires": ["flag:relay_fixed"], "text": "Leave it be. It's happy now." },
+        { "text": "Prodding it does nothing. The hum stays faint, and stays wrong." }
+      ],
+      "itemUse": [
+        {
+          "withItem": "sniffer",
+          "requires": ["!flag:knows_fault"],
+          "text": "The sniffer chirps twice: focusing crystal — burnt out. Calibration — off by exactly a whole tone. Exactly. That's no storm.",
+          "setFlags": ["knows_fault"]
+        },
+        { "withItem": "sniffer", "text": "The sniffer chirps approvingly. Nothing new to disapprove of." },
+        {
+          "withItem": "crystal",
+          "text": "The crystal seats in the socket with a click like a struck glass.",
+          "removeItem": "crystal",
+          "setFlags": ["crystal_installed"]
+        },
+        {
+          "withItem": "tuner",
+          "requires": ["flag:crystal_installed"],
+          "text": "You strike the fork on your boot and hold it to the coil. The relay shivers, finds the note, and the mist-heads hiss awake all down the vine rows.",
+          "removeItem": "tuner",
+          "setFlags": ["relay_fixed"]
+        },
+        {
+          "withItem": "tuner",
+          "text": "The fork rings true; the relay can't answer. The burnt crystal won't hold a note."
+        }
+      ]
+    },
+    {
+      "id": "crevice",
+      "name": "basalt crevice",
+      "region": { "x": 246, "y": 130, "w": 40, "h": 16 },
+      "walkTo": { "x": 264, "y": 156 },
+      "look": [
+        { "requires": ["flag:got_crystal"], "text": "Just a crack in the rock now. Nothing glitters." },
+        { "text": "A crack in the basalt. Deep down, something glitters — glassy, regular, man-made." }
+      ],
+      "use": [
+        {
+          "requires": ["flag:knows_fault", "companion:cog", "!flag:got_crystal"],
+          "text": "Cog kneels, reaches in to the shoulder, and returns holding a spare crystal like a teacup. \"Undamaged. Unlike its predecessor.\"",
+          "giveItem": "crystal",
+          "setFlags": ["got_crystal"]
+        },
+        {
+          "requires": ["flag:knows_fault", "!flag:got_crystal"],
+          "text": "Too narrow and too deep for your arm. Cog's, on the other hand, does not complain about basalt."
+        },
+        { "requires": ["!flag:got_crystal"], "text": "You're not reaching into strange planetary geology without a reason." },
+        { "text": "Empty now, and welcome to stay that way." }
+      ]
+    },
+    {
+      "id": "greenhouse",
+      "name": "greenhouse",
+      "region": { "x": 300, "y": 62, "w": 96, "h": 60 },
+      "walkTo": { "x": 330, "y": 140 },
+      "look": [
+        {
+          "requires": ["flag:relay_fixed"],
+          "text": "Mist rolls down the glass in slow, satisfied curtains. The vines uncurl, ostentatiously."
+        },
+        { "text": "Long glass houses, mist-heads hanging dry over the vine rows. The vines have begun, resentfully, to curl." }
+      ],
+      "use": [{ "text": "The door's for colonists. The problem's outside anyway — up the mast." }]
+    }
+  ],
+  "characters": [
+    {
+      "id": "wren",
+      "name": "Wren",
+      "pos": { "x": 320, "y": 152 },
+      "walkTo": { "x": 298, "y": 154 },
+      "paint": "wren",
+      "facing": "left",
+      "color": [190, 214, 154],
+      "look": [{ "text": "Wren, the Hollow's botanist. Soil on her knees, worry all over her face." }],
+      "talk": [
+        {
+          "requires": ["flag:relay_fixed"],
+          "speaker": "target",
+          "text": "\"LISTEN to it! The mists! Oh, the vines will be insufferable about this.\""
+        },
+        {
+          "requires": ["flag:wren_confessed"],
+          "speaker": "target",
+          "text": "\"True to A! Mostly!\" she calls, hovering."
+        },
+        { "dialogue": "wren" }
+      ],
+      "itemUse": [
+        {
+          "withItem": "sniffer",
+          "text": "The sniffer reads: flustered, seventy-eight percent. Rising."
+        }
+      ]
+    }
+  ],
+  "exits": []
+}

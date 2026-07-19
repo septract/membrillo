@@ -1,0 +1,60 @@
+[
+  {
+    "id": "cog",
+    "name": "Lt. Cog",
+    "paint": "cog",
+    "color": [150, 220, 210],
+    "look": [{ "text": "Lt. Cog, maintaining the regulation following distance. Which he measured." }],
+    "talk": [
+      {
+        "requires": ["flag:on_hollow", "!flag:knows_fault"],
+        "speaker": "target",
+        "text": "\"Listen. The relay is singing a whole tone flat, and something inside smells of burnt quartz. Diagnosis: one burnt focusing crystal, and one hand that retuned the collar.\"",
+        "setFlags": ["knows_fault"]
+      },
+      {
+        "requires": ["flag:relay_fixed"],
+        "speaker": "target",
+        "text": "\"The relay is in tune. My joke, deployed at the moment of triumph, scored one (1) audible laugh. Field study concludes: timing.\""
+      },
+      {
+        "speaker": "target",
+        "text": "\"I am practising timing, Ensign. The joke will deploy when morale requires it.\""
+      }
+    ],
+    "itemUse": [
+      {
+        "withItem": "sniffer",
+        "speaker": "target",
+        "text": "\"Reading: android. Your instrument functions, Ensign. As do I.\""
+      }
+    ]
+  },
+  {
+    "id": "solace",
+    "name": "Counselor Solace",
+    "paint": "solace",
+    "color": [200, 170, 220],
+    "look": [{ "text": "Counselor Solace, keeping pace, reading the weather in everyone." }],
+    "talk": [
+      {
+        "requires": ["flag:on_hollow", "flag:knows_fault", "!flag:wren_confessed"],
+        "speaker": "target",
+        "text": "\"Wren isn't hiding malice — only embarrassment. Ask her about the tuning, gently, and let me stand beside you.\""
+      },
+      {
+        "requires": ["flag:relay_fixed"],
+        "speaker": "target",
+        "text": "\"Relief, everywhere, like rain. Well done, Ensign.\""
+      },
+      { "speaker": "target", "text": "\"Breathe, Ensign. You're doing fine.\"" }
+    ],
+    "itemUse": [
+      {
+        "withItem": "sniffer",
+        "speaker": "target",
+        "text": "\"Point that at someone's feelings again, Ensign, and I will read YOUR diary. Aloud. At dinner.\""
+      }
+    ]
+  }
+]

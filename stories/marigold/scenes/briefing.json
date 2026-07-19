@@ -1,0 +1,10 @@
+{
+  "id": "briefing",
+  "name": "Orbit",
+  "beats": [
+    "The survey ship Marigold, in orbit over Verdant Hollow.",
+    "Below: one agricultural colony, four hundred souls, and a weather relay that has gone quietly, ominously dark.",
+    "Your first away mission, Ensign. Try not to be memorable."
+  ],
+  "next": "bridge"
+}
