@@ -1,0 +1,38 @@
+{
+  "id": "apartment_render",
+  "name": "Sol's Apartment (rendered)",
+  "debug": true,
+  "paint": "apartment_render",
+  "size": { "w": 320, "h": 180 },
+  "walk": { "x": 14, "y": 118, "w": 292, "h": 32 },
+  "depth": { "far": { "y": 118, "scale": 1.438 }, "near": { "y": 150, "scale": 1.868 } },
+  "start": { "x": 160, "y": 140 },
+  "hotspots": [
+    {
+      "id": "closet",
+      "name": "coat closet",
+      "region": { "x": 24, "y": 38, "w": 44, "h": 64 },
+      "walkTo": { "x": 74, "y": 140 },
+      "look": [{ "text": "The same closet, now with corners and a floor that recedes. You could believe a coat lives in there instead of merely being implied by one." }]
+    },
+    {
+      "id": "couch",
+      "name": "the couch",
+      "region": { "x": 224, "y": 74, "w": 76, "h": 34 },
+      "walkTo": { "x": 250, "y": 144 },
+      "look": [{ "text": "A rendered couch, sitting back where the perspective says it should. You shrink a little as you approach it — the depth band, doing its quiet job." }],
+      "use": [{ "text": "You test the cushions of the rendered couch. Schematically, they are perfect. Spiritually, you miss the hand-drawn ones." }]
+    }
+  ],
+  "exits": [
+    {
+      "id": "toflat",
+      "name": "the door",
+      "region": { "x": 254, "y": 48, "w": 36, "h": 24 },
+      "walkTo": { "x": 270, "y": 138 },
+      "to": "apartment",
+      "entry": { "x": 60, "y": 150 },
+      "look": "Through the rendered door — and straight into the hand-drawn version of the same room. Mind the dimensional seam."
+    }
+  ]
+}

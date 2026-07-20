@@ -6,7 +6,7 @@
 // coffee-shop New York, warm lamps against grey daylight.
 
 import type { State } from 'membrillo/core/types';
-import { portraitImage, type PortraitFraming } from 'membrillo/art/images';
+import { imageScene, portraitImage, type PortraitFraming } from 'membrillo/art/images';
 import { P, css, mix, rgba, type RGB } from 'membrillo/art/palette';
 import { rampRect } from 'membrillo/art/dither';
 import {
@@ -675,7 +675,15 @@ const clerkPortrait: PortraitPainter = (ctx, _state, t, talking) => {
 // ============================================================================
 // EXPORTS
 // ============================================================================
-export const scenes = { apartment, street, diner, store, briefCard, victoryCard };
+// A/B comparison: the same apartment rebuilt through the scene-render pipeline
+// (floorplans/apartment_render.json → `membrillo scene build`). Hidden — reach
+// it with ?story=nothing&start=apartment_render; its door walks into the
+// hand-drawn version so you can step from one straight into the other.
+const apartmentRenderUrl = new URL('./assets/apartment_render.png', import.meta.url).href;
+export const scenes = {
+  apartment, street, diner, store, briefCard, victoryCard,
+  apartment_render: imageScene(apartmentRenderUrl),
+};
 export const sprites = { artie, kessler, elna, sol, nib, clerk };
 export const props = {};
 

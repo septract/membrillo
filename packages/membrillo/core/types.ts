@@ -231,6 +231,12 @@ export interface Scene {
   next?: string;
   /** Terminal scene: reaching it ends the story (fuzzer's success criterion). */
   ending?: boolean;
+  /**
+   * Intentionally out-of-flow: reachable only by debug jump (?start=), so the
+   * fuzzer exempts it from the "every scene reachable" invariant. For test /
+   * comparison scenes, never for shipped content.
+   */
+  debug?: boolean;
 }
 
 export interface CombineRule {

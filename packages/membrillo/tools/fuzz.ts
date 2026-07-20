@@ -272,7 +272,8 @@ function fuzzStory(story: Story): FuzzResult {
     }
   }
 
-  const unreachedScenes = Object.keys(story.scenes).filter((s) => !seenScenes.has(s));
+  // debug:true scenes are intentionally out-of-flow (reachable only by ?start=).
+  const unreachedScenes = Object.keys(story.scenes).filter((s) => !seenScenes.has(s) && !story.scenes[s]?.debug);
 
   // Objectives must actually function: shown somewhere, completable somewhere.
   const brokenObjectives: string[] = [];
