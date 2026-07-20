@@ -4,32 +4,46 @@
   "debug": true,
   "paint": "apartment_render",
   "size": { "w": 320, "h": 180 },
-  "walk": { "x": 14, "y": 118, "w": 292, "h": 32 },
-  "depth": { "far": { "y": 118, "scale": 1.438 }, "near": { "y": 150, "scale": 1.868 } },
-  "start": { "x": 160, "y": 140 },
+  "walk": { "x": 85, "y": 136, "w": 132, "h": 29 },
+  "depth": { "far": { "y": 136, "scale": 1.553 }, "near": { "y": 164, "scale": 2.185 } },
+  "start": { "x": 150, "y": 150 },
   "hotspots": [
     {
-      "id": "closet",
-      "name": "coat closet",
-      "region": { "x": 24, "y": 38, "w": 44, "h": 64 },
-      "walkTo": { "x": 74, "y": 140 },
-      "look": [{ "text": "The same closet, now with corners and a floor that recedes. You could believe a coat lives in there instead of merely being implied by one." }]
+      "id": "kitchen",
+      "name": "the kitchen",
+      "region": { "x": 26, "y": 50, "w": 74, "h": 66 },
+      "walkTo": { "x": 100, "y": 150 },
+      "look": [{ "text": "Counter, fridge, cabinets of cereal you didn't buy and won't replace. A whole kitchen, and not one thing in it is yours. Classic." }]
+    },
+    {
+      "id": "window",
+      "name": "the window",
+      "region": { "x": 124, "y": 44, "w": 86, "h": 26 },
+      "walkTo": { "x": 150, "y": 148 },
+      "look": [{ "text": "The big window, and the same grey city through it, now with actual depth behind the glass. The building across the way judges you in three dimensions." }]
     },
     {
       "id": "couch",
       "name": "the couch",
-      "region": { "x": 224, "y": 74, "w": 76, "h": 34 },
-      "walkTo": { "x": 250, "y": 144 },
-      "look": [{ "text": "A rendered couch, sitting back where the perspective says it should. You shrink a little as you approach it — the depth band, doing its quiet job." }],
-      "use": [{ "text": "You test the cushions of the rendered couch. Schematically, they are perfect. Spiritually, you miss the hand-drawn ones." }]
+      "region": { "x": 116, "y": 72, "w": 100, "h": 34 },
+      "walkTo": { "x": 160, "y": 158 },
+      "look": [{ "text": "The green couch. THE couch. It sits back where the perspective says it should, and you shrink a little as you approach — the depth band, doing its quiet job." }],
+      "use": [{ "text": "You sink into the rendered couch. Schematically, it is perfect. Spiritually, you miss the hand-drawn one, and that's the whole show." }]
+    },
+    {
+      "id": "bike",
+      "name": "the bike on the wall",
+      "region": { "x": 298, "y": 60, "w": 20, "h": 42 },
+      "walkTo": { "x": 206, "y": 150 },
+      "look": [{ "text": "A green bike, hung on the wall, ridden never. It is decor. It is a lifestyle you are only pretending to have. You respect it enormously." }]
     }
   ],
   "exits": [
     {
       "id": "toflat",
       "name": "the door",
-      "region": { "x": 254, "y": 48, "w": 36, "h": 24 },
-      "walkTo": { "x": 270, "y": 138 },
+      "region": { "x": 250, "y": 50, "w": 42, "h": 42 },
+      "walkTo": { "x": 210, "y": 152 },
       "to": "apartment",
       "entry": { "x": 60, "y": 150 },
       "look": "Through the rendered door — and straight into the hand-drawn version of the same room. Mind the dimensional seam."
